@@ -454,6 +454,10 @@ Both pages use shared styles from `style.css` and load the full script stack (`c
 | 6 | Privacy/compliance: domain trust, terms checkbox, employer approval, legal pages, concern reporting | ✓ Complete |
 | 7 (planned) | Server-side email relay, coordinator invite flow, file attachments (coordinator-reviewed) | Planned |
 
+### Phase 7 — cleanup item
+
+`server/routes/dev.js` is dead code. It was the server-side seeder called by `demo.js`, which was deleted in the Phase 6 hardening pass. Remove it at the start of Phase 7 and drop its route mount from `server/index.js`.
+
 ## Hard Rules
 - Do not add sections, features, or content not in the reference
 - Do not "improve" a reference design — match it
