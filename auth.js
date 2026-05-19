@@ -632,42 +632,6 @@ function _showVerifyError(message, showResend) {
   if (showResend && currentUser) _tickResendCooldown();
 }
 
-// —— COORDINATOR MANUAL VERIFY ——
-// Phase 5: replace with API call from coordinator dashboard.
-// On this device, only works when the target user is currently logged in.
-function coordinatorManualVerify(userId) {
-  if (!currentUser || currentUser.id !== userId) return false;
-  currentUser.emailVerified              = true;
-  currentUser.emailVerificationToken     = null;
-  currentUser.emailVerificationExpiresAt = null;
-  saveCurrentUser(currentUser);
-  return true;
-}
-
-// Console escape hatch for coordinators and dev:
-//   sibVerifyUser('user@email.com')  or  sibVerifyUser(userId)
-window.sibVerifyUser = function (emailOrId) {
-  const raw = localStorage.getItem('sib_user');
-  if (!raw) { console.warn('[sibVerifyUser] No user in localStorage'); return false; }
-  const user = JSON.parse(raw);
-  if (user.email !== emailOrId && user.id !== emailOrId) {
-    console.warn('[sibVerifyUser] No match — stored user is:', user.email, '/', user.id);
-    return false;
-  }
-  user.emailVerified              = true;
-  user.emailVerificationToken     = null;
-  user.emailVerificationExpiresAt = null;
-  localStorage.setItem('sib_user', JSON.stringify(user));
-  if (currentUser && (currentUser.email === emailOrId || currentUser.id === emailOrId)) {
-    currentUser.emailVerified              = true;
-    currentUser.emailVerificationToken     = null;
-    currentUser.emailVerificationExpiresAt = null;
-  }
-  _removeVerifyOverlays();
-  console.log('%c[sibVerifyUser] ✓ Verified', 'color:#16a34a;font-weight:bold', user);
-  return true;
-};
-
 // —— INIT ——
 document.addEventListener('DOMContentLoaded', () => {
   updateNavForAuth();

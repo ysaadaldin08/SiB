@@ -336,7 +336,6 @@
 <script src="moderation.js"></script>
 <script src="auth.js"></script>
 <script src="app.js"></script>
-<script src="demo.js"></script>
 <script>
 // —— STATE ——
 let coordPostings     = [];
@@ -578,11 +577,7 @@ async function manualVerifyUser(userId, email) {
       return;
     }
   } catch (_) {}
-  // API unavailable — show console command for manual use
-  const cmd = 'sibVerifyUser("' + email + '")';
-  if (confirm('API unavailable. To verify this account, share these steps with the user:\n\n1. Open their browser console (F12 → Console)\n2. Paste and run:\n\n' + cmd + '\n\nClick OK to copy the command.')) {
-    try { await navigator.clipboard.writeText(cmd); showToast('✓ Command copied to clipboard.'); } catch (_) {}
-  }
+  showToast('Could not verify account — server unavailable. Try again or contact the administrator.', true);
 }
 
 async function approveEmployer(userId, name) {

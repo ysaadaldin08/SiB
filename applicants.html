@@ -141,7 +141,6 @@ async function changeStatus(appId, newStatus) {
     if (existingPill) existingPill.outerHTML = statusPill(newStatus);
   }
   showToast('✓ Status updated to: ' + newStatus);
-  // Notify the student (in-app record; server-side handles cross-user email, Phase 5)
   const app = _cachedApps.find(a => a.id === appId);
   if (app) {
     createNotification({
@@ -153,7 +152,6 @@ async function changeStatus(appId, newStatus) {
         firstName: app.studentName ? app.studentName.split(' ')[0] : 'there',
       },
       userEmail: null,
-      // TODO: Phase 5 — pass student email server-side for immediate email notification
     });
   }
   // Notify all coordinators when a student is accepted for co-op placement

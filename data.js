@@ -615,32 +615,7 @@ function migrateExistingData() {
     }
   } catch (_) {}
 
-  // sib_coordinators is a legacy key — coordinators are now real Supabase Auth users.
-  // sib_notifications, sib_message_threads, sib_messages are now server-backed.
-  // Keep initializing them for demo.js compatibility (harmless empty arrays).
-  ['sib_notifications', 'sib_message_threads', 'sib_messages', 'sib_coordinators'].forEach(key => {
-    if (localStorage.getItem(key) === null) localStorage.setItem(key, '[]');
-  });
-
   localStorage.setItem('sib_data_version', DATA_VERSION);
 }
-
-// ——— DEBUG ———
-// Open the browser console and run: sibDump()
-// Returns a snapshot of every localStorage collection plus the flaggedTerms config.
-window.sibDump = function () {
-  const snapshot = {
-    user:           JSON.parse(localStorage.getItem('sib_user')            || 'null'),
-    notifications:  JSON.parse(localStorage.getItem('sib_notifications')   || '[]'),
-    messageThreads: JSON.parse(localStorage.getItem('sib_message_threads') || '[]'),
-    messages:       JSON.parse(localStorage.getItem('sib_messages')        || '[]'),
-    coordinators:   JSON.parse(localStorage.getItem('sib_coordinators')    || '[]'),
-    flaggedTerms
-  };
-  console.group('%cSiB data model snapshot', 'font-weight:bold;color:#1a6cf6;font-size:13px');
-  Object.entries(snapshot).forEach(([k, v]) => console.log(k + ':', v));
-  console.groupEnd();
-  return snapshot;
-};
 
 migrateExistingData();

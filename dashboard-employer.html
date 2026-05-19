@@ -237,7 +237,7 @@
         <!-- Send area -->
         <div style="background:#f8f9fb;border-radius:12px;padding:14px 16px;border:1px solid var(--line);">
           <div style="font-size:11.5px;color:var(--text-faint);margin-bottom:8px;">
-            Text messages only &nbsp;·&nbsp; No file attachments <!-- TODO: Phase 6 — coordinator-reviewed file attachments -->
+            Text messages only &nbsp;·&nbsp; No file attachments
           </div>
           <textarea id="edash-msg-input" placeholder="Type a message… (Ctrl+Enter to send)" rows="3"
             style="width:100%;box-sizing:border-box;border:1.5px solid #e5e7eb;border-radius:8px;padding:10px 13px;font-family:var(--sans);font-size:13.5px;resize:vertical;outline:none;line-height:1.55;transition:border-color 0.15s;"
@@ -296,7 +296,6 @@
 <script src="messaging.js"></script>
 <script src="auth.js"></script>
 <script src="app.js"></script>
-<script src="demo.js"></script>
 <script>
 const EDASH_SECTIONS = ['overview','postings','browse','requests','listing','messages','notifications','settings'];
 
@@ -505,7 +504,6 @@ async function savePosting() {
         payload: { postingTitle: posted.title, postingId: posted.id },
         userEmail: currentUser.email,
       });
-      // TODO: Phase 5 — send listingDigest to students with matching track interests (server-side)
     }
   }
   closeModal('postingModal');

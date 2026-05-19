@@ -4,11 +4,7 @@
 //
 // Cross-user notifications (e.g. employer notified when student applies) store
 // an in-app record but skip email because the recipient's email / prefs aren't
-// accessible client-side. The server-side transport (Phase 5+) will handle those.
-//
-// TODO (Phase 5): implement daily-digest delivery — query sib_notifications where
-//   emailedAt IS NULL and the user's preference for that type is 'daily', batch
-//   into one email per user, set emailedAt on each record after sending.
+// accessible client-side. Server-side transport handles those.
 
 // Maps notification type → notificationPreferences key
 const _PREF_KEY = {
@@ -150,7 +146,7 @@ async function createNotification({ userId, type, payload = {}, userEmail = null
     });
     markNotificationEmailed(notif.id); // fire-and-forget
   }
-  // pref === 'daily' → stored, no immediate email; digest job handles (see TODO above)
+  // pref === 'daily' → stored for batch delivery; no immediate email sent
   // pref === 'off'   → in-app only, never emailed
 
   // 4. Refresh bell badge if the recipient is currently logged in

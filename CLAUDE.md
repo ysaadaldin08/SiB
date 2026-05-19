@@ -390,25 +390,6 @@ Both pages use shared styles from `style.css` and load the full script stack (`c
 | `employerApproved` | (future — coordinator dashboard API call) | employer |
 | `concernReport` | `app.js submitReportConcern()` | all coordinators |
 
-## Demo Seeder (`demo.js`)
-
-Loaded on localhost only (no-op in production). Provides a floating **"⚡ DEMO MODE"** panel in the bottom-right corner of every key page.
-
-**Entry points:**
-- `demoAsStudent()` — logs in as Alex Thompson (OCDSB student), seeds sessionStorage `sib_student_app`, redirects to student dashboard
-- `demoAsEmployer()` — logs in as Shopify Ottawa (employer), seeds sessionStorage `sib_emp_data`, redirects to employer dashboard
-- `demoAsCoordinator()` — logs in as Mr. Caap (coordinator), redirects to coordinator dashboard
-
-**Seeded data (shared across all roles):**
-- 2 message threads: one normal (reviewed by coordinator), one flagged (phone number attempt by employer)
-- 6 messages across the 2 threads
-- Coordinator notifications: newPlacement, messageFlagged, newUserReview, concernReport
-- Student notifications: signupConfirm, 2× applicationStatus, 2× newMessage
-- Employer notifications: signupConfirm, newApplication, newMessage
-- Shopify Ottawa in `sib_approved_employers[]`
-
-**Pages that load demo.js:** `index.html`, `dashboard-student.html`, `dashboard-employer.html`, `coordinator-dashboard.html`
-
 ## Final Architecture Summary
 
 ### Files (all in project root)
@@ -437,13 +418,12 @@ Loaded on localhost only (no-op in production). Provides a floating **"⚡ DEMO 
 |------|---------|-----------|
 | `config.js` | API_BASE, SUPABASE_URL, getToken() | Every page |
 | `data.js` | All data functions: API wrappers, localStorage CRUD, shapes, domain config, migration | Every page |
-| `email.js` | sendEmail() mock with dev toast + verify link | Every page |
+| `email.js` | sendEmail() mock (console log + neutral toast) | Every page |
 | `notifications.js` | createNotification(), notifyCoordinators(), initNotifBell(), buildNotifPrefsHtml() | Every page |
 | `moderation.js` | analyzeMessage() — content scan for phone/email/URL/social/phrases | Dashboard + messaging pages |
 | `messaging.js` | msInit(), msOpenOrCreate(), msSendMessage(), msRenderInbox() | Dashboard pages |
 | `auth.js` | doLogin(), doSignup(), doSignOut(), verification flow, terms checkbox injection | Every page |
 | `app.js` | showToast(), modals, nav, renderStudents(), footer injection, report-concern modal | Every page |
-| `demo.js` | localhost-only demo seeder; floating dev panel | index + dashboards |
 
 ### Notification types (all in notifications.js)
 
@@ -471,7 +451,7 @@ Loaded on localhost only (no-op in production). Provides a floating **"⚡ DEMO 
 | 3 | Messaging (gated, logged, moderated), coordinator notifications | ✓ Complete |
 | 4 | Content moderation (scan + pre-send warning + flag) | ✓ Complete |
 | 5 | Coordinator role + dashboard (7 sections), thread review, placement tracking | ✓ Complete |
-| 6 | Privacy/compliance: domain trust, terms checkbox, employer approval, legal pages, concern reporting, demo seeder | ✓ Complete |
+| 6 | Privacy/compliance: domain trust, terms checkbox, employer approval, legal pages, concern reporting | ✓ Complete |
 | 7 (planned) | Server-side email relay, coordinator invite flow, file attachments (coordinator-reviewed) | Planned |
 
 ## Hard Rules
