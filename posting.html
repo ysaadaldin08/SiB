@@ -1,0 +1,275 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Placement Detail — Students in Business</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="mainNav">
+  <div class="nav-brand" onclick="window.location.href='index.html'">
+    <div class="nav-mark">SiB</div>
+    <span class="nav-name">Students in Business</span>
+  </div>
+  <div class="nav-links">
+    <button class="nav-btn" onclick="window.location.href='index.html'">Home</button>
+    <button class="nav-btn" onclick="window.location.href='job-listings.html'" style="color:var(--ink);font-weight:600;">Browse Jobs</button>
+    <button class="nav-btn" onclick="window.location.href='resources.html'">Resources</button>
+  </div>
+  <div class="nav-actions" id="navActions">
+    <button class="btn-outline-sm" onclick="openAuth('login')">Sign In</button>
+    <button class="btn-fill-sm" onclick="openAuth('signup', 'student')">Get Started</button>
+  </div>
+</nav>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><span id="toastMsg"></span></div>
+
+<!-- AUTH MODAL -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal" style="max-width:460px;">
+    <button class="modal-close" onclick="closeModal('authModal')">×</button>
+    <div class="modal-logo"><div class="modal-logo-mark">SiB</div><span class="modal-logo-name">Students in Business</span></div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="authTabLogin" onclick="switchAuthTab('login')">Sign In</button>
+      <button class="auth-tab" id="authTabSignup" onclick="switchAuthTab('signup')">Create Account</button>
+    </div>
+    <div id="authLogin">
+      <div class="auth-divider"><span>sign in with email</span></div>
+      <div class="field"><label>Email Address</label><input type="email" id="loginEmail" placeholder="your@email.com"></div>
+      <div class="field"><label>Password</label><input type="password" id="loginPassword" placeholder="••••••••"></div>
+      <button class="btn-primary" style="width:100%;justify-content:center;margin-top:2px;" onclick="doLogin()">Sign In →</button>
+      <div class="no-account-note" id="noAccountNote">No account found. <a onclick="switchAuthTab('signup')">Create one?</a></div>
+    </div>
+    <div id="authSignup" style="display:none;">
+      <div class="auth-divider"><span>create account with email</span></div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">I am a:</p>
+      <div class="role-selector" id="rolePicker">
+        <div class="role-card selected" id="roleStudent" onclick="selectRole('student')">
+          <div class="role-icon" style="display:flex;align-items:center;justify-content:center;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          </div>
+          <div class="role-name">Student</div><div class="role-desc">Grade 10–12 applicant</div>
+        </div>
+        <div class="role-card" id="roleEmployer" onclick="selectRole('employer')">
+          <div class="role-icon" style="display:flex;align-items:center;justify-content:center;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+          </div>
+          <div class="role-name">Employer</div><div class="role-desc">Company hosting a co-op</div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>First Name</label><input type="text" id="signupFirst" placeholder="First"></div>
+        <div class="field"><label>Last Name</label><input type="text" id="signupLast" placeholder="Last"></div>
+      </div>
+      <div class="field"><label>Email Address</label><input type="email" id="signupEmail" placeholder="your@email.com"></div>
+      <div class="field"><label>Password</label><input type="password" id="signupPass" placeholder="••••••••"></div>
+      <button class="btn-primary" style="width:100%;justify-content:center;margin-top:2px;" onclick="doSignup()">Create Account →</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE CONTENT (populated by JS) -->
+<div id="pageRoot"></div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div><div class="footer-brand">Students in Business</div><div class="footer-tagline">Co-op Placement Platform · Ottawa</div></div>
+    <div style="text-align:right;"><div class="footer-email">Contact: <a href="mailto:ysaadaldin08@gmail.com" style="color:var(--blue);font-weight:600;">ysaadaldin08@gmail.com</a></div><div class="footer-note">Built &amp; managed by Yousef Saadaldin · Spring 2026</div></div>
+  </div>
+</footer>
+
+<script src="config.js"></script>
+<script src="data.js"></script>
+<script src="email.js"></script>
+<script src="notifications.js"></script>
+<script src="moderation.js"></script>
+<script src="auth.js"></script>
+<script src="app.js"></script>
+<script>
+let currentPosting = null;
+
+function buildApplyPanel(posting) {
+  if (!currentUser) {
+    return `
+      <div class="apply-gate-note">Sign in as a student to apply to this placement.</div>
+      <button class="btn-primary" style="width:100%;justify-content:center;" onclick="loginAndReturn()">Sign in to Apply →</button>
+      <p style="font-size:12px;color:var(--text-faint);text-align:center;margin-top:10px;">Public browsing is always free — no account needed.</p>`;
+  }
+  if (currentUser.role === 'employer') {
+    return `<div class="apply-gate-note">Employers cannot apply to placements. Use your <a href="dashboard-employer.html" style="color:var(--blue);font-weight:600;">dashboard</a> to post roles.</div>`;
+  }
+  const existing = getApplicationForPosting(currentUser.email, posting.id);
+  if (existing) {
+    return `
+      <div class="apply-already-box">
+        <p style="font-size:13.5px;color:var(--text-muted);">You've already applied to this role.</p>
+        ${statusPill(existing.status)}
+        <a href="dashboard-student.html" style="font-size:13.5px;font-weight:600;color:var(--blue);">View my applications →</a>
+      </div>`;
+  }
+  return `
+    <form onsubmit="submitApplication(event)">
+      <div class="field"><label>Full name</label><input id="applyName" value="${currentUser.name || ''}" placeholder="Your full name" required></div>
+      <div class="field"><label>School</label><input id="applySchool" placeholder="Earl of March SS" required></div>
+      <div class="field"><label>Grade</label>
+        <select id="applyGrade" required>
+          <option value="">Select grade</option>
+          <option value="10">Grade 10</option>
+          <option value="11">Grade 11</option>
+          <option value="12">Grade 12</option>
+        </select>
+      </div>
+      <div class="field"><label>Why are you interested? <span style="font-weight:400;color:var(--text-faint);">(optional)</span></label><textarea id="applyNote" placeholder="Brief cover note…" style="min-height:80px;"></textarea></div>
+      <div class="field"><label>Resume URL <span style="font-weight:400;color:var(--text-faint);">(optional)</span></label><input id="applyResume" type="url" placeholder="https://…"></div>
+      <button type="submit" class="btn-primary" style="width:100%;justify-content:center;margin-top:4px;">Submit Application →</button>
+    </form>`;
+}
+
+function loginAndReturn() {
+  sessionStorage.setItem('sib_auth_redirect', 'posting.html?id=' + currentPosting.id);
+  openAuth('login');
+}
+
+async function submitApplication(e) {
+  e.preventDefault();
+  if (!currentUser || currentUser.role !== 'student') { showToast('Please sign in as a student to apply.', true); return; }
+  const name  = document.getElementById('applyName').value.trim();
+  const school = document.getElementById('applySchool').value.trim();
+  const grade = document.getElementById('applyGrade').value;
+  if (!name || !school || !grade) { showToast('Please fill in all required fields.', true); return; }
+  if (await hasApplied(currentUser.email, currentPosting.id)) { showToast('You have already applied to this listing.', true); return; }
+  await createApplication({
+    postingId: currentPosting.id,
+    studentEmail: currentUser.email,
+    studentName: name,
+    school, grade,
+    coverNote: document.getElementById('applyNote').value.trim(),
+    resumeUrl: document.getElementById('applyResume').value.trim()
+  });
+  showToast('✓ Application submitted!');
+  // Notify student — immediate email
+  createNotification({
+    userId: currentUser.id,
+    type: 'applicationSubmitted',
+    payload: { postingTitle: currentPosting.title, companyName: currentPosting.companyName, firstName: currentUser.first },
+    userEmail: currentUser.email,
+  });
+  // Notify employer — in-app record only; server-side handles email (Phase 5)
+  createNotification({
+    userId: currentPosting.employerId,
+    type: 'newApplication',
+    payload: { studentName: name, postingTitle: currentPosting.title, postingId: currentPosting.id },
+    userEmail: null,
+    // TODO: Phase 5 — pass employer email server-side for immediate email notification
+  });
+  // Re-render apply panel to show status
+  document.getElementById('applyPanelBody').innerHTML = buildApplyPanel(currentPosting);
+}
+
+function renderPage(posting) {
+  const applyPanelHtml = buildApplyPanel(posting);
+  document.title = posting.title + ' — ' + posting.companyName + ' — SiB';
+  document.getElementById('pageRoot').innerHTML = `
+    <div class="posting-detail-page">
+      <div class="posting-detail-inner">
+        <a href="job-listings.html" class="posting-back-link">← Back to listings</a>
+        <div class="posting-detail-layout">
+
+          <!-- Main -->
+          <div class="posting-detail-main">
+            <div class="posting-header-company">
+              <div style="width:38px;height:38px;border-radius:9px;background:var(--ink);display:inline-flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:15px;color:white;flex-shrink:0;">${posting.companyName.charAt(0)}</div>
+              ${posting.companyName}
+            </div>
+            <div class="posting-header-title">${posting.title}</div>
+            <div class="posting-header-meta">${posting.location}${posting.startDate ? ' &middot; Start: ' + posting.startDate : ''}</div>
+            <div class="posting-header-tags">
+              ${trackTag(posting.track)}
+              ${workModeBadge(posting.workMode)}
+              <span class="ttag" style="background:var(--mist);color:var(--text-muted);">${posting.hoursPerWeek} hrs/week</span>
+            </div>
+
+            ${posting.description ? `<div class="posting-section"><div class="posting-section-title">About this placement</div><div class="posting-section-body">${posting.description}</div></div>` : ''}
+            ${posting.responsibilities ? `<div class="posting-section"><div class="posting-section-title">Responsibilities</div><div class="posting-section-body">${posting.responsibilities}</div></div>` : ''}
+            ${posting.requirements ? `<div class="posting-section"><div class="posting-section-title">Requirements</div><div class="posting-section-body">${posting.requirements}</div></div>` : ''}
+          </div>
+
+          <!-- Aside -->
+          <div class="posting-detail-aside">
+
+            <!-- Apply -->
+            <div class="aside-card">
+              <div class="aside-card-title">Apply to this role</div>
+              <div id="applyPanelBody">${applyPanelHtml}</div>
+            </div>
+
+            <!-- Role Snapshot -->
+            <div class="aside-card">
+              <div class="aside-card-title">Role snapshot</div>
+              <div class="aside-dl">
+                <div><div class="aside-dt">Location</div><div class="aside-dd">${posting.location}</div></div>
+                <div><div class="aside-dt">Hours / week</div><div class="aside-dd">${posting.hoursPerWeek} hrs</div></div>
+                <div><div class="aside-dt">Work mode</div><div class="aside-dd">${posting.workMode}</div></div>
+                <div><div class="aside-dt">Start date</div><div class="aside-dd">${posting.startDate || 'TBD'}</div></div>
+                <div><div class="aside-dt">Application deadline</div><div class="aside-dd">${formatDeadlineDate(posting.deadline)}</div></div>
+                <div><div class="aside-dt">Named supervisor</div><div class="aside-dd">${posting.supervisorName || 'On file'}</div></div>
+              </div>
+            </div>
+
+            <!-- Company -->
+            <div class="aside-card">
+              <div class="aside-card-title">${posting.companyName}</div>
+              <p style="font-size:13.5px;color:var(--text-muted);line-height:1.65;">Ottawa-area employer participating in the SiB co-op program. Full company details shared after intro confirmation.</p>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderNotFound() {
+  document.getElementById('pageRoot').innerHTML = `
+    <div style="min-height:100vh;background:#ffffff;display:flex;align-items:center;justify-content:center;padding:40px;">
+      <div style="text-align:center;max-width:440px;">
+        <div style="margin-bottom:20px;display:flex;justify-content:center;"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#d0d7de" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
+        <div style="font-family:var(--serif);font-size:26px;color:var(--ink);margin-bottom:8px;">Listing not found</div>
+        <p style="font-size:14px;color:var(--text-muted);margin-bottom:22px;">This posting may have been archived or removed.</p>
+        <a href="job-listings.html" class="btn-primary" style="text-decoration:none;">← Browse all listings</a>
+      </div>
+    </div>`;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  updateNavForAuth();
+  const id = new URLSearchParams(location.search).get('id');
+  if (!id) { renderNotFound(); return; }
+  const posting = getPostingById(id);
+  if (!posting || !posting.isActive) { renderNotFound(); return; }
+  currentPosting = posting;
+  renderPage(posting);
+  if (typeof AOS !== 'undefined') AOS.refresh();
+});
+</script>
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>AOS.init({ duration: 600, easing: 'ease-out-cubic', once: true, offset: 60 });</script>
+<script src="https://unpkg.com/@studio-freight/lenis@1.0.23/bundled/lenis.min.js"></script>
+<script>
+  const lenis = new Lenis({ duration: 1.2, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
+  lenis.on('scroll', ({ scroll }) => {
+    const nav = document.getElementById('mainNav');
+    if (nav) nav.classList.toggle('scrolled', scroll > 10);
+  });
+  function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+  requestAnimationFrame(raf);
+</script>
+</body>
+</html>

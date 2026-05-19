@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resource Centre — Students in Business</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="mainNav">
+  <div class="nav-brand" onclick="window.location.href='index.html'">
+    <div class="nav-mark">SiB</div>
+    <span class="nav-name">Students in Business</span>
+  </div>
+  <div class="nav-links">
+    <button class="nav-btn" onclick="window.location.href='index.html'">Home</button>
+    <button class="nav-btn" onclick="window.location.href='job-listings.html'">Browse Jobs</button>
+    <button class="nav-btn" onclick="window.location.href='resources.html'" style="color:var(--ink);font-weight:600;">Resources</button>
+    <button class="nav-btn" onclick="requireAuth('student-apply')">Apply</button>
+  </div>
+  <div class="nav-actions" id="navActions">
+    <button class="btn-outline-sm" onclick="openAuth('login')">Sign In</button>
+    <button class="btn-fill-sm" onclick="openAuth('signup', 'student')">Get Started</button>
+  </div>
+</nav>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><span id="toastMsg"></span></div>
+
+<!-- AUTH MODAL -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal" style="max-width:460px;">
+    <button class="modal-close" onclick="closeModal('authModal')">×</button>
+    <div class="modal-logo">
+      <div class="modal-logo-mark">SiB</div>
+      <span class="modal-logo-name">Students in Business</span>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="authTabLogin" onclick="switchAuthTab('login')">Sign In</button>
+      <button class="auth-tab" id="authTabSignup" onclick="switchAuthTab('signup')">Create Account</button>
+    </div>
+    <div id="authLogin">
+      <button class="btn-google" onclick="handleGoogleAuth()">
+        <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Continue with Google
+      </button>
+      <div class="auth-divider"><span>or sign in with email</span></div>
+      <div class="field"><label>Email Address</label><input type="email" id="loginEmail" placeholder="your@email.com"></div>
+      <div class="field"><label>Password</label><input type="password" id="loginPassword" placeholder="••••••••"></div>
+      <button class="btn-primary" style="width:100%;justify-content:center;margin-top:2px;" onclick="doLogin()">Sign In →</button>
+      <div class="no-account-note" id="noAccountNote">No account found with that email. <a onclick="switchAuthTab('signup')">Create one instead?</a></div>
+      <p style="text-align:center;margin-top:14px;font-size:12.5px;color:var(--text-faint);">Don't have an account? <span style="color:var(--blue);cursor:pointer;font-weight:600;" onclick="switchAuthTab('signup')">Sign up</span></p>
+    </div>
+    <div id="authSignup" style="display:none;">
+      <button class="btn-google" onclick="handleGoogleAuth()">
+        <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Continue with Google
+      </button>
+      <div class="auth-divider"><span>or create account with email</span></div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">I am a:</p>
+      <div class="role-selector" id="rolePicker">
+        <div class="role-card selected" id="roleStudent" onclick="selectRole('student')"><div class="role-icon">🎓</div><div class="role-name">Student</div><div class="role-desc">Grade 10–12, co-op applicant</div></div>
+        <div class="role-card" id="roleEmployer" onclick="selectRole('employer')"><div class="role-icon">🏢</div><div class="role-name">Employer</div><div class="role-desc">Company looking to host a student</div></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>First Name</label><input type="text" id="signupFirst" placeholder="First"></div>
+        <div class="field"><label>Last Name</label><input type="text" id="signupLast" placeholder="Last"></div>
+      </div>
+      <div class="field"><label>Email Address</label><input type="email" id="signupEmail" placeholder="your@email.com"></div>
+      <div class="field"><label>Password <span style="color:var(--text-faint);font-weight:400;">(min. 8 characters)</span></label><input type="password" id="signupPass" placeholder="••••••••"></div>
+      <button class="btn-primary" style="width:100%;justify-content:center;margin-top:2px;" onclick="doSignup()">Create Account →</button>
+      <p style="text-align:center;margin-top:14px;font-size:12.5px;color:var(--text-faint);">Already have an account? <span style="color:var(--blue);cursor:pointer;font-weight:600;" onclick="switchAuthTab('login')">Sign in</span></p>
+    </div>
+  </div>
+</div>
+
+<!-- HERO -->
+<div class="resources-hero">
+  <div class="resources-inner" style="position:relative;z-index:1;">
+    <div id="resourcesReturnBtn" style="margin-bottom:20px;"></div>
+    <div data-aos="fade-up" style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgba(255,255,255,0.38);margin-bottom:12px;">Resource Centre</div>
+    <h1 data-aos="fade-up" data-aos-delay="120" style="font-family:var(--serif);font-size:46px;font-weight:400;color:white;letter-spacing:-0.02em;margin-bottom:14px;">Prepare for your placement</h1>
+    <p data-aos="fade-up" data-aos-delay="240" style="font-size:16.5px;color:rgba(255,255,255,0.55);line-height:1.65;max-width:520px;">Guides, tools, and official sources to help you put your best foot forward — all linked to credible, up-to-date resources.</p>
+  </div>
+</div>
+
+<!-- RESOURCE CARDS -->
+<div class="section" style="background:white;padding-top:56px;">
+  <div class="section-inner" style="max-width:880px;">
+    <div class="resource-cards">
+
+      <div class="rc reveal" data-aos="fade-up" data-aos-delay="100">
+        <div class="rc-header"><div class="rc-icon">📄</div><div class="rc-title">Resume Builder</div><div class="rc-desc">Templates, tips, and step-by-step guides to write a resume that employers notice.</div></div>
+        <div class="rc-body">
+          <a class="rc-link" href="https://www.jobbank.gc.ca/findajob/resources/write-good-resume" target="_blank"><span class="rc-link-icon">🇨🇦</span><div><div class="rc-link-text">How to Write a Good Resume</div><div class="rc-link-source">Government of Canada · Job Bank</div></div><span class="rc-link-arrow">→</span></a>
+          <a class="rc-link" href="https://www.canada.ca/en/services/jobs/opportunities/young-canadians.html" target="_blank"><span class="rc-link-icon">🇨🇦</span><div><div class="rc-link-text">Jobs for Youth — Resources & Opportunities</div><div class="rc-link-source">Government of Canada · ESDC</div></div><span class="rc-link-arrow">→</span></a>
+          <a class="rc-link" href="https://www.ocdsb.ca/programs/cooperative_education" target="_blank"><span class="rc-link-icon">🏫</span><div><div class="rc-link-text">Co-op Education Program</div><div class="rc-link-source">Ottawa-Carleton District School Board (OCDSB)</div></div><span class="rc-link-arrow">→</span></a>
+          <a class="rc-link" href="https://www.ocsb.ca/programs/cooperative-education/" target="_blank"><span class="rc-link-icon">🏫</span><div><div class="rc-link-text">Co-op Education Program</div><div class="rc-link-source">Ottawa Catholic School Board (OCSB)</div></div><span class="rc-link-arrow">→</span></a>
+        </div>
+      </div>
+
+      <div class="rc reveal reveal-delay-1" data-aos="fade-up" data-aos-delay="200">
+        <div class="rc-header"><div class="rc-icon">🤝</div><div class="rc-title">Interview Techniques</div><div class="rc-desc">Common questions, preparation strategies, and best practices for making a great impression.</div></div>
+        <div class="rc-body">
+          <a class="rc-link" href="https://www.jobbank.gc.ca/findajob/resources/prepare-for-interview" target="_blank"><span class="rc-link-icon">🇨🇦</span><div><div class="rc-link-text">How to Prepare for a Job Interview</div><div class="rc-link-source">Government of Canada · Job Bank</div></div><span class="rc-link-arrow">→</span></a>
+          <a class="rc-link" href="https://www.canada.ca/en/services/jobs/opportunities/young-canadians.html" target="_blank"><span class="rc-link-icon">🇨🇦</span><div><div class="rc-link-text">Young Canadians — Employment Resources</div><div class="rc-link-source">Government of Canada · ESDC</div></div><span class="rc-link-arrow">→</span></a>
+          <a class="rc-link" href="https://www.jobbank.gc.ca/career-planning/before-you-begin" target="_blank"><span class="rc-link-icon">💡</span><div><div class="rc-link-text">Career Planning — Before You Begin</div><div class="rc-link-source">Government of Canada · Job Bank</div></div><span class="rc-link-arrow">→</span></a>
+        </div>
+      </div>
+
+      <div class="rc reveal reveal-delay-2" data-aos="fade-up" data-aos-delay="100">
+        <div class="rc-header"><div class="rc-icon">💼</div><div class="rc-title">Workplace Professionalism</div><div class="rc-desc">Your rights, responsibilities, and what employers expect from day one.</div></div>
+        <div class="rc-body">
+          <a class="rc-link" href="https://www.ontario.ca/page/employee-rights-ontario" target="_blank"><span class="rc-link-icon">🏛️</span><div><div class="rc-link-text">Employee Rights in Ontario</div><div class="rc-link-source">Government of Ontario</div></div><span class="rc-link-arrow">→</span></a>
+          <a class="rc-link" href="https://www.ontario.ca/page/young-workers-health-and-safety" target="_blank"><span class="rc-link-icon">🏛️</span><div><div class="rc-link-text">Young Workers — Health and Safety</div><div class="rc-link-source">Government of Ontario</div></div><span class="rc-link-arrow">→</span></a>
+          <a class="rc-link" href="https://www.canada.ca/en/employment-social-development/programs/laws-regulations/labour/interpretations-policies/young-workers.html" target="_blank"><span class="rc-link-icon">🇨🇦</span><div><div class="rc-link-text">Young Workers — Federal Labour Standards</div><div class="rc-link-source">Employment and Social Development Canada</div></div><span class="rc-link-arrow">→</span></a>
+        </div>
+      </div>
+
+      <div class="rc reveal reveal-delay-3" data-aos="fade-up" data-aos-delay="200">
+        <div class="rc-header"><div class="rc-icon">🧭</div><div class="rc-title">Co-op Planning</div><div class="rc-desc">Tools and guides to set goals, track your learning, and make the most of your placement.</div></div>
+        <div class="rc-body">
+          <a class="rc-link" href="https://www.ocdsb.ca/programs/cooperative_education" target="_blank"><span class="rc-link-icon">🏫</span><div><div class="rc-link-text">OCDSB Cooperative Education Program</div><div class="rc-link-source">Ottawa-Carleton District School Board (OCDSB)</div></div><span class="rc-link-arrow">→</span></a>
+          <a class="rc-link" href="https://www.ocsb.ca/programs/cooperative-education/" target="_blank"><span class="rc-link-icon">🏫</span><div><div class="rc-link-text">OCSB Cooperative Education Program</div><div class="rc-link-source">Ottawa Catholic School Board (OCSB)</div></div><span class="rc-link-arrow">→</span></a>
+          <a class="rc-link" href="https://www.jobbank.gc.ca/career-planning" target="_blank"><span class="rc-link-icon">🇨🇦</span><div><div class="rc-link-text">Career Planning Tools</div><div class="rc-link-source">Government of Canada · Job Bank</div></div><span class="rc-link-arrow">→</span></a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div><div class="footer-brand">Students in Business</div><div class="footer-tagline">Co-op Placement Platform · Ottawa</div></div>
+    <div style="text-align:right;"><div class="footer-email">Contact: <a href="mailto:ysaadaldin08@gmail.com" style="color:var(--blue);font-weight:600;">ysaadaldin08@gmail.com</a></div><div class="footer-note">Built &amp; managed by Yousef Saadaldin · Spring 2026</div></div>
+  </div>
+</footer>
+
+<script src="config.js"></script>
+<script src="email.js"></script>
+<script src="notifications.js"></script>
+<script src="moderation.js"></script>
+<script src="auth.js"></script>
+<script src="app.js"></script>
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>AOS.init({ duration: 600, easing: 'ease-out-cubic', once: true, offset: 60 });</script>
+<script src="https://unpkg.com/@studio-freight/lenis@1.0.23/bundled/lenis.min.js"></script>
+<script>
+  const lenis = new Lenis({ duration: 1.2, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
+  lenis.on('scroll', ({ scroll }) => {
+    const nav = document.getElementById('mainNav');
+    if (nav) nav.classList.toggle('scrolled', scroll > 10);
+  });
+  function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+  requestAnimationFrame(raf);
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const returnPage = sessionStorage.getItem('sib_resource_return');
+  const btn = document.getElementById('resourcesReturnBtn');
+  if (returnPage && btn) {
+    const isForm = returnPage === 'student-apply';
+    const label = isForm ? 'Return to Application' : (returnPage === 'dashboard-employer' ? 'Employer Dashboard' : 'Student Dashboard');
+    const fn = isForm ? 'returnToApplication()' : 'returnToDash()';
+    btn.innerHTML = `<button class="form-back" style="color:rgba(255,255,255,0.6);" onclick="${fn}">← Return to ${label}</button>`;
+  }
+});
+</script>
+</body>
+</html>

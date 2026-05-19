@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signing you in — Students in Business</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #0d1117;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    color: #fff;
+  }
+  .card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 48px 40px;
+    max-width: 440px;
+    width: 100%;
+    text-align: center;
+    color: #0d1117;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.4);
+  }
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 32px;
+  }
+  .logo-mark {
+    width: 38px; height: 38px;
+    background: #0d1117;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800; color: #fff; letter-spacing: -0.02em;
+  }
+  .logo-name { font-size: 15px; font-weight: 700; color: #0d1117; letter-spacing: -0.01em; }
+
+  /* Loading state */
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid #e5e7eb;
+    border-top-color: #0d1117;
+    border-radius: 50%;
+    animation: spin 0.75s linear infinite;
+    margin: 0 auto 20px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .state-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.02em; }
+  .state-sub { font-size: 14px; color: #6b7280; line-height: 1.5; }
+
+  /* Role picker */
+  .role-heading { font-size: 20px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.02em; }
+  .role-sub { font-size: 14px; color: #6b7280; margin-bottom: 24px; line-height: 1.5; }
+  .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .role-card {
+    border: 2px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 20px 16px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    text-align: center;
+  }
+  .role-card:hover { border-color: #0d1117; }
+  .role-card.selected { border-color: #0d1117; background: #f8fafc; }
+  .role-icon { font-size: 26px; margin-bottom: 10px; }
+  .role-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .role-desc { font-size: 12px; color: #9ca3af; line-height: 1.4; }
+  .btn-confirm {
+    width: 100%;
+    padding: 14px;
+    background: #0d1117;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    border: none;
+    border-radius: 11px;
+    cursor: pointer;
+    letter-spacing: -0.01em;
+    transition: opacity 0.15s;
+  }
+  .btn-confirm:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-confirm:not(:disabled):hover { opacity: 0.85; }
+
+  /* Error state */
+  .error-icon {
+    width: 48px; height: 48px;
+    background: #fef2f2;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 22px;
+  }
+  .btn-back {
+    margin-top: 16px;
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b7280;
+    cursor: pointer;
+    text-decoration: underline;
+    background: none;
+    border: none;
+  }
+</style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="logo">
+    <div class="logo-mark">SiB</div>
+    <span class="logo-name">Students in Business</span>
+  </div>
+  <div id="stateLoading">
+    <div class="spinner"></div>
+    <div class="state-title">Signing you in…</div>
+    <div class="state-sub">Just a moment while we set up your account.</div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+(async function() {
+  // ── Parse the URL fragment Supabase returns after OAuth ──
+  function parseFragment() {
+    const hash = window.location.hash.substring(1);
+    const params = {};
+    hash.split('&').forEach(pair => {
+      const [k, v] = pair.split('=');
+      if (k) params[decodeURIComponent(k)] = decodeURIComponent((v || '').replace(/\+/g, ' '));
+    });
+    return params;
+  }
+
+  function showError(msg) {
+    document.getElementById('stateLoading').innerHTML = `
+      <div class="error-icon">✕</div>
+      <div class="state-title">Something went wrong</div>
+      <div class="state-sub">${msg}</div>
+      <button class="btn-back" onclick="window.location.href='index.html'">← Back to home</button>`;
+  }
+
+  function completeLogin(user) {
+    localStorage.setItem('sib_user', JSON.stringify(user));
+    // Route to the appropriate next page
+    const redirect = sessionStorage.getItem('sib_auth_redirect');
+    const target   = sessionStorage.getItem('sib_auth_target');
+    sessionStorage.removeItem('sib_auth_redirect');
+    sessionStorage.removeItem('sib_auth_target');
+    if (redirect) { window.location.href = redirect; return; }
+    if (target) { window.location.href = target + '.html'; return; }
+    if (user.role === 'coordinator') { window.location.href = 'coordinator-dashboard.html'; return; }
+    window.location.href = user.role === 'employer' ? 'employer-register.html' : 'student-apply.html';
+  }
+
+  // ── Role selection UI ──
+  let _pendingToken = null;
+  let _pendingUser  = null;
+  let _selectedRole = null;
+
+  function showRolePicker(token, user) {
+    _pendingToken = token;
+    _pendingUser  = user;
+    document.getElementById('stateLoading').innerHTML = `
+      <div class="role-heading">One last step</div>
+      <div class="role-sub">Welcome, ${user.first || 'there'}! How will you be using SiB?</div>
+      <div class="role-grid">
+        <div class="role-card" id="roleStudent" onclick="pickRole('student')">
+          <div class="role-icon">🎓</div>
+          <div class="role-name">Student</div>
+          <div class="role-desc">Grade 10–12, co-op applicant</div>
+        </div>
+        <div class="role-card" id="roleEmployer" onclick="pickRole('employer')">
+          <div class="role-icon">🏢</div>
+          <div class="role-name">Employer</div>
+          <div class="role-desc">Company looking to host a student</div>
+        </div>
+      </div>
+      <button class="btn-confirm" id="confirmBtn" onclick="confirmRole()" disabled>Continue →</button>`;
+  }
+
+  window.pickRole = function(role) {
+    _selectedRole = role;
+    document.getElementById('roleStudent').classList.toggle('selected', role === 'student');
+    document.getElementById('roleEmployer').classList.toggle('selected', role === 'employer');
+    document.getElementById('confirmBtn').disabled = false;
+  };
+
+  window.confirmRole = async function() {
+    const btn = document.getElementById('confirmBtn');
+    btn.disabled = true;
+    btn.textContent = 'Setting up your account…';
+    try {
+      const res = await fetch(API_BASE + '/auth/setup-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _pendingToken },
+        body: JSON.stringify({ role: _selectedRole })
+      });
+      const result = await res.json();
+      if (!result.success) { showError(result.error || 'Setup failed. Please try again.'); return; }
+      completeLogin(result.data.user);
+    } catch (e) {
+      showError('Could not reach the server. Is it running?');
+    }
+  };
+
+  // ── Main flow ──
+  const params = parseFragment();
+
+  if (params.error) {
+    showError(params.error_description || 'Google sign-in was cancelled or failed.');
+    return;
+  }
+
+  const token = params.access_token;
+  if (!token) {
+    showError('No authentication token received. Please try signing in again.');
+    return;
+  }
+
+  // Store the token now — it's valid regardless of profile state
+  localStorage.setItem('sib_token', token);
+
+  try {
+    const res = await fetch(API_BASE + '/auth/session', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const result = await res.json();
+    if (!result.success) { showError(result.error || 'Could not load your account.'); return; }
+
+    if (result.data.needsRoleSetup) {
+      showRolePicker(token, result.data.user);
+    } else {
+      completeLogin(result.data.user);
+    }
+  } catch (e) {
+    showError('Could not reach the server. Make sure the API server is running on port 3001.');
+  }
+})();
+</script>
+</body>
+</html>

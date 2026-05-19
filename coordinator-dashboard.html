@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coordinator Dashboard — Students in Business</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+<style>
+/* —— TAB BAR —— */
+.coord-tab-bar {
+  position: sticky; top: 60px; z-index: 800;
+  background: rgba(255,255,255,0.97); backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--line); padding: 0 48px; overflow-x: auto;
+}
+.coord-tab-bar-inner { max-width: 1180px; margin: 0 auto; display: flex; gap: 0; align-items: center; }
+.coord-tab-btn {
+  padding: 14px 16px; font-size: 13.5px; font-weight: 600; color: var(--text-muted);
+  background: none; border: none; cursor: pointer; font-family: var(--sans);
+  border-bottom: 2.5px solid transparent; margin-bottom: -1px;
+  transition: color 0.18s, border-color 0.18s; display: flex; align-items: center;
+  gap: 6px; white-space: nowrap;
+}
+.coord-tab-btn:hover { color: var(--ink); }
+.coord-tab-btn.active { color: var(--ink); border-bottom-color: var(--ink); }
+.coord-tab-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 20px; height: 18px; padding: 0 5px; border-radius: 9px;
+  background: var(--mist-2); font-size: 10.5px; font-weight: 700; color: var(--text-faint);
+  transition: background 0.18s, color 0.18s;
+}
+.coord-tab-btn.active .coord-tab-count { background: var(--ink); color: white; }
+.coord-tab-count.danger { background: #fef2f2 !important; color: #dc2626 !important; }
+
+/* —— PAGE LAYOUT —— */
+.coord-page { min-height: 100vh; background: #ffffff; padding: 0 48px 80px; }
+.coord-inner { max-width: 1180px; margin: 0 auto; padding-top: 36px; }
+.coord-page-header {
+  margin-bottom: 28px; padding-bottom: 24px; border-bottom: 1px solid var(--line);
+  display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+}
+.coord-page-title { font-family: var(--serif); font-size: 28px; font-weight: 400; color: var(--ink); letter-spacing: -0.02em; margin-bottom: 4px; }
+.coord-page-sub { font-size: 13.5px; color: var(--text-muted); }
+.coord-section { display: none; }
+.coord-section.active { display: block; }
+
+/* —— POSTING / LISTING CARDS —— */
+.coord-posting-card {
+  background: white; border-radius: var(--radius-lg); padding: 20px 24px;
+  border: 1px solid var(--line); box-shadow: var(--shadow-xs); margin-bottom: 10px;
+  transition: border-color var(--transition);
+}
+.coord-posting-card:hover { border-color: rgba(26,108,246,0.25); }
+.coord-posting-top {
+  display: flex; align-items: flex-start; gap: 14px; justify-content: space-between; flex-wrap: wrap;
+}
+.coord-posting-meta { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.coord-posting-footer {
+  display: flex; align-items: center; gap: 8px; margin-top: 14px; padding-top: 12px;
+  border-top: 1px solid var(--line); flex-wrap: wrap;
+}
+.coord-posting-date { font-size: 12px; color: var(--text-faint); margin-left: auto; }
+
+/* —— APPLICATION CARDS —— */
+.coord-app-card {
+  background: white; border-radius: var(--radius-lg); padding: 18px 22px;
+  border: 1px solid var(--line); box-shadow: var(--shadow-xs); margin-bottom: 10px;
+  transition: border-color var(--transition);
+}
+.coord-app-card:hover { border-color: rgba(26,108,246,0.25); }
+.coord-app-top { display: flex; align-items: flex-start; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
+.coord-app-info { flex: 1; min-width: 0; }
+.coord-app-student-name { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 2px; }
+.coord-app-student-detail { font-size: 12.5px; color: var(--text-muted); }
+.coord-app-posting-title { font-size: 13.5px; font-weight: 600; color: var(--ink); margin-top: 6px; }
+.coord-app-company { font-size: 12px; color: var(--text-faint); }
+.coord-app-footer {
+  display: flex; align-items: center; gap: 10px; padding-top: 12px;
+  border-top: 1px solid var(--line); flex-wrap: wrap;
+}
+.coord-cover-toggle {
+  font-size: 12.5px; font-weight: 600; color: var(--blue); background: none;
+  border: none; cursor: pointer; padding: 0; font-family: var(--sans); transition: color var(--transition);
+}
+.coord-cover-toggle:hover { color: var(--blue-dark); }
+.coord-cover-body {
+  display: none; margin-top: 10px; padding: 10px 14px; background: var(--mist);
+  border-radius: var(--radius-sm); font-size: 13px; color: var(--text-body); line-height: 1.65;
+  border-left: 3px solid var(--line);
+}
+.coord-cover-body.open { display: block; }
+
+/* —— USER CARDS —— */
+.coord-users-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.coord-user-card {
+  background: white; border-radius: var(--radius-lg); padding: 20px 22px;
+  border: 1px solid var(--line); box-shadow: var(--shadow-xs);
+  transition: box-shadow var(--transition), border-color var(--transition);
+}
+.coord-user-card:hover { box-shadow: var(--shadow); border-color: rgba(26,108,246,0.2); }
+.coord-user-top { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+.coord-user-avatar {
+  width: 40px; height: 40px; border-radius: 50%; background: var(--ink);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif); font-size: 17px; color: white; flex-shrink: 0;
+}
+.coord-user-avatar.emp { background: #1a4f8a; }
+.coord-user-name { font-size: 14.5px; font-weight: 700; color: var(--ink); margin-bottom: 2px; letter-spacing: -0.01em; }
+.coord-user-email { font-size: 12px; color: var(--text-faint); }
+.coord-user-company { font-size: 12.5px; color: var(--text-muted); font-weight: 600; margin-top: 3px; }
+.coord-user-footer {
+  display: flex; align-items: center; justify-content: space-between; padding-top: 10px;
+  border-top: 1px solid var(--line); font-size: 12px; color: var(--text-faint); flex-wrap: wrap; gap: 8px;
+}
+.coord-user-count {
+  display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px;
+  border-radius: 100px; background: var(--mist); font-size: 11.5px; font-weight: 700; color: var(--text-muted);
+}
+
+/* —— MESSAGING —— */
+.coord-msg-filter-btn {
+  padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  border: 1.5px solid #e5e7eb; background: #fff; color: #6b7280;
+  cursor: pointer; font-family: var(--sans); transition: all 0.15s;
+}
+.coord-msg-filter-btn.active { border-color: #0d1117; background: #0d1117; color: #fff; }
+.coord-msg-filter-btn:hover:not(.active) { border-color: #9ca3af; color: #374151; }
+.coord-thread-bubble-wrap { max-height: 520px; overflow-y: auto; padding-bottom: 8px; }
+.coord-review-area {
+  border-top: 1px solid var(--line); padding-top: 18px; margin-top: 4px;
+}
+
+/* —— LOADING —— */
+.coord-loading { text-align: center; padding: 80px 0; font-size: 14px; color: var(--text-faint); }
+.coord-loading-spinner {
+  width: 32px; height: 32px; border: 3px solid var(--line); border-top-color: var(--blue);
+  border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 14px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Responsive */
+@media (max-width: 960px) {
+  .coord-tab-bar { padding: 0 4px; }
+  .coord-page { padding: 0 18px 60px; }
+  .coord-tab-btn { padding: 12px 10px; font-size: 12.5px; }
+  .coord-users-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><span id="toastMsg"></span></div>
+
+<!-- NAV -->
+<nav id="mainNav">
+  <div class="nav-brand" onclick="window.location.href='index.html'" style="cursor:pointer;">
+    <div class="nav-mark">SiB</div>
+    <span class="nav-name">Students in Business</span>
+  </div>
+  <div class="nav-links">
+    <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-faint);padding:7px 12px;">Coordinator Portal</span>
+  </div>
+  <div class="nav-actions" id="navActions">
+    <span id="navUserName" style="font-size:13.5px;font-weight:600;color:var(--ink);padding:7px 12px;"></span>
+    <button class="btn-outline-sm" onclick="doSignOut()">Sign Out</button>
+  </div>
+</nav>
+
+<!-- TAB BAR -->
+<div class="coord-tab-bar">
+  <div class="coord-tab-bar-inner">
+    <button class="coord-tab-btn active" id="tab-btn-overview" onclick="switchTab('overview')">
+      Overview
+    </button>
+    <button class="coord-tab-btn" id="tab-btn-users" onclick="switchTab('users')">
+      Users <span class="coord-tab-count" id="tab-count-users">—</span>
+    </button>
+    <button class="coord-tab-btn" id="tab-btn-placements" onclick="switchTab('placements')">
+      Placements <span class="coord-tab-count" id="tab-count-placements">—</span>
+    </button>
+    <button class="coord-tab-btn" id="tab-btn-messages" onclick="switchTab('messages')">
+      Messages <span class="coord-tab-count" id="tab-count-messages">—</span>
+    </button>
+    <button class="coord-tab-btn" id="tab-btn-reports" onclick="switchTab('reports')">
+      Reports <span class="coord-tab-count" id="tab-count-reports">—</span>
+    </button>
+    <button class="coord-tab-btn" id="tab-btn-listings" onclick="switchTab('listings')">
+      Listings <span class="coord-tab-count" id="tab-count-listings">—</span>
+    </button>
+    <button class="coord-tab-btn" id="tab-btn-applications" onclick="switchTab('applications')">
+      Applications <span class="coord-tab-count" id="tab-count-applications">—</span>
+    </button>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="coord-page">
+  <div class="coord-inner">
+
+    <!-- Loading -->
+    <div id="coordLoading" class="coord-loading">
+      <div class="coord-loading-spinner"></div>
+      Loading dashboard…
+    </div>
+
+    <!-- ————————— OVERVIEW ————————— -->
+    <div class="coord-section" id="section-overview"></div>
+
+    <!-- ————————— USERS ————————— -->
+    <div class="coord-section" id="section-users">
+      <div class="coord-page-header">
+        <div>
+          <div class="coord-page-title">Users</div>
+          <div class="coord-page-sub">All student and employer accounts on the platform.</div>
+        </div>
+      </div>
+      <div class="filter-bar" style="margin-bottom:18px;">
+        <input class="filter-input" id="userSearch" type="text" placeholder="Search by name, email, or company…" oninput="renderUsers()" style="max-width:300px;">
+        <select class="filter-select" id="userRoleFilter" onchange="renderUsers()">
+          <option value="">All roles</option>
+          <option value="student">Students</option>
+          <option value="employer">Employers</option>
+        </select>
+      </div>
+      <div id="users-list" class="coord-users-grid"></div>
+    </div>
+
+    <!-- ————————— PLACEMENTS ————————— -->
+    <div class="coord-section" id="section-placements">
+      <div class="coord-page-header">
+        <div>
+          <div class="coord-page-title">Accepted Placements</div>
+          <div class="coord-page-sub">Students confirmed for co-op credit — ready for school board reporting.</div>
+        </div>
+      </div>
+      <div class="stat-row" id="placements-stats" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;"></div>
+      <div id="placements-list"></div>
+    </div>
+
+    <!-- ————————— MESSAGES ————————— -->
+    <div class="coord-section" id="section-messages">
+      <div class="coord-page-header">
+        <div>
+          <div class="coord-page-title">Message Threads</div>
+          <div class="coord-page-sub">Read-only view of all student–employer conversations. Flag reasons are shown prominently.</div>
+        </div>
+      </div>
+
+      <!-- Inbox -->
+      <div id="coord-msg-inbox">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px;">
+          <button class="coord-msg-filter-btn active" data-filter="all" onclick="filterMessages('all')">All threads</button>
+          <button class="coord-msg-filter-btn" data-filter="flagged" onclick="filterMessages('flagged')">Flagged only</button>
+          <input class="filter-input" id="coord-thread-search" type="text" placeholder="Search participants or listing…"
+                 oninput="coordRenderThreadList()" style="max-width:260px;margin-left:auto;">
+        </div>
+        <div id="coord-thread-list"></div>
+      </div>
+
+      <!-- Thread detail -->
+      <div id="coord-msg-detail" style="display:none;">
+        <button onclick="coordMsgBack()" style="display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600;color:var(--ink);background:none;border:none;cursor:pointer;padding:0;margin-bottom:20px;font-family:var(--sans);">
+          ← Back to threads
+        </button>
+        <div id="coord-detail-header"></div>
+        <div id="coord-flag-reasons" style="display:none;"></div>
+        <div id="coord-detail-messages" class="coord-thread-bubble-wrap"></div>
+        <div id="coord-review-panel" class="coord-review-area"></div>
+      </div>
+    </div>
+
+    <!-- ————————— REPORTS ————————— -->
+    <div class="coord-section" id="section-reports">
+      <div class="coord-page-header">
+        <div>
+          <div class="coord-page-title">Flagged Conversations</div>
+          <div class="coord-page-sub">Threads flagged by automated scanning or user reports.</div>
+        </div>
+      </div>
+      <div id="reports-list"></div>
+    </div>
+
+    <!-- ————————— LISTINGS ————————— -->
+    <div class="coord-section" id="section-listings">
+      <div class="coord-page-header">
+        <div>
+          <div class="coord-page-title">Listings</div>
+          <div class="coord-page-sub">All employer job listings — active and archived.</div>
+        </div>
+      </div>
+      <div class="stat-row" id="listings-stats" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;"></div>
+      <div id="listings-list"></div>
+    </div>
+
+    <!-- ————————— APPLICATIONS ————————— -->
+    <div class="coord-section" id="section-applications">
+      <div class="coord-page-header">
+        <div>
+          <div class="coord-page-title">All Applications</div>
+          <div class="coord-page-sub">Cross-listing view of every student application.</div>
+        </div>
+      </div>
+      <div class="stat-row" id="applications-stats" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px;"></div>
+      <div class="filter-bar" style="margin-bottom:18px;">
+        <input class="filter-input" id="appSearch" type="text" placeholder="Search by student, school, or posting…" oninput="filterApplications()" style="max-width:320px;">
+        <select class="filter-select" id="appStatusFilter" onchange="filterApplications()">
+          <option value="">All statuses</option>
+          <option value="Applied">Applied</option>
+          <option value="Under Review">Under Review</option>
+          <option value="Interview">Interview</option>
+          <option value="Rejected">Rejected</option>
+          <option value="Accepted">Accepted</option>
+        </select>
+      </div>
+      <div id="applications-list"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div><div class="footer-brand">Students in Business</div><div class="footer-tagline">Co-op Placement Platform · Ottawa</div></div>
+    <div style="text-align:right;"><div class="footer-email">Contact: <a href="mailto:ysaadaldin08@gmail.com" style="color:var(--blue);font-weight:600;">ysaadaldin08@gmail.com</a></div></div>
+  </div>
+</footer>
+
+<script src="config.js"></script>
+<script src="data.js"></script>
+<script src="email.js"></script>
+<script src="notifications.js"></script>
+<script src="moderation.js"></script>
+<script src="auth.js"></script>
+<script src="app.js"></script>
+<script src="demo.js"></script>
+<script>
+// —— STATE ——
+let coordPostings     = [];
+let coordApplications = [];
+let coordUsers        = [];
+let activeTab         = 'overview';
+let _coordActiveThread = null;
+let _coordThreadFilter = 'all';
+
+const STATUS_OPTIONS = ['Applied', 'Under Review', 'Interview', 'Rejected', 'Accepted'];
+
+// —— API HELPERS ——
+async function cGet(path) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` }
+  });
+  return res.json();
+}
+async function cPut(path, body) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+    body: JSON.stringify(body)
+  });
+  return res.json();
+}
+async function cDel(path) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` }
+  });
+  return res.json();
+}
+
+// —— TAB SWITCHING ——
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.coord-tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.coord-section').forEach(s => s.classList.remove('active'));
+  const btn = document.getElementById('tab-btn-' + tab);
+  const sec = document.getElementById('section-' + tab);
+  if (btn) btn.classList.add('active');
+  if (sec) sec.classList.add('active');
+
+  if (tab === 'overview')       renderOverview();
+  if (tab === 'users')          renderUsers();
+  if (tab === 'placements')     renderPlacements();
+  if (tab === 'messages')       renderMessages();
+  if (tab === 'reports')        renderReports();
+  if (tab === 'listings')       renderListings();
+  if (tab === 'applications')   filterApplications();
+}
+
+// —— LOAD ALL DATA ——
+async function loadAll() {
+  try {
+    const [pRes, aRes, uRes] = await Promise.all([
+      cGet('/coordinator/postings'),
+      cGet('/coordinator/applications'),
+      cGet('/coordinator/users'),
+    ]);
+    coordPostings     = pRes.success ? pRes.data : [];
+    coordApplications = aRes.success ? aRes.data : [];
+    coordUsers        = uRes.success ? uRes.data : [];
+  } catch (_) {
+    // Server may be unavailable — localStorage sections still work
+  }
+}
+
+// —— UPDATE TAB COUNTS ——
+async function updateTabCounts() {
+  const threads = await getAllMessageThreads();
+  const flagged = threads.filter(t => t.status === 'flagged');
+  const placed  = coordApplications.filter(a => a.status === 'Accepted');
+
+  document.getElementById('tab-count-users').textContent         = coordUsers.length || '—';
+  document.getElementById('tab-count-placements').textContent    = placed.length;
+  document.getElementById('tab-count-messages').textContent      = threads.length;
+  document.getElementById('tab-count-listings').textContent      = coordPostings.length || '—';
+  document.getElementById('tab-count-applications').textContent  = coordApplications.length || '—';
+
+  const reportsEl = document.getElementById('tab-count-reports');
+  reportsEl.textContent = flagged.length;
+  if (flagged.length > 0) reportsEl.classList.add('danger');
+  else reportsEl.classList.remove('danger');
+}
+
+// —— ① OVERVIEW ——
+async function renderOverview() {
+  const students  = coordUsers.filter(u => u.role === 'student').length;
+  const employers = coordUsers.filter(u => u.role === 'employer').length;
+  const active    = coordPostings.filter(p => p.is_active).length;
+  const totalApps = coordApplications.length;
+  const placed    = coordApplications.filter(a => a.status === 'Accepted').length;
+  const threads   = await getAllMessageThreads();
+  const flagged   = threads.filter(t => t.status === 'flagged').length;
+  const unreviewed = threads.filter(t => t.status === 'flagged' && !t.reviewedAt).length;
+  const apiOk     = coordUsers.length > 0 || coordPostings.length > 0;
+
+  const sec = document.getElementById('section-overview');
+  sec.innerHTML = `
+    <div class="coord-page-header">
+      <div>
+        <div class="coord-page-title">Overview</div>
+        <div class="coord-page-sub">${apiOk ? 'Live platform snapshot.' : 'Messaging and notifications are live. Connect the API server to see user and listing data.'}</div>
+      </div>
+      <div style="font-size:12.5px;color:${apiOk ? '#15803d' : '#d97706'};font-weight:600;background:${apiOk ? '#f0fdf4' : '#fffbeb'};border:1px solid ${apiOk ? '#86efac' : '#fde68a'};border-radius:8px;padding:6px 12px;">
+        ${apiOk ? '✓ API connected' : '⚠ API offline — localStorage data shown'}
+      </div>
+    </div>
+
+    <div class="stat-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:12px;">
+      <div class="stat-card" data-aos="fade-up" data-aos-delay="0">
+        <div class="stat-label">Students</div><div class="stat-val">${students || '—'}</div>
+      </div>
+      <div class="stat-card" data-aos="fade-up" data-aos-delay="60">
+        <div class="stat-label">Employers</div><div class="stat-val">${employers || '—'}</div>
+      </div>
+      <div class="stat-card" data-aos="fade-up" data-aos-delay="120">
+        <div class="stat-label">Active Listings</div><div class="stat-val">${active || '—'}</div>
+      </div>
+    </div>
+    <div class="stat-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;">
+      <div class="stat-card" data-aos="fade-up" data-aos-delay="0">
+        <div class="stat-label">Total Applications</div><div class="stat-val">${totalApps || '—'}</div>
+      </div>
+      <div class="stat-card" data-aos="fade-up" data-aos-delay="60" style="${placed ? 'border-color:#86efac;' : ''}">
+        <div class="stat-label">Accepted Placements</div>
+        <div class="stat-val" style="${placed ? 'color:#15803d;' : ''}">${placed}</div>
+      </div>
+      <div class="stat-card" data-aos="fade-up" data-aos-delay="120" style="${flagged ? 'border-color:#fca5a5;' : ''}">
+        <div class="stat-label">Flagged Threads</div>
+        <div class="stat-val" style="${flagged ? 'color:#dc2626;' : ''}">${flagged}</div>
+      </div>
+    </div>
+
+    ${unreviewed ? `
+    <div style="padding:16px 20px;background:#fef2f2;border:1.5px solid #fca5a5;border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:20px;" data-aos="fade-up">
+      <div>
+        <div style="font-size:13.5px;color:#991b1b;font-weight:700;">⚑ ${unreviewed} conversation${unreviewed !== 1 ? 's' : ''} flagged and awaiting review</div>
+        <div style="font-size:12.5px;color:#b91c1c;margin-top:2px;">Review required before the co-op period ends.</div>
+      </div>
+      <button onclick="switchTab('reports')" style="padding:9px 18px;border-radius:9px;background:#dc2626;color:#fff;border:none;font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">Review now →</button>
+    </div>` : ''}
+
+    ${placed ? `
+    <div style="padding:16px 20px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;" data-aos="fade-up">
+      <div style="font-size:13.5px;color:#15803d;font-weight:700;">✓ ${placed} student${placed !== 1 ? 's' : ''} placed — ready for school board reporting</div>
+      <button onclick="switchTab('placements')" style="padding:9px 18px;border-radius:9px;background:#15803d;color:#fff;border:none;font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">View placements →</button>
+    </div>` : ''}`;
+
+  if (typeof AOS !== 'undefined') AOS.refresh();
+}
+
+// —— ② USERS ——
+function renderUsers() {
+  const q    = (document.getElementById('userSearch')?.value || '').toLowerCase();
+  const role = document.getElementById('userRoleFilter')?.value || '';
+
+  let users = coordUsers.filter(u => {
+    const name  = (u.full_name    || u.email   || '').toLowerCase();
+    const email = (u.email        || '').toLowerCase();
+    const co    = (u.company_name || '').toLowerCase();
+    const school= (u.school       || '').toLowerCase();
+    const matchQ = !q || name.includes(q) || email.includes(q) || co.includes(q) || school.includes(q);
+    const matchR = !role || u.role === role;
+    return matchQ && matchR;
+  });
+
+  const container = document.getElementById('users-list');
+  if (!container) return;
+
+  if (!coordUsers.length) {
+    container.innerHTML = emptyState('👥', 'No user data', 'Connect the API server to load student and employer accounts.');
+    container.style.display = 'block';
+    return;
+  }
+  if (!users.length) {
+    container.innerHTML = emptyState('🔍', 'No users found', 'Try a different search or filter.');
+    container.style.display = 'block';
+    return;
+  }
+
+  container.innerHTML = users.map(u => {
+    const name    = u.full_name || u.email;
+    const initial = (u.company_name || name || '?').charAt(0).toUpperCase();
+    const isEmp   = u.role === 'employer';
+    const count   = isEmp ? (u.active_posting_count || 0) : (u.application_count || 0);
+    const verified = u.email_verified !== false;
+    const verifiedBadge = verified
+      ? `<span style="font-size:11px;color:#15803d;font-weight:700;background:#f0fdf4;border:1px solid #86efac;border-radius:5px;padding:1px 7px;">✓ Verified</span>`
+      : `<span style="font-size:11px;color:#dc2626;font-weight:700;background:#fef2f2;border:1px solid #fca5a5;border-radius:5px;padding:1px 7px;">Unverified</span>`;
+    const verifyBtn = !verified
+      ? `<button onclick="manualVerifyUser('${escAttr(String(u.id))}','${escAttr(u.email)}')"
+           style="font-size:12px;font-weight:700;color:#1a6cf6;background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:7px;padding:5px 11px;cursor:pointer;font-family:var(--sans);">
+           Verify →
+         </button>`
+      : '';
+    // Employer posting-approval: reads coordinator_approved from API response (2.3)
+    const alreadyApproved = isEmp && !!u.coordinator_approved;
+    const approvalHtml = isEmp
+      ? (alreadyApproved
+          ? `<span style="font-size:11px;color:#0369a1;font-weight:700;background:#f0f9ff;border:1px solid #7dd3fc;border-radius:5px;padding:1px 7px;">✓ Posting Approved</span>`
+          : `<button onclick="approveEmployer('${escAttr(String(u.id))}','${escAttr(name)}')"
+               style="font-size:12px;font-weight:700;color:#b45309;background:#fffbeb;border:1.5px solid #fde68a;border-radius:7px;padding:5px 11px;cursor:pointer;font-family:var(--sans);">
+               Approve to Post →
+             </button>`)
+      : '';
+    return `
+      <div class="coord-user-card">
+        <div class="coord-user-top">
+          <div class="coord-user-avatar${isEmp ? ' emp' : ''}">${initial}</div>
+          <div style="flex:1;min-width:0;">
+            <div class="coord-user-name">${escHtml(name)}</div>
+            <div class="coord-user-email">${escHtml(u.email || '—')}</div>
+            ${isEmp && u.company_name ? `<div class="coord-user-company">🏢 ${escHtml(u.company_name)}</div>` : ''}
+            ${!isEmp && u.school ? `<div style="font-size:12px;color:var(--text-muted);margin-top:2px;">${escHtml(u.school)}${u.grade ? ' · Grade ' + escHtml(String(u.grade)) : ''}</div>` : ''}
+          </div>
+        </div>
+        <div class="coord-user-footer">
+          <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
+            ${verifiedBadge}
+            ${verifyBtn}
+            ${approvalHtml}
+          </div>
+          <span class="coord-user-count">${isEmp ? '📋 ' + count + ' listing' + (count !== 1 ? 's' : '') : '📄 ' + count + ' app' + (count !== 1 ? 's' : '')}</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function manualVerifyUser(userId, email) {
+  try {
+    const res = await cPut('/coordinator/users/' + userId, { email_verified: true });
+    if (res.success) {
+      showToast('✓ ' + email + ' verified.');
+      const u = coordUsers.find(x => String(x.id) === userId);
+      if (u) { u.email_verified = true; renderUsers(); }
+      return;
+    }
+  } catch (_) {}
+  // API unavailable — show console command for manual use
+  const cmd = 'sibVerifyUser("' + email + '")';
+  if (confirm('API unavailable. To verify this account, share these steps with the user:\n\n1. Open their browser console (F12 → Console)\n2. Paste and run:\n\n' + cmd + '\n\nClick OK to copy the command.')) {
+    try { await navigator.clipboard.writeText(cmd); showToast('✓ Command copied to clipboard.'); } catch (_) {}
+  }
+}
+
+async function approveEmployer(userId, name) {
+  try {
+    const r = await cPut('/coordinator/employers/' + userId + '/approve', {});
+    if (r.success) {
+      showToast('✓ ' + name + ' approved — they can now post listings.');
+      const u = coordUsers.find(x => String(x.id) === String(userId));
+      if (u) { u.coordinator_approved = true; renderUsers(); }
+    } else {
+      showToast('Could not approve: ' + (r.error || 'Server error'), true);
+    }
+  } catch (_) {
+    showToast('Server unavailable — could not approve employer.', true);
+  }
+}
+
+// —— ③ PLACEMENTS ——
+function renderPlacements() {
+  const placed = coordApplications.filter(a => a.status === 'Accepted');
+  const schools = new Set(placed.map(a => a.students?.school).filter(Boolean)).size;
+  const employers = new Set(placed.map(a => a.postings?.employer_id).filter(Boolean)).size;
+
+  document.getElementById('placements-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Placements</div><div class="stat-val" style="color:#15803d;">${placed.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Employers Hosting</div><div class="stat-val">${employers || '—'}</div></div>
+    <div class="stat-card"><div class="stat-label">Schools Represented</div><div class="stat-val">${schools || '—'}</div></div>`;
+
+  const container = document.getElementById('placements-list');
+  if (!container) return;
+
+  if (!coordApplications.length) {
+    container.innerHTML = emptyState('📋', 'No data yet', 'Connect the API server to load application data.');
+    return;
+  }
+  if (!placed.length) {
+    container.innerHTML = emptyState('🎯', 'No accepted placements yet', 'When an employer accepts a student, the placement will appear here for co-op credit tracking.');
+    return;
+  }
+
+  container.innerHTML = placed.map(a => {
+    const stu = a.students  || {};
+    const pos = a.postings  || {};
+    const co  = pos.employers || {};
+    const name = stu.full_name || 'Unknown Student';
+    const initial = name.charAt(0).toUpperCase();
+    return `
+      <div class="coord-app-card">
+        <div class="coord-app-top">
+          <div class="applicant-avatar">${initial}</div>
+          <div class="coord-app-info">
+            <div class="coord-app-student-name">${escHtml(name)}</div>
+            <div class="coord-app-student-detail">${escHtml(stu.school || '—')}${stu.grade ? ' · Grade ' + escHtml(String(stu.grade)) : ''}${stu.email ? ' · ' + escHtml(stu.email) : ''}</div>
+            <div class="coord-app-posting-title" style="margin-top:8px;">→ ${escHtml(pos.title || '—')}</div>
+            <div class="coord-app-company">${escHtml(co.company_name || '—')}${pos.location ? ' · ' + escHtml(pos.location) : ''}</div>
+          </div>
+          <div style="flex-shrink:0;">${statusPill('Accepted')}</div>
+        </div>
+        <div class="coord-app-footer">
+          ${pos.start_date ? `<span style="font-size:12.5px;color:var(--ink);font-weight:600;">Start: ${escHtml(pos.start_date)}</span>` : ''}
+          ${pos.hours_per_week ? `<span class="ttag" style="background:var(--mist);color:var(--text-muted);">${pos.hours_per_week} hrs/wk</span>` : ''}
+          ${pos.work_mode ? workModeBadge(pos.work_mode) : ''}
+          <span class="applicant-date" style="margin-left:auto;">Placed ${formatDateShort(a.updated_at || a.created_at)}</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// —— ④ MESSAGES ——
+async function renderMessages() {
+  _coordActiveThread = null;
+  const inbox  = document.getElementById('coord-msg-inbox');
+  const detail = document.getElementById('coord-msg-detail');
+  if (inbox)  inbox.style.display  = 'block';
+  if (detail) detail.style.display = 'none';
+  await coordRenderThreadList();
+}
+
+function filterMessages(filter) {
+  _coordThreadFilter = filter;
+  document.querySelectorAll('.coord-msg-filter-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === filter);
+  });
+  coordRenderThreadList(); // fire-and-forget async
+}
+
+async function coordRenderThreadList() {
+  const q = (document.getElementById('coord-thread-search')?.value || '').toLowerCase();
+  let threads = (await getAllMessageThreads())
+    .sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt));
+  if (_coordThreadFilter === 'flagged') threads = threads.filter(t => t.status === 'flagged');
+  if (q) {
+    threads = threads.filter(t => {
+      const pn = t.participantNames || {};
+      return (pn.studentName  || '').toLowerCase().includes(q) ||
+             (pn.employerName || '').toLowerCase().includes(q) ||
+             (pn.listingTitle || '').toLowerCase().includes(q);
+    });
+  }
+
+  const list = document.getElementById('coord-thread-list');
+  if (!list) return;
+
+  if (!threads.length) {
+    list.innerHTML = emptyState('💬',
+      _coordThreadFilter === 'flagged' ? 'No flagged conversations' : 'No conversations yet',
+      _coordThreadFilter === 'flagged' ? 'All clear — no flagged threads.' : 'Student–employer conversations will appear here after students are accepted.');
+    return;
+  }
+
+  // Preview and message count come from server enrichment — no per-thread API call needed.
+  list.innerHTML = threads.map(t => {
+    const pn       = t.participantNames || {};
+    const preview  = t.preview ? t.preview.slice(0, 76) + (t.preview.length > 76 ? '…' : '') : 'No messages';
+    const msgCount = t.messageCount || 0;
+    const ago      = typeof timeAgo === 'function' ? timeAgo(t.lastMessageAt) : '';
+    const flagBadge  = t.status === 'flagged'
+      ? `<span style="font-size:10.5px;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:4px;padding:1px 7px;font-weight:700;flex-shrink:0;">FLAGGED</span>`
+      : '';
+    const reviewedBadge = t.reviewedAt
+      ? `<span style="font-size:10.5px;background:#f0fdf4;color:#15803d;border:1px solid #86efac;border-radius:4px;padding:1px 7px;font-weight:700;flex-shrink:0;">REVIEWED</span>`
+      : '';
+    const closedBadge = t.status === 'closed'
+      ? `<span style="font-size:10.5px;background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb;border-radius:4px;padding:1px 7px;font-weight:700;flex-shrink:0;">CLOSED</span>`
+      : '';
+    return `
+      <div class="coord-posting-card" style="cursor:pointer;" onclick="coordOpenThread('${t.id}')">
+        <div class="coord-posting-top">
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px;">
+              <span style="font-size:14px;font-weight:700;color:var(--ink);">${escHtml(pn.studentName || 'Student')}</span>
+              <span style="font-size:12px;color:var(--text-faint);">↔</span>
+              <span style="font-size:14px;font-weight:700;color:var(--ink);">${escHtml(pn.employerName || 'Employer')}</span>
+              ${flagBadge}${reviewedBadge}${closedBadge}
+            </div>
+            ${pn.listingTitle ? `<div style="font-size:12px;color:var(--text-faint);margin-bottom:3px;">${escHtml(pn.listingTitle)}</div>` : ''}
+            <div style="font-size:13px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escHtml(preview)}</div>
+          </div>
+          <div style="font-size:11.5px;color:var(--text-faint);white-space:nowrap;flex-shrink:0;margin-left:12px;">${ago}<br><span style="font-size:11px;">${msgCount} msg${msgCount !== 1 ? 's' : ''}</span></div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function coordOpenThread(threadId) {
+  const threads = await getAllMessageThreads();
+  const thread  = threads.find(t => t.id === threadId);
+  if (!thread) return;
+  _coordActiveThread = thread;
+
+  const inbox  = document.getElementById('coord-msg-inbox');
+  const detail = document.getElementById('coord-msg-detail');
+  if (inbox)  inbox.style.display  = 'none';
+  if (detail) detail.style.display = 'block';
+
+  await coordRenderThreadDetail(thread);
+}
+
+async function coordMsgBack() {
+  _coordActiveThread = null;
+  const inbox  = document.getElementById('coord-msg-inbox');
+  const detail = document.getElementById('coord-msg-detail');
+  if (inbox)  { inbox.style.display = 'block'; await coordRenderThreadList(); }
+  if (detail) detail.style.display = 'none';
+}
+
+async function coordRenderThreadDetail(thread) {
+  const pn      = thread.participantNames || {};
+  const msgs    = (await getMessages(thread.id)).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  const flaggedMsgs = msgs.filter(m => m.flagged && m.flagReasons && m.flagReasons.length > 0);
+
+  // —— Header ——
+  const header = document.getElementById('coord-detail-header');
+  if (header) {
+    const statusColor = { flagged: ['#fef3c7','#92400e','#fcd34d'], closed: ['#f3f4f6','#6b7280','#e5e7eb'], open: ['#f0fdf4','#15803d','#86efac'] }[thread.status] || ['#f3f4f6','#6b7280','#e5e7eb'];
+    const flagBanner = thread.status === 'flagged'
+      ? `<div style="margin-top:6px;padding:9px 13px;background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;font-size:12.5px;color:#92400e;font-weight:600;">⚑ Flagged — coordinator review required.</div>` : '';
+    const reviewedBanner = thread.reviewedAt
+      ? `<div style="margin-top:6px;padding:9px 13px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;font-size:12.5px;color:#15803d;font-weight:600;">
+           ✓ Reviewed by ${escHtml(thread.reviewedBy || 'coordinator')} · ${formatDateShort(thread.reviewedAt)}
+           ${thread.coordinatorNote ? `<div style="font-weight:400;margin-top:4px;color:#166534;font-style:italic;">"${escHtml(thread.coordinatorNote)}"</div>` : ''}
+         </div>` : '';
+    header.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:16px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:16px;font-weight:700;color:var(--ink);">
+            ${escHtml(pn.studentName || 'Student')} ↔ ${escHtml(pn.employerName || 'Employer')}
+          </div>
+          ${pn.listingTitle ? `<div style="font-size:12.5px;color:var(--text-faint);margin-top:2px;">${escHtml(pn.listingTitle)}</div>` : ''}
+          ${flagBanner}${reviewedBanner}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+          <span style="font-size:12px;padding:4px 10px;border-radius:6px;background:${statusColor[0]};color:${statusColor[1]};border:1px solid ${statusColor[2]};font-weight:700;">
+            ${thread.status.charAt(0).toUpperCase() + thread.status.slice(1)}
+          </span>
+          ${thread.status !== 'closed'
+            ? `<button onclick="coordCloseThread('${thread.id}')" style="font-size:12.5px;font-weight:600;color:#374151;background:none;border:1.5px solid #e5e7eb;border-radius:8px;padding:6px 13px;cursor:pointer;font-family:var(--sans);">Close thread</button>`
+            : ''}
+        </div>
+      </div>`;
+  }
+
+  // —— Flag reasons box ——
+  const flagBox = document.getElementById('coord-flag-reasons');
+  if (flagBox) {
+    if (flaggedMsgs.length) {
+      flagBox.style.display = 'block';
+      flagBox.innerHTML = `
+        <div style="padding:14px 16px;background:#fffbeb;border:1.5px solid #fcd34d;border-radius:12px;margin-bottom:16px;">
+          <div style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:10px;">⚑ Flagged message reasons</div>
+          ${flaggedMsgs.map(m => `
+            <div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #fde68a;">
+              <div style="font-size:12.5px;color:#b45309;font-weight:600;margin-bottom:2px;">${escHtml(moderationReasonLabels(m.flagReasons).join(' · '))}</div>
+              <div style="font-size:12.5px;color:#78350f;font-style:italic;">"${escHtml(m.body.slice(0, 120))}${m.body.length > 120 ? '…' : ''}"</div>
+              <div style="font-size:11px;color:#b45309;margin-top:2px;">${new Date(m.createdAt).toLocaleString('en-CA', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' })}</div>
+            </div>`).join('')}
+        </div>`;
+    } else {
+      flagBox.style.display = 'none';
+    }
+  }
+
+  // —— Messages (read-only bubbles) ——
+  const msgContainer = document.getElementById('coord-detail-messages');
+  if (msgContainer) {
+    const notice = `<div style="padding:10px 14px;background:#fffbeb;border-radius:8px;font-size:12.5px;color:#92400e;margin-bottom:14px;border:1px solid #fde68a;">
+      🔒 Read-only coordinator view · All messages are permanently logged and cannot be deleted.
+    </div>`;
+
+    if (!msgs.length) {
+      msgContainer.innerHTML = notice + `<div style="text-align:center;padding:28px;color:var(--text-faint);font-size:13.5px;">No messages yet.</div>`;
+    } else {
+      msgContainer.innerHTML = notice + msgs.map(m => {
+        const isStudent  = m.senderRole === 'student';
+        const senderName = isStudent ? (pn.studentName || 'Student') : (m.senderRole === 'coordinator' ? 'Coordinator' : (pn.employerName || 'Employer'));
+        const time = new Date(m.createdAt).toLocaleString('en-CA', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+        const bgColor  = m.flagged ? '#fffbeb' : isStudent ? '#f3f4f6' : '#1a6cf6';
+        const txtColor = m.flagged ? '#78350f' : isStudent ? '#0d1117' : '#fff';
+        const border   = m.flagged ? '1px solid #fcd34d' : 'none';
+        const align    = isStudent ? 'flex-start' : 'flex-end';
+        const radius   = isStudent ? '14px 14px 14px 4px' : '14px 14px 4px 14px';
+        const flagNote = m.flagged
+          ? `<div style="font-size:11px;color:#b45309;font-weight:600;margin-top:4px;">⚑ ${escHtml(moderationReasonLabels(m.flagReasons).join(', '))}</div>`
+          : '';
+        return `
+          <div style="display:flex;flex-direction:column;align-items:${align};margin-bottom:16px;">
+            <div style="font-size:11px;color:var(--text-faint);margin-bottom:3px;${isStudent ? '' : 'text-align:right;'}">${escHtml(senderName)} · ${time}</div>
+            <div style="max-width:76%;padding:11px 15px;border-radius:${radius};background:${bgColor};color:${txtColor};border:${border};font-size:13.5px;line-height:1.55;word-break:break-word;box-shadow:0 1px 3px rgba(0,0,0,0.07);">
+              ${escHtml(m.body).replace(/\n/g, '<br>')}
+            </div>
+            ${flagNote}
+          </div>`;
+      }).join('');
+    }
+    msgContainer.scrollTop = msgContainer.scrollHeight;
+  }
+
+  // —— Review panel ——
+  const reviewPanel = document.getElementById('coord-review-panel');
+  if (reviewPanel) {
+    if (thread.reviewedAt) {
+      reviewPanel.innerHTML = `
+        <div style="padding:14px 18px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;font-size:13.5px;color:#15803d;font-weight:600;">
+          ✓ Reviewed by ${escHtml(thread.reviewedBy || 'coordinator')} · ${formatDateShort(thread.reviewedAt)}
+          ${thread.coordinatorNote ? `<div style="font-size:13px;font-weight:400;color:#166534;margin-top:6px;font-style:italic;">"${escHtml(thread.coordinatorNote)}"</div>` : ''}
+        </div>`;
+    } else {
+      reviewPanel.innerHTML = `
+        <div style="border-top:1px solid var(--line);padding-top:18px;margin-top:6px;">
+          <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:10px;">Coordinator Review</div>
+          <div class="field" style="margin-bottom:12px;">
+            <label style="font-size:12.5px;">Internal note
+              <span style="font-weight:400;color:var(--text-faint);"> — only visible to coordinators, never to students or employers</span>
+            </label>
+            <textarea id="coord-review-note" placeholder="Observations, actions taken, outcome…" style="min-height:80px;resize:vertical;"></textarea>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button onclick="coordMarkReviewed('${thread.id}')"
+              style="display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:9px;background:#0d1117;color:#fff;border:none;font-family:var(--sans);font-size:13.5px;font-weight:700;cursor:pointer;">
+              ✓ Mark as Reviewed
+            </button>
+          </div>
+        </div>`;
+    }
+  }
+}
+
+async function coordMarkReviewed(threadId) {
+  const note = (document.getElementById('coord-review-note')?.value || '').trim() || null;
+  await coordinatorReviewThread(threadId, { note });
+  updateTabCounts(); // fire-and-forget
+  showToast('✓ Thread marked as reviewed.');
+  const thread = await getMessageThreadById(threadId);
+  if (thread) { _coordActiveThread = thread; await coordRenderThreadDetail(thread); }
+}
+
+async function coordCloseThread(threadId) {
+  await updateMessageThreadStatus(threadId, 'closed');
+  showToast('✓ Thread closed.');
+  const thread = await getMessageThreadById(threadId);
+  if (thread) { _coordActiveThread = thread; await coordRenderThreadDetail(thread); }
+}
+
+// —— ⑤ REPORTS ——
+async function renderReports() {
+  const flagged = (await getAllMessageThreads())
+    .filter(t => t.status === 'flagged')
+    .sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt));
+
+  const container = document.getElementById('reports-list');
+  if (!container) return;
+
+  if (!flagged.length) {
+    container.innerHTML = emptyState('✓', 'No flagged conversations', 'All clear — no conversations have been flagged or reported.');
+    return;
+  }
+
+  // Use server-enriched flagged counts and reasons — no per-thread getMessages() call needed.
+  container.innerHTML = flagged.map(t => {
+    const pn          = t.participantNames || {};
+    const allReasons  = moderationReasonLabels(t.flagReasonsSummary || []);
+    const flaggedCount = t.flaggedCount  || 0;
+    const msgCount    = t.messageCount   || 0;
+    const ago = typeof timeAgo === 'function' ? timeAgo(t.lastMessageAt) : '';
+    const needsReview = !t.reviewedAt;
+    return `
+      <div class="coord-posting-card" style="border-left:3px solid ${needsReview ? '#fca5a5' : '#86efac'};">
+        <div class="coord-posting-top">
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:5px;">
+              <span style="font-size:14px;font-weight:700;color:var(--ink);">${escHtml(pn.studentName || 'Student')} ↔ ${escHtml(pn.employerName || 'Employer')}</span>
+              ${needsReview
+                ? `<span style="font-size:10.5px;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:4px;padding:1px 7px;font-weight:700;">NEEDS REVIEW</span>`
+                : `<span style="font-size:10.5px;background:#f0fdf4;color:#15803d;border:1px solid #86efac;border-radius:4px;padding:1px 7px;font-weight:700;">REVIEWED</span>`}
+            </div>
+            ${pn.listingTitle ? `<div style="font-size:12px;color:var(--text-faint);margin-bottom:6px;">${escHtml(pn.listingTitle)}</div>` : ''}
+            ${allReasons.length
+              ? `<div style="font-size:12.5px;color:#b45309;font-weight:600;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:5px 11px;display:inline-block;margin-bottom:4px;">⚑ ${allReasons.join(' · ')}</div>`
+              : ''}
+            ${t.coordinatorNote ? `<div style="font-size:12.5px;color:#15803d;font-style:italic;margin-top:4px;">Note: "${escHtml(t.coordinatorNote)}"</div>` : ''}
+          </div>
+          <div style="font-size:11.5px;color:var(--text-faint);white-space:nowrap;flex-shrink:0;">${ago}</div>
+        </div>
+        <div class="coord-posting-footer">
+          <span style="font-size:12.5px;color:var(--text-muted);">${flaggedCount} flagged message${flaggedCount !== 1 ? 's' : ''} · ${msgCount} total</span>
+          <button onclick="switchTab('messages');coordOpenThread('${t.id}')"
+            style="padding:7px 14px;border-radius:8px;background:#0d1117;color:#fff;border:none;font-family:var(--sans);font-size:12.5px;font-weight:700;cursor:pointer;">
+            Review thread →
+          </button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// —— ⑥ LISTINGS (was Postings) ——
+function renderListings() {
+  const totalApplicants = coordPostings.reduce((s, p) => s + (p.applicant_count || 0), 0);
+  const active = coordPostings.filter(p => p.is_active).length;
+
+  document.getElementById('listings-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total Listings</div><div class="stat-val">${coordPostings.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Active</div><div class="stat-val">${active}</div></div>
+    <div class="stat-card"><div class="stat-label">Total Applicants</div><div class="stat-val">${totalApplicants}</div></div>`;
+
+  if (!coordPostings.length) {
+    document.getElementById('listings-list').innerHTML = emptyState('📋', 'No listings yet', 'Employer postings will appear here. Connect the API server if this is unexpected.');
+    return;
+  }
+
+  document.getElementById('listings-list').innerHTML = coordPostings.map(p => {
+    const co = p.employers || {};
+    const initial = (co.company_name || p.title || '?').charAt(0).toUpperCase();
+    const statusPillHtml = p.is_active
+      ? `<span class="active-pill">Active</span>`
+      : `<span class="archived-pill">Archived</span>`;
+    const archiveBtn = p.is_active
+      ? `<button class="btn-sm amber" onclick="archivePosting('${p.id}')">Archive</button>`
+      : `<button class="btn-sm blue" onclick="reactivatePosting('${p.id}')">Reactivate</button>`;
+    return `
+      <div class="coord-posting-card" id="pcard-${p.id}">
+        <div class="coord-posting-top">
+          <div style="display:flex;align-items:flex-start;gap:14px;flex:1;min-width:0;">
+            <div class="posting-company-logo" style="flex-shrink:0;">${initial}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.09em;color:var(--text-faint);margin-bottom:3px;">${escHtml(co.company_name || '—')}</div>
+              <div style="font-family:var(--serif);font-size:19px;font-weight:400;color:var(--ink);letter-spacing:-0.01em;line-height:1.2;">${escHtml(p.title)}</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
+            ${statusPillHtml}
+            <span class="applicant-count-chip">👤 ${p.applicant_count || 0}</span>
+          </div>
+        </div>
+        <div class="coord-posting-meta">
+          ${p.track ? trackTag(p.track) : ''}
+          ${p.work_mode ? workModeBadge(p.work_mode) : ''}
+          ${p.hours_per_week ? `<span class="ttag" style="background:var(--mist);color:var(--text-muted);">${p.hours_per_week} hrs/wk</span>` : ''}
+        </div>
+        <div class="coord-posting-footer">
+          ${archiveBtn}
+          <button class="btn-sm danger" onclick="deletePosting('${p.id}', '${escAttr(p.title)}')">Delete</button>
+          <a href="applicants.html?postingId=${p.id}" class="btn-sm blue" style="text-decoration:none;">View Applicants</a>
+          <span class="coord-posting-date">Posted ${formatDateShort(p.created_at)}</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// —— ⑦ APPLICATIONS ——
+function renderApplications(list) {
+  const total    = coordApplications.length;
+  const pending  = coordApplications.filter(a => a.status === 'Applied').length;
+  const inProg   = coordApplications.filter(a => a.status === 'Under Review' || a.status === 'Interview').length;
+  const accepted = coordApplications.filter(a => a.status === 'Accepted').length;
+
+  document.getElementById('applications-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Total</div><div class="stat-val">${total}</div></div>
+    <div class="stat-card"><div class="stat-label">Pending Review</div><div class="stat-val">${pending}</div></div>
+    <div class="stat-card"><div class="stat-label">In Progress</div><div class="stat-val">${inProg}</div></div>
+    <div class="stat-card"><div class="stat-label">Accepted</div><div class="stat-val" style="${accepted ? 'color:#15803d;' : ''}">${accepted}</div></div>`;
+
+  if (!list.length) {
+    document.getElementById('applications-list').innerHTML = emptyState('📭', 'No applications found', 'No applications match your filter, or connect the API server.');
+    return;
+  }
+
+  document.getElementById('applications-list').innerHTML = list.map(a => {
+    const stu = a.students || {};
+    const pos = a.postings  || {};
+    const co  = pos.employers || {};
+    const name = stu.full_name || 'Unknown Student';
+    const initial = name.charAt(0).toUpperCase();
+    const opts = STATUS_OPTIONS.map(s => `<option value="${s}" ${s === a.status ? 'selected' : ''}>${s}</option>`).join('');
+    const resumeHtml = a.resume_url
+      ? `<a href="${escHtml(a.resume_url)}" target="_blank" rel="noopener" class="applicant-resume-link">📎 Resume</a>`
+      : `<span style="font-size:12px;color:var(--text-faint);">No resume</span>`;
+    const coverToggle = a.cover_note
+      ? `<button class="coord-cover-toggle" onclick="toggleCover('cover-${a.id}')">📄 Cover note</button>` : '';
+    const coverBody   = a.cover_note
+      ? `<div class="coord-cover-body" id="cover-${a.id}">"${escHtml(a.cover_note)}"</div>` : '';
+    return `
+      <div class="coord-app-card" id="acard-${a.id}">
+        <div class="coord-app-top">
+          <div class="applicant-avatar">${initial}</div>
+          <div class="coord-app-info">
+            <div class="coord-app-student-name">${escHtml(name)}</div>
+            <div class="coord-app-student-detail">${escHtml(stu.school || '—')}${stu.grade ? ' · Grade ' + escHtml(String(stu.grade)) : ''}${stu.email ? ' · ' + escHtml(stu.email) : ''}</div>
+            <div class="coord-app-posting-title">${escHtml(pos.title || '—')}</div>
+            <div class="coord-app-company">${escHtml(co.company_name || '—')}</div>
+          </div>
+          <div style="flex-shrink:0;">${statusPill(a.status)}</div>
+        </div>
+        ${coverBody}
+        <div class="coord-app-footer">
+          <label style="font-size:12.5px;font-weight:600;color:var(--ink);">Status:</label>
+          <select class="applicant-status-select" onchange="changeAppStatus('${a.id}', this.value)">${opts}</select>
+          ${resumeHtml}
+          ${coverToggle}
+          <span class="applicant-date" style="margin-left:auto;">Applied ${formatDateShort(a.created_at)}</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function filterApplications() {
+  const q      = (document.getElementById('appSearch')?.value || '').toLowerCase();
+  const status = document.getElementById('appStatusFilter')?.value || '';
+  const list   = coordApplications.filter(a => {
+    const stu   = a.students || {};
+    const pos   = a.postings  || {};
+    const name  = (stu.full_name || '').toLowerCase();
+    const school= (stu.school   || '').toLowerCase();
+    const title = (pos.title    || '').toLowerCase();
+    const matchQ = !q || name.includes(q) || school.includes(q) || title.includes(q);
+    const matchS = !status || a.status === status;
+    return matchQ && matchS;
+  });
+  renderApplications(list);
+}
+
+// —— LISTING ACTIONS ——
+async function archivePosting(id) {
+  const res = await cPut(`/coordinator/postings/${id}`, { is_active: false });
+  if (res.success) {
+    const p = coordPostings.find(x => x.id === id);
+    if (p) p.is_active = false;
+    renderListings();
+    showToast('✓ Listing archived.');
+  } else { showToast(res.error || 'Failed to archive.', true); }
+}
+
+async function reactivatePosting(id) {
+  const res = await cPut(`/coordinator/postings/${id}`, { is_active: true });
+  if (res.success) {
+    const p = coordPostings.find(x => x.id === id);
+    if (p) p.is_active = true;
+    renderListings();
+    showToast('✓ Listing reactivated.');
+  } else { showToast(res.error || 'Failed to reactivate.', true); }
+}
+
+async function deletePosting(id, title) {
+  if (!confirm(`Delete "${title}"?\n\nThis removes the listing and all its applications permanently.`)) return;
+  const res = await cDel(`/coordinator/postings/${id}`);
+  if (res.success) {
+    coordPostings     = coordPostings.filter(p => p.id !== id);
+    coordApplications = coordApplications.filter(a => a.posting_id !== id);
+    renderListings(); filterApplications(); updateTabCounts();
+    showToast('✓ Listing deleted.');
+  } else { showToast(res.error || 'Failed to delete.', true); }
+}
+
+async function changeAppStatus(appId, newStatus) {
+  const res = await cPut(`/coordinator/applications/${appId}`, { status: newStatus });
+  if (res.success) {
+    const app = coordApplications.find(a => a.id === appId);
+    if (app) app.status = newStatus;
+    const card = document.getElementById('acard-' + appId);
+    if (card) { const pill = card.querySelector('.status-pill'); if (pill) pill.outerHTML = statusPill(newStatus); }
+    showToast('✓ Status updated to: ' + newStatus);
+  } else { showToast(res.error || 'Failed to update status.', true); }
+}
+
+function toggleCover(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('open');
+}
+
+// —— HELPERS ——
+function escHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(str) { return String(str || '').replace(/'/g, "\\'").replace(/"/g, '\\"'); }
+function emptyState(icon, title, body) {
+  return `<div class="empty-state">
+    <div class="empty-state-icon">${icon}</div>
+    <div class="empty-state-title">${title}</div>
+    <div class="empty-state-body">${body}</div>
+  </div>`;
+}
+
+// —— INIT ——
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!currentUser || currentUser.role !== 'coordinator') {
+    window.location.href = 'coordinator-login.html';
+    return;
+  }
+
+  const nameEl = document.getElementById('navUserName');
+  if (nameEl) nameEl.textContent = currentUser.name;
+
+  await loadAll();
+
+  document.getElementById('coordLoading').style.display = 'none';
+  await updateTabCounts();
+  switchTab('overview');
+
+  // Handle direct-link sections (e.g. from a notification)
+  const params = new URLSearchParams(location.search);
+  const section = params.get('section');
+  if (section === 'messages') switchTab('messages');
+  if (section === 'reports')  switchTab('reports');
+  if (section === 'users')    switchTab('users');
+  if (section === 'placements') switchTab('placements');
+
+  if (typeof AOS !== 'undefined') AOS.refresh();
+});
+</script>
+
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>AOS.init({ duration: 600, easing: 'ease-out-cubic', once: true, offset: 60 });</script>
+<script src="https://unpkg.com/@studio-freight/lenis@1.0.23/bundled/lenis.min.js"></script>
+<script>
+  const lenis = new Lenis({ duration: 1.2, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
+  lenis.on('scroll', ({ scroll }) => {
+    const nav = document.getElementById('mainNav');
+    if (nav) nav.classList.toggle('scrolled', scroll > 10);
+  });
+  function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+  requestAnimationFrame(raf);
+</script>
+</body>
+</html>

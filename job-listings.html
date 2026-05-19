@@ -1,0 +1,252 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Browse Co-op Listings — Students in Business</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="mainNav">
+  <div class="nav-brand" onclick="window.location.href='index.html'">
+    <div class="nav-mark">SiB</div>
+    <span class="nav-name">Students in Business</span>
+  </div>
+  <div class="nav-links">
+    <button class="nav-btn" onclick="window.location.href='index.html'">Home</button>
+    <button class="nav-btn" onclick="window.location.href='job-listings.html'" style="color:var(--ink);font-weight:600;">Browse Jobs</button>
+    <button class="nav-btn" onclick="window.location.href='resources.html'">Resources</button>
+    <button class="nav-btn" onclick="handleApplyNav()">Apply</button>
+  </div>
+  <div class="nav-actions" id="navActions">
+    <button class="btn-outline-sm" onclick="openAuth('login')">Sign In</button>
+    <button class="btn-fill-sm" onclick="openAuth('signup', 'student')">Get Started</button>
+  </div>
+</nav>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><span id="toastMsg"></span></div>
+
+<!-- AUTH MODAL -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal" style="max-width:460px;">
+    <button class="modal-close" onclick="closeModal('authModal')">×</button>
+    <div class="modal-logo">
+      <div class="modal-logo-mark">SiB</div>
+      <span class="modal-logo-name">Students in Business</span>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="authTabLogin" onclick="switchAuthTab('login')">Sign In</button>
+      <button class="auth-tab" id="authTabSignup" onclick="switchAuthTab('signup')">Create Account</button>
+    </div>
+    <div id="authLogin">
+      <div class="auth-divider"><span>sign in with email</span></div>
+      <div class="field"><label>Email Address</label><input type="email" id="loginEmail" placeholder="your@email.com"></div>
+      <div class="field"><label>Password</label><input type="password" id="loginPassword" placeholder="••••••••"></div>
+      <button class="btn-primary" style="width:100%;justify-content:center;margin-top:2px;" onclick="doLogin()">Sign In →</button>
+      <div class="no-account-note" id="noAccountNote">No account found. <a onclick="switchAuthTab('signup')">Create one?</a></div>
+      <p style="text-align:center;margin-top:14px;font-size:12.5px;color:var(--text-faint);">No account? <span style="color:var(--blue);cursor:pointer;font-weight:600;" onclick="switchAuthTab('signup')">Sign up</span></p>
+    </div>
+    <div id="authSignup" style="display:none;">
+      <div class="auth-divider"><span>create account with email</span></div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">I am a:</p>
+      <div class="role-selector" id="rolePicker">
+        <div class="role-card selected" id="roleStudent" onclick="selectRole('student')">
+          <div class="role-icon" style="display:flex;align-items:center;justify-content:center;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          </div>
+          <div class="role-name">Student</div>
+          <div class="role-desc">Grade 10–12, co-op applicant</div>
+        </div>
+        <div class="role-card" id="roleEmployer" onclick="selectRole('employer')">
+          <div class="role-icon" style="display:flex;align-items:center;justify-content:center;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+          </div>
+          <div class="role-name">Employer</div>
+          <div class="role-desc">Company looking to host a student</div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>First Name</label><input type="text" id="signupFirst" placeholder="First"></div>
+        <div class="field"><label>Last Name</label><input type="text" id="signupLast" placeholder="Last"></div>
+      </div>
+      <div class="field"><label>Email Address</label><input type="email" id="signupEmail" placeholder="your@email.com"></div>
+      <div class="field"><label>Password</label><input type="password" id="signupPass" placeholder="••••••••"></div>
+      <button class="btn-primary" style="width:100%;justify-content:center;margin-top:2px;" onclick="doSignup()">Create Account →</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE -->
+<div class="jl-page">
+  <div class="jl-inner">
+
+    <!-- Header -->
+    <div class="jl-header">
+      <div class="section-eyebrow" data-aos="fade-up">Spring 2026 Cohort</div>
+      <h1 data-aos="fade-up" data-aos-delay="100" style="font-family:var(--serif);font-size:38px;font-weight:400;color:var(--ink);letter-spacing:-0.02em;margin-bottom:8px;line-height:1.1;">Browse Co-op &amp; Internship Listings</h1>
+      <p data-aos="fade-up" data-aos-delay="200" style="font-size:15px;color:var(--text-muted);max-width:560px;line-height:1.65;">Open co-op placements from Ottawa-area employers across every industry. Browse freely — sign in as a student to apply.</p>
+    </div>
+
+    <!-- Search -->
+    <div class="jl-search-bar">
+      <input class="filter-input" id="searchInput" placeholder="Search by title, company, or track…" oninput="applyFilters()" style="flex:1;">
+      <button class="btn-fill-sm" onclick="applyFilters()">Search</button>
+    </div>
+
+    <div class="jl-layout">
+
+      <!-- Sidebar Filters -->
+      <aside class="jl-sidebar" data-aos="fade-right" data-aos-delay="150">
+        <div class="jl-sidebar-title">Filter Listings</div>
+
+        <div class="filter-group">
+          <span class="filter-group-label">Track</span>
+          <div class="filter-options" id="trackFilters">
+            <label class="filter-option"><input type="checkbox" value="Technology &amp; IT" onchange="applyFilters()"><span>Technology &amp; IT</span></label>
+            <label class="filter-option"><input type="checkbox" value="Business &amp; Finance" onchange="applyFilters()"><span>Business &amp; Finance</span></label>
+            <label class="filter-option"><input type="checkbox" value="Marketing &amp; Communications" onchange="applyFilters()"><span>Marketing &amp; Communications</span></label>
+            <label class="filter-option"><input type="checkbox" value="Health &amp; Sciences" onchange="applyFilters()"><span>Health &amp; Sciences</span></label>
+            <label class="filter-option"><input type="checkbox" value="Education &amp; Social Services" onchange="applyFilters()"><span>Education &amp; Social Services</span></label>
+            <label class="filter-option"><input type="checkbox" value="Trades &amp; Engineering" onchange="applyFilters()"><span>Trades &amp; Engineering</span></label>
+            <label class="filter-option"><input type="checkbox" value="Arts, Media &amp; Design" onchange="applyFilters()"><span>Arts, Media &amp; Design</span></label>
+            <label class="filter-option"><input type="checkbox" value="Law &amp; Government" onchange="applyFilters()"><span>Law &amp; Government</span></label>
+            <label class="filter-option"><input type="checkbox" value="Hospitality &amp; Food Services" onchange="applyFilters()"><span>Hospitality &amp; Food Services</span></label>
+            <label class="filter-option"><input type="checkbox" value="Retail &amp; Customer Service" onchange="applyFilters()"><span>Retail &amp; Customer Service</span></label>
+          </div>
+        </div>
+
+        <div class="filter-divider"></div>
+
+        <div class="filter-group">
+          <span class="filter-group-label">Work Mode</span>
+          <div class="filter-options" id="modeFilters">
+            <label class="filter-option"><input type="checkbox" value="Remote" onchange="applyFilters()"><span>Remote</span></label>
+            <label class="filter-option"><input type="checkbox" value="Hybrid" onchange="applyFilters()"><span>Hybrid</span></label>
+            <label class="filter-option"><input type="checkbox" value="On-site" onchange="applyFilters()"><span>On-site</span></label>
+          </div>
+        </div>
+
+        <div class="filter-divider"></div>
+
+        <div class="filter-group">
+          <span class="filter-group-label">Hours / Week</span>
+          <div class="filter-options" id="hoursFilters">
+            <label class="filter-option"><input type="checkbox" value="14" onchange="applyFilters()"><span>14+ hrs</span></label>
+            <label class="filter-option"><input type="checkbox" value="20" onchange="applyFilters()"><span>20+ hrs</span></label>
+            <label class="filter-option"><input type="checkbox" value="25" onchange="applyFilters()"><span>25+ hrs</span></label>
+          </div>
+        </div>
+
+        <button class="filter-clear-btn" onclick="clearFilters()">Clear all filters</button>
+      </aside>
+
+      <!-- Results -->
+      <div>
+        <div class="jl-count" id="resultCount"></div>
+        <div class="postings-list" id="postingsList"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div><div class="footer-brand">Students in Business</div><div class="footer-tagline">Co-op Placement Platform · Ottawa</div></div>
+    <div style="text-align:right;"><div class="footer-email">Contact: <a href="mailto:ysaadaldin08@gmail.com" style="color:var(--blue);font-weight:600;">ysaadaldin08@gmail.com</a></div><div class="footer-note">Built &amp; managed by Yousef Saadaldin · Spring 2026</div></div>
+  </div>
+</footer>
+
+<script src="config.js"></script>
+<script src="data.js"></script>
+<script src="email.js"></script>
+<script src="notifications.js"></script>
+<script src="moderation.js"></script>
+<script src="auth.js"></script>
+<script src="app.js"></script>
+<script>
+let allPostings = [];
+
+function applyFilters() {
+  const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+  const checkedTracks = [...document.querySelectorAll('#trackFilters input:checked')].map(i => i.value);
+  const checkedModes  = [...document.querySelectorAll('#modeFilters input:checked')].map(i => i.value);
+  const checkedHours  = [...document.querySelectorAll('#hoursFilters input:checked')].map(i => parseInt(i.value));
+
+  let filtered = allPostings.filter(p => {
+    if (q) {
+      const text = (p.title + ' ' + p.companyName + ' ' + p.track + ' ' + p.location).toLowerCase();
+      if (!text.includes(q)) return false;
+    }
+    if (checkedTracks.length && !checkedTracks.includes(p.track)) return false;
+    if (checkedModes.length && !checkedModes.includes(p.workMode)) return false;
+    if (checkedHours.length && !checkedHours.some(h => p.hoursPerWeek >= h)) return false;
+    return true;
+  });
+
+  renderPostings(filtered);
+}
+
+function clearFilters() {
+  document.getElementById('searchInput').value = '';
+  document.querySelectorAll('#trackFilters input, #modeFilters input, #hoursFilters input').forEach(i => i.checked = false);
+  applyFilters();
+}
+
+function renderPostings(list) {
+  const el = document.getElementById('postingsList');
+  const count = document.getElementById('resultCount');
+  count.textContent = list.length + ' listing' + (list.length !== 1 ? 's' : '') + ' found';
+  if (!list.length) {
+    el.innerHTML = `<div class="empty-state">
+      <div class="empty-state-icon">🔍</div>
+      <div class="empty-state-title">No listings match your filters</div>
+      <div class="empty-state-body">Try removing a filter or clearing all to see everything.</div>
+    </div>`;
+    return;
+  }
+  el.innerHTML = list.map((p, i) => {
+    const html = postingCardHTML(p);
+    return html.replace('class="posting-card', `class="posting-card" data-aos="fade-up" data-aos-delay="${Math.min(i * 80, 320)}`);
+  }).join('');
+  if (typeof AOS !== 'undefined') AOS.refresh();
+}
+
+function handleApplyNav() {
+  if (!currentUser) { openModal('authModal'); return; }
+  window.location.href = currentUser.role === 'employer' ? 'employer-register.html' : 'student-apply.html';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  allPostings = getActivePostings();
+
+  // Pre-fill search from URL ?q=
+  const params = new URLSearchParams(location.search);
+  const q = params.get('q') || '';
+  if (q) document.getElementById('searchInput').value = q;
+
+  applyFilters();
+  updateNavForAuth();
+});
+</script>
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>AOS.init({ duration: 600, easing: 'ease-out-cubic', once: true, offset: 60 });</script>
+<script src="https://unpkg.com/@studio-freight/lenis@1.0.23/bundled/lenis.min.js"></script>
+<script>
+  const lenis = new Lenis({ duration: 1.2, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
+  lenis.on('scroll', ({ scroll }) => {
+    const nav = document.getElementById('mainNav');
+    if (nav) nav.classList.toggle('scrolled', scroll > 10);
+  });
+  function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+  requestAnimationFrame(raf);
+</script>
+</body>
+</html>

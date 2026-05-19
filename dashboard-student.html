@@ -1,0 +1,397 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Dashboard — Students in Business</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><span id="toastMsg"></span></div>
+
+<div class="dash-layout">
+
+  <!-- SIDEBAR -->
+  <div class="dash-sidebar" data-aos="fade-right">
+    <div class="sidebar-logo" onclick="window.location.href='index.html'" style="cursor:pointer;" title="Back to Home">
+      <div class="sidebar-logo-mark">SiB</div>
+      <div class="sidebar-logo-name">Student Portal</div>
+      <div class="sidebar-logo-user" id="sdash-username">Student</div>
+    </div>
+    <div class="sidebar-nav">
+      <button class="sidebar-link active" id="slink-overview" onclick="showSDashSection('overview')"><span class="sicon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>Overview</button>
+      <button class="sidebar-link" id="slink-applications" onclick="showSDashSection('applications')"><span class="sicon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 2H6a2 2 0 0 0-2 2v17a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-3"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="12" y2="16"/></svg></span>Job Applications</button>
+      <button class="sidebar-link" id="slink-application" onclick="showSDashSection('application')"><span class="sicon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>My SiB Application</button>
+      <button class="sidebar-link" id="slink-placement" onclick="showSDashSection('placement')"><span class="sicon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg></span>Placement</button>
+      <button class="sidebar-link" id="slink-messages" onclick="showSDashSection('messages')"><span class="sicon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>Messages</button>
+      <button class="sidebar-link" id="slink-notifications" onclick="showSDashSection('notifications')"><span class="sicon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>Notifications</button>
+      <button class="sidebar-link" id="slink-settings" onclick="showSDashSection('settings')"><span class="sicon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Settings</button>
+      <button class="sidebar-link" onclick="goToResourceFromDash('student')"><span class="sicon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span>Resources</button>
+    </div>
+    <div class="sidebar-bottom">
+      <div class="sidebar-user-name" id="sdash-name">Student</div>
+      <div class="sidebar-user-role">Student Applicant</div>
+      <button class="sidebar-signout" onclick="doSignOut()" style="display:flex;align-items:center;gap:7px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sign Out</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="dash-main">
+
+    <!-- OVERVIEW -->
+    <div id="sdash-overview">
+      <div class="dash-header">
+        <div class="dash-title">Welcome back, <span id="sdash-firstname">there</span></div>
+        <div class="dash-sub">Here's a snapshot of your SiB status and job applications.</div>
+      </div>
+
+      <!-- Stat cards -->
+      <div class="stat-row" id="sdash-stats" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;">
+        <div class="stat-card" data-aos="fade-up" data-aos-delay="100">
+          <div class="stat-label">Applications Sent</div>
+          <div class="stat-val" id="stat-total">0</div>
+          <div class="stat-change" id="stat-total-sub"></div>
+        </div>
+        <div class="stat-card" data-aos="fade-up" data-aos-delay="200">
+          <div class="stat-label">In Progress</div>
+          <div class="stat-val" id="stat-active">0</div>
+          <div class="stat-change" id="stat-active-sub" style="color:var(--amber);"></div>
+        </div>
+        <div class="stat-card" data-aos="fade-up" data-aos-delay="300">
+          <div class="stat-label">Latest Activity</div>
+          <div class="stat-val" id="stat-latest" style="font-size:18px;line-height:1.3;margin-top:4px;">—</div>
+        </div>
+      </div>
+
+      <!-- Status hero (SiB program status) -->
+      <div class="status-hero" data-aos="fade-up" data-aos-delay="150">
+        <div class="status-hero-inner">
+          <div class="status-eyebrow">SiB Program Status</div>
+          <div class="status-name" id="sdash-fullname">Your Name</div>
+          <div class="status-school" id="sdash-school">Earl of March SS · Grade 12 · Technology / Marketing</div>
+          <div class="status-badge"><div class="status-badge-dot"></div><span id="sdash-status">Under Review</span></div>
+        </div>
+      </div>
+
+      <!-- Recent applications preview -->
+      <div class="tracker-card" id="recentAppsCard" style="display:none;">
+        <div class="tracker-title">Recent Job Applications</div>
+        <div id="recentAppsList"></div>
+        <button class="btn-secondary" style="margin-top:16px;font-size:13px;padding:9px 18px;" onclick="showSDashSection('applications')">View all applications →</button>
+      </div>
+
+      <!-- Progress tracker -->
+      <div class="tracker-card" data-aos="fade-up" data-aos-delay="100">
+        <div class="tracker-title">Program Progress</div>
+        <div class="tracker-steps">
+          <div class="tracker-step done"><div class="tracker-circle">✓</div><div class="tracker-step-label">Submitted</div></div>
+          <div class="tracker-step current"><div class="tracker-circle">2</div><div class="tracker-step-label">Under Review</div></div>
+          <div class="tracker-step"><div class="tracker-circle">3</div><div class="tracker-step-label">Approved</div></div>
+          <div class="tracker-step"><div class="tracker-circle">4</div><div class="tracker-step-label">Matched</div></div>
+        </div>
+      </div>
+
+      <div class="detail-grid" data-aos="fade-up" data-aos-delay="100">
+        <div class="detail-card"><div class="detail-label">Employer</div><div class="detail-val soft">Not yet matched. Your profile is live — we'll notify you when selected.</div></div>
+        <div class="detail-card"><div class="detail-label">Next Steps</div><div class="detail-val soft">Coordinator reviewing your application. Check email within 3–5 business days.</div></div>
+        <div class="detail-card"><div class="detail-label">Tracks Selected</div><div class="detail-val" id="sdash-tracks">Technology, Marketing</div></div>
+        <div class="detail-card"><div class="detail-label">Availability</div><div class="detail-val" id="sdash-avail">25 hrs/week</div></div>
+      </div>
+    </div>
+
+    <!-- JOB APPLICATIONS -->
+    <div id="sdash-applications" style="display:none;">
+      <div class="dash-header">
+        <div class="dash-title">Job Applications</div>
+        <div class="dash-sub">Track the status of every co-op posting you've applied to.</div>
+      </div>
+      <div class="stat-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;">
+        <div class="stat-card"><div class="stat-label">Total Applied</div><div class="stat-val" id="app-stat-total">0</div></div>
+        <div class="stat-card"><div class="stat-label">Under Review / Interview</div><div class="stat-val" id="app-stat-active">0</div></div>
+        <div class="stat-card"><div class="stat-label">Accepted</div><div class="stat-val" id="app-stat-accepted">0</div></div>
+      </div>
+      <div id="appsList"></div>
+      <div style="margin-top:20px;">
+        <a href="job-listings.html" class="btn-primary" style="text-decoration:none;display:inline-flex;">Browse more listings →</a>
+      </div>
+    </div>
+
+    <!-- SiB APPLICATION (original form responses) -->
+    <div id="sdash-application" style="display:none;">
+      <div class="dash-header"><div class="dash-title">My SiB Application</div><div class="dash-sub">Review what you submitted to the program.</div></div>
+      <div class="tracker-card">
+        <div class="tracker-title">Submitted Responses</div>
+        <div style="display:flex;flex-direction:column;gap:18px;">
+          <div><div class="detail-label">Why do you want a co-op placement?</div><div style="font-size:13.5px;color:var(--text-body);line-height:1.65;margin-top:5px;padding:13px 15px;background:var(--mist);border-radius:var(--radius-sm);" id="sdash-q1">Answer stored from your application.</div></div>
+          <div><div class="detail-label">Describe a project where you worked independently</div><div style="font-size:13.5px;color:var(--text-body);line-height:1.65;margin-top:5px;padding:13px 15px;background:var(--mist);border-radius:var(--radius-sm);" id="sdash-q2">Answer stored from your application.</div></div>
+        </div>
+      </div>
+      <div class="detail-grid" style="margin-top:18px;">
+        <div class="detail-card">
+          <div class="detail-label">Resume</div>
+          <div class="detail-val" id="sdash-resumename">No resume uploaded</div>
+          <input type="file" id="sdash-resumeinput" accept="application/pdf" style="display:none;" onchange="dashReplaceResume(this)">
+          <button onclick="dashViewOrReplace()" style="margin-top:10px;font-size:12px;font-weight:600;color:var(--blue);background:none;border:1px solid var(--blue);border-radius:6px;padding:5px 12px;cursor:pointer;" id="sdash-resumebtn">View PDF</button>
+        </div>
+        <div class="detail-card"><div class="detail-label">Commitment Agreement</div><div class="detail-val" style="color:var(--emerald);">✓ All 5 clauses signed</div></div>
+      </div>
+      <div style="background:rgba(180,83,9,0.05);border:1px solid rgba(180,83,9,0.18);border-radius:var(--radius);padding:14px 18px;margin-top:6px;">
+        <div style="font-size:13px;font-weight:700;color:var(--amber);margin-bottom:3px;">Need to make changes?</div>
+        <div style="font-size:13px;color:var(--text-muted);">Email <a href="mailto:ysaadaldin08@gmail.com" style="color:var(--blue);font-weight:600;">ysaadaldin08@gmail.com</a> with your change request.</div>
+      </div>
+    </div>
+
+    <!-- MESSAGES -->
+    <div id="sdash-messages" style="display:none;">
+
+      <!-- Inbox list -->
+      <div id="sdash-messages-inbox">
+        <div class="dash-header">
+          <div class="dash-title">Messages</div>
+          <div class="dash-sub">Conversations with employers. Text only. All messages are permanently logged.</div>
+        </div>
+        <div id="sdash-inbox-list"></div>
+      </div>
+
+      <!-- Thread view -->
+      <div id="sdash-messages-thread" style="display:none;">
+        <button onclick="msBackToInbox()" style="display:inline-flex;align-items:center;gap:5px;background:none;border:none;cursor:pointer;font-family:var(--sans);font-size:13px;font-weight:600;color:var(--blue);padding:0;margin-bottom:16px;">← Back to Messages</button>
+
+        <!-- PERSISTENT SAFETY NOTICE — always visible in thread view -->
+        <div style="display:flex;align-items:flex-start;gap:10px;background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:12px 16px;margin-bottom:16px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span style="font-size:12.5px;color:#92400e;line-height:1.6;"><strong>All messages are logged</strong> and may be reviewed by your co-op coordinator. Do not share personal contact information or arrange to communicate off this platform.</span>
+        </div>
+
+        <div id="sdash-thread-header"></div>
+        <div id="sdash-thread-messages" style="min-height:180px;max-height:400px;overflow-y:auto;padding:16px 0;margin-bottom:16px;"></div>
+
+        <div style="background:#f8f9fb;border-radius:12px;padding:14px 16px;border:1px solid var(--line);">
+          <div style="font-size:11.5px;color:var(--text-faint);margin-bottom:8px;">
+            Text messages only &nbsp;·&nbsp; No file attachments <!-- TODO: Phase 6 — coordinator-reviewed file attachments -->
+          </div>
+          <textarea id="sdash-msg-input" placeholder="Type a message… (Ctrl+Enter to send)" rows="3"
+            style="width:100%;box-sizing:border-box;border:1.5px solid #e5e7eb;border-radius:8px;padding:10px 13px;font-family:var(--sans);font-size:13.5px;resize:vertical;outline:none;line-height:1.55;transition:border-color 0.15s;"
+            onkeydown="if(event.ctrlKey&&event.key==='Enter'){msSendMessage();}"
+            onfocus="this.style.borderColor='#1a6cf6'" onblur="this.style.borderColor='#e5e7eb'"></textarea>
+          <div style="display:flex;justify-content:flex-end;margin-top:8px;">
+            <button onclick="msSendMessage()" style="padding:9px 22px;border-radius:8px;background:#1a6cf6;color:#fff;font-family:var(--sans);font-size:13.5px;font-weight:700;border:none;cursor:pointer;">Send →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS -->
+    <div id="sdash-notifications" style="display:none;">
+      <div class="dash-header">
+        <div class="dash-title">Notifications</div>
+        <div class="dash-sub">Your recent activity and alerts.</div>
+      </div>
+      <div id="sdash-notif-list">
+        <div class="empty-state"><div class="empty-state-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-faint)"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div><div class="empty-state-title">No notifications yet</div><div class="empty-state-body">Application status updates will appear here.</div></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="sdash-settings" style="display:none;">
+      <div id="sdash-settings-body"></div>
+    </div>
+
+    <!-- PLACEMENT -->
+    <div id="sdash-placement" style="display:none;">
+      <div class="dash-header"><div class="dash-title">Placement Details</div><div class="dash-sub">Your placement information will appear here once matched.</div></div>
+      <div style="background:white;border-radius:var(--radius-xl);padding:56px 36px;text-align:center;border:1px solid var(--line);box-shadow:var(--shadow-xs);">
+        <div style="display:flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:14px;background:var(--mist);margin:0 auto 14px;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-faint)"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <div style="font-family:var(--serif);font-size:21px;font-weight:400;color:var(--ink);margin-bottom:7px;">Not yet matched</div>
+        <div style="font-size:13.5px;color:var(--text-muted);max-width:360px;margin:0 auto;">Your profile is live in the employer browse portal. When an employer selects you, the coordinator will reach out to schedule an intro meeting.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="data.js"></script>
+<script src="email.js"></script>
+<script src="notifications.js"></script>
+<script src="moderation.js"></script>
+<script src="messaging.js"></script>
+<script src="auth.js"></script>
+<script src="app.js"></script>
+<script src="demo.js"></script>
+<script>
+const SDASH_SECTIONS = ['overview','applications','application','placement','messages','notifications','settings'];
+
+function showSDashSection(sec) {
+  SDASH_SECTIONS.forEach(s => {
+    const el = document.getElementById('sdash-' + s);
+    if (el) el.style.display = s === sec ? 'block' : 'none';
+  });
+  document.querySelectorAll('.dash-sidebar .sidebar-link[id^=slink]').forEach(l => {
+    l.classList.toggle('active', l.id === 'slink-' + sec);
+  });
+  if (sec === 'applications') renderApplicationsTab();
+  if (sec === 'messages') msRenderInbox();
+  if (sec === 'notifications') renderSDashNotifications();
+  if (sec === 'settings') {
+    const body = document.getElementById('sdash-settings-body');
+    if (body) body.innerHTML = buildNotifPrefsHtml('student');
+  }
+}
+
+// Open or create a message thread with an accepted employer directly from this page.
+function studentGoToMessages(applicationId, employerId, employerName, listingId, listingTitle) {
+  showSDashSection('messages');
+  msOpenOrCreate({
+    applicationId,
+    studentId:   currentUser.email,
+    employerId,
+    studentName: currentUser.name,
+    employerName,
+    listingId,
+    listingTitle
+  });
+}
+
+function renderSDashNotifications() {
+  if (!currentUser) return;
+  const notifs = getNotifications(currentUser.id)
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const list = document.getElementById('sdash-notif-list');
+  if (!list) return;
+  if (!notifs.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-state-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-faint)"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div><div class="empty-state-title">No notifications yet</div><div class="empty-state-body">Application status updates will appear here.</div></div>`;
+    return;
+  }
+  list.innerHTML = notifs.map(n => {
+    const label = typeof _notifLabel === 'function' ? _notifLabel(n.type, n.payload) : n.type;
+    const ago   = typeof timeAgo === 'function' ? timeAgo(n.createdAt) : '';
+    const unread = !n.readAt;
+    return `<div class="job-app-card" style="border-left:3px solid ${unread ? '#1a6cf6' : 'transparent'};background:${unread ? '#f5f8ff' : '#fff'};">
+      <div><div class="job-app-title" style="font-weight:${unread ? '600' : '400'};">${_htmlEsc(label)}</div><div class="job-app-date">${ago}</div></div>
+      ${unread ? `<button onclick="markNotificationRead('${n.id}');renderSDashNotifications();_refreshNotifBadge();" style="font-size:12px;font-weight:600;color:var(--blue);background:none;border:none;cursor:pointer;white-space:nowrap;">Mark read</button>` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function renderApplicationsTab() {
+  if (!currentUser) return;
+  const apps = await getApplicationsByStudent(currentUser.email);
+  const accepted = apps.filter(a => a.status === 'Accepted').length;
+  const active = apps.filter(a => a.status === 'Under Review' || a.status === 'Interview').length;
+  document.getElementById('app-stat-total').textContent = apps.length;
+  document.getElementById('app-stat-active').textContent = active;
+  document.getElementById('app-stat-accepted').textContent = accepted;
+
+  const list = document.getElementById('appsList');
+  if (!apps.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-title">No applications yet</div><div class="empty-state-body">Browse the listings and apply to your first role.</div></div>`;
+    return;
+  }
+  list.innerHTML = apps.map(a => {
+    const posting = a._posting;
+    const title = posting ? posting.title : 'Listing removed';
+    const company = posting ? posting.companyName : '—';
+    const location = posting ? posting.location : '';
+    return `
+      <div class="job-app-card">
+        <div>
+          <div class="job-app-title">${title}</div>
+          <div class="job-app-company">${company}${location ? ' · ' + location : ''}</div>
+          <div class="job-app-date">Applied ${formatDateShort(a.appliedAt)}</div>
+        </div>
+        <div class="job-app-right">
+          ${statusPill(a.status)}
+          ${a.status === 'Accepted' && posting
+            ? `<button onclick="studentGoToMessages('${a.id}','${posting.employerId || ''}','${_htmlEsc(posting.companyName || 'Employer')}','${posting.id}','${_htmlEsc(posting.title || '')}')"
+                style="display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:7px;background:#dbeafe;color:#1d4ed8;font-family:var(--sans);font-size:12.5px;font-weight:700;border:none;cursor:pointer;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Message</button>`
+            : ''}
+          ${posting ? `<a href="posting.html?id=${posting.id}" style="font-size:12px;color:var(--blue);font-weight:600;text-decoration:none;">View posting →</a>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function renderOverviewStats() {
+  if (!currentUser) return;
+  const stats = await getStudentStats(currentUser.email);
+  document.getElementById('stat-total').textContent = stats.total;
+  document.getElementById('stat-total-sub').textContent = stats.total ? 'job applications sent' : '';
+  document.getElementById('stat-active').textContent = stats.active;
+  document.getElementById('stat-active-sub').textContent = stats.active ? 'under review or interview' : '';
+  document.getElementById('stat-latest').textContent = stats.latest ? formatDateShort(stats.latest) : '—';
+
+  // Recent apps preview
+  const apps = (await getApplicationsByStudent(currentUser.email)).slice(0, 3);
+  if (apps.length) {
+    document.getElementById('recentAppsCard').style.display = 'block';
+    document.getElementById('recentAppsList').innerHTML = apps.map(a => {
+      const posting = a._posting;
+      const title = posting ? posting.title : 'Listing removed';
+      const company = posting ? posting.companyName : '—';
+      return `<div class="job-app-card" style="margin-bottom:8px;">
+        <div><div class="job-app-title">${title}</div><div class="job-app-company">${company}</div></div>
+        <div class="job-app-right">${statusPill(a.status)}</div>
+      </div>`;
+    }).join('');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (!currentUser) { window.location.href = 'index.html'; return; }
+  if (!sessionStorage.getItem('sib_student_app')) { window.location.href = 'student-apply.html'; return; }
+  const n = document.getElementById('sdash-name');
+  const u = document.getElementById('sdash-username');
+  const f = document.getElementById('sdash-firstname');
+  if (n) n.textContent = currentUser.name;
+  if (u) u.textContent = currentUser.name;
+  if (f) f.textContent = currentUser.first || currentUser.name;
+
+  initNotifBell();
+  msInit();
+  renderOverviewStats();
+
+  // Populate from sessionStorage if present
+  const appStored = sessionStorage.getItem('sib_student_app');
+  if (appStored) {
+    try {
+      const d = JSON.parse(appStored);
+      const el = (id, val) => { const e = document.getElementById(id); if(e) e.textContent = val; };
+      el('sdash-fullname', (d.first || '') + ' ' + (d.last ? d.last.charAt(0) + '.' : ''));
+      el('sdash-school', (d.school || '') + ' · ' + (d.grade || '') + ' · ' + (d.tracks || ''));
+      el('sdash-tracks', d.tracks || '—');
+      el('sdash-avail', (d.hrs || '—') + ' hrs/week');
+      el('sdash-q1', d.q1 || '—');
+      el('sdash-q2', d.q2 || '—');
+      el('sdash-resumename', d.resumeName || 'No resume uploaded');
+    } catch(e) {}
+  }
+
+  // Handle deep-link sections from URL params
+  const params = new URLSearchParams(location.search);
+  if (params.get('tab') === 'applications' || params.get('section') === 'applications') {
+    showSDashSection('applications');
+  } else if (params.get('section') === 'messages') {
+    showSDashSection('messages');
+  } else if (params.get('section') === 'notifications') {
+    showSDashSection('notifications');
+  }
+});
+</script>
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>AOS.init({ duration: 600, easing: 'ease-out-cubic', once: true, offset: 60 });</script>
+<script src="https://unpkg.com/@studio-freight/lenis@1.0.23/bundled/lenis.min.js"></script>
+<script>
+  const lenis = new Lenis({ duration: 1.2, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
+  function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+  requestAnimationFrame(raf);
+</script>
+</body>
+</html>

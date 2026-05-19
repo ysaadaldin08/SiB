@@ -1,0 +1,243 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Applicants — Students in Business</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><span id="toastMsg"></span></div>
+
+<!-- NAV -->
+<nav id="mainNav">
+  <div class="nav-brand" onclick="window.location.href='index.html'">
+    <div class="nav-mark">SiB</div>
+    <span class="nav-name">Students in Business</span>
+  </div>
+  <div class="nav-links">
+    <button class="nav-btn" onclick="window.location.href='dashboard-employer.html'">← Dashboard</button>
+  </div>
+  <div class="nav-actions" id="navActions">
+    <span id="navUserName" style="font-size:13.5px;font-weight:600;color:var(--ink);padding:7px 12px;"></span>
+    <button class="btn-outline-sm" onclick="doSignOut()">Sign Out</button>
+  </div>
+</nav>
+
+<!-- PAGE -->
+<div class="applicants-page">
+  <div class="applicants-inner" id="pageRoot">
+    <div style="text-align:center;padding:60px 0;"><div style="font-size:14px;color:var(--text-faint);">Loading…</div></div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div><div class="footer-brand">Students in Business</div><div class="footer-tagline">Co-op Placement Platform · Ottawa</div></div>
+    <div style="text-align:right;"><div class="footer-email">Contact: <a href="mailto:ysaadaldin08@gmail.com" style="color:var(--blue);font-weight:600;">ysaadaldin08@gmail.com</a></div></div>
+  </div>
+</footer>
+
+<script src="config.js"></script>
+<script src="data.js"></script>
+<script src="email.js"></script>
+<script src="notifications.js"></script>
+<script src="moderation.js"></script>
+<script src="auth.js"></script>
+<script src="app.js"></script>
+<script>
+const STATUS_OPTIONS = ['Applied','Under Review','Interview','Rejected','Accepted'];
+let currentPostingId = null;
+let _currentPosting  = null;
+let _cachedApps      = [];
+
+function buildStatusSelect(appId, currentStatus) {
+  const opts = STATUS_OPTIONS.map(s =>
+    `<option value="${s}" ${s === currentStatus ? 'selected' : ''}>${s}</option>`
+  ).join('');
+  return `<select class="applicant-status-select" onchange="changeStatus('${appId}', this.value)">${opts}</select>`;
+}
+
+async function renderApplicants(posting) {
+  _currentPosting = posting;
+  const apps = await getApplicationsByPosting(posting.id);
+  _cachedApps = apps;
+  const root = document.getElementById('pageRoot');
+  document.title = 'Applicants — ' + posting.title + ' — SiB';
+
+  let html = `
+    <a href="dashboard-employer.html" class="posting-back-link">← Back to dashboard</a>
+
+    <div style="margin-bottom:28px;">
+      <div class="section-eyebrow" data-aos="fade-up">Applicant Review</div>
+      <h1 style="font-family:var(--serif);font-size:34px;font-weight:400;color:var(--ink);letter-spacing:-0.02em;margin-bottom:6px;line-height:1.15;" data-aos="fade-up" data-aos-delay="100">${posting.title}</h1>
+      <p style="font-size:14.5px;color:var(--text-muted);" data-aos="fade-up" data-aos-delay="180">${posting.companyName} · ${posting.workMode} · ${posting.hoursPerWeek} hrs/week · ${posting.location}</p>
+    </div>
+
+    <div class="stat-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:28px;">
+      <div class="stat-card" data-aos="fade-up" data-aos-delay="100"><div class="stat-label">Total Applicants</div><div class="stat-val">${apps.length}</div></div>
+      <div class="stat-card" data-aos="fade-up" data-aos-delay="200"><div class="stat-label">Under Review / Interview</div><div class="stat-val">${apps.filter(a => a.status === 'Under Review' || a.status === 'Interview').length}</div></div>
+      <div class="stat-card" data-aos="fade-up" data-aos-delay="300"><div class="stat-label">Accepted</div><div class="stat-val">${apps.filter(a => a.status === 'Accepted').length}</div></div>
+    </div>`;
+
+  if (!apps.length) {
+    html += `<div class="empty-state">
+      <div class="empty-state-icon">📭</div>
+      <div class="empty-state-title">No applicants yet</div>
+      <div class="empty-state-body">When students apply to this listing, they'll appear here.</div>
+    </div>`;
+  } else {
+    html += apps.map(a => {
+      const initial = a.studentName ? a.studentName.charAt(0).toUpperCase() : '?';
+      const resumeLink = a.resumeUrl
+        ? `<a href="${a.resumeUrl}" target="_blank" rel="noopener" class="applicant-resume-link">📎 Resume</a>`
+        : `<span style="font-size:12.5px;color:var(--text-faint);">No resume</span>`;
+      const coverHtml = a.coverNote
+        ? `<div class="applicant-cover">"${a.coverNote}"</div>`
+        : '';
+      return `
+        <div class="applicant-card" id="acard-${a.id}">
+          <div class="applicant-card-top">
+            <div class="applicant-avatar">${initial}</div>
+            <div class="applicant-info">
+              <div class="applicant-name">${a.studentName}</div>
+              <div class="applicant-detail">${a.school}${a.grade ? ' · Grade ' + a.grade : ''} · ${a.studentEmail}</div>
+            </div>
+            ${statusPill(a.status)}
+          </div>
+          ${coverHtml}
+          <div class="applicant-footer">
+            <label style="font-size:13px;font-weight:600;color:var(--ink);">Update status:</label>
+            ${buildStatusSelect(a.id, a.status)}
+            ${resumeLink}
+            ${a.status === 'Accepted'
+              ? `<button onclick="goMessageStudent('${a.id}','${a.studentEmail || a.studentId}','${_htmlEsc(a.studentName)}','${a.postingId}','${_currentPosting ? _htmlEsc(_currentPosting.title) : ''}')"
+                  style="display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:7px;background:#dbeafe;color:#1d4ed8;font-family:var(--sans);font-size:12.5px;font-weight:700;border:none;cursor:pointer;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  Message student</button>`
+              : ''}
+            <span class="applicant-date">Applied ${formatDateShort(a.appliedAt)}</span>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  root.innerHTML = html;
+  if (typeof AOS !== 'undefined') AOS.refresh();
+}
+
+async function changeStatus(appId, newStatus) {
+  await updateApplicationStatus(appId, newStatus);
+  // Update the pill inline without re-rendering
+  const card = document.getElementById('acard-' + appId);
+  if (card) {
+    const existingPill = card.querySelector('.status-pill');
+    if (existingPill) existingPill.outerHTML = statusPill(newStatus);
+  }
+  showToast('✓ Status updated to: ' + newStatus);
+  // Notify the student (in-app record; server-side handles cross-user email, Phase 5)
+  const app = _cachedApps.find(a => a.id === appId);
+  if (app) {
+    createNotification({
+      userId: app.studentId,
+      type: 'applicationStatus',
+      payload: {
+        status: newStatus,
+        postingTitle: _currentPosting ? _currentPosting.title : '—',
+        firstName: app.studentName ? app.studentName.split(' ')[0] : 'there',
+      },
+      userEmail: null,
+      // TODO: Phase 5 — pass student email server-side for immediate email notification
+    });
+  }
+  // Notify all coordinators when a student is accepted for co-op placement
+  if (newStatus === 'Accepted' && app) {
+    notifyCoordinators('newPlacement', {
+      studentName:  app.studentName,
+      school:       app.school || '',
+      postingTitle: _currentPosting ? _currentPosting.title       : '—',
+      companyName:  _currentPosting ? _currentPosting.companyName : '—',
+      postingId:    app.postingId
+    });
+  }
+}
+
+// Navigate employer to their dashboard Messages section to message an accepted student.
+function goMessageStudent(applicationId, studentId, studentName, listingId, listingTitle) {
+  if (!currentUser) return;
+  sessionStorage.setItem('sib_open_thread_params', JSON.stringify({
+    applicationId,
+    studentId,
+    employerId: currentUser.email,
+    studentName,
+    employerName: currentUser.name,
+    listingId,
+    listingTitle: listingTitle || ''
+  }));
+  window.location.href = 'dashboard-employer.html?section=messages';
+}
+
+function renderAccessDenied() {
+  document.getElementById('pageRoot').innerHTML = `
+    <div style="text-align:center;padding:80px 0;">
+      <div style="font-size:44px;margin-bottom:14px;">🔒</div>
+      <div style="font-family:var(--serif);font-size:26px;color:var(--ink);margin-bottom:8px;">Access denied</div>
+      <p style="font-size:14px;color:var(--text-muted);margin-bottom:22px;">You must be signed in as an employer to view applicants.</p>
+      <a href="index.html" class="btn-primary" style="text-decoration:none;">Back to home</a>
+    </div>`;
+}
+
+function renderNotFound() {
+  document.getElementById('pageRoot').innerHTML = `
+    <div style="text-align:center;padding:80px 0;">
+      <div style="font-size:44px;margin-bottom:14px;">🔍</div>
+      <div style="font-family:var(--serif);font-size:26px;color:var(--ink);margin-bottom:8px;">Posting not found</div>
+      <p style="font-size:14px;color:var(--text-muted);margin-bottom:22px;">This listing may have been deleted.</p>
+      <a href="dashboard-employer.html" class="btn-primary" style="text-decoration:none;">← Back to dashboard</a>
+    </div>`;
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // Nav
+  if (currentUser) {
+    const nameEl = document.getElementById('navUserName');
+    if (nameEl) nameEl.textContent = currentUser.name;
+  }
+
+  if (!currentUser || currentUser.role !== 'employer') { renderAccessDenied(); return; }
+
+  const postingId = new URLSearchParams(location.search).get('postingId');
+  if (!postingId) { renderNotFound(); return; }
+
+  const posting = await getPostingById(postingId);
+  if (!posting) { renderNotFound(); return; }
+
+  // Verify this employer owns the posting
+  if (posting.employerId !== '__seed__' && posting.employerId !== currentUser.email.toLowerCase()) {
+    renderAccessDenied(); return;
+  }
+
+  currentPostingId = postingId;
+  renderApplicants(posting);
+});
+</script>
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>AOS.init({ duration: 600, easing: 'ease-out-cubic', once: true, offset: 60 });</script>
+<script src="https://unpkg.com/@studio-freight/lenis@1.0.23/bundled/lenis.min.js"></script>
+<script>
+  const lenis = new Lenis({ duration: 1.2, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
+  lenis.on('scroll', ({ scroll }) => {
+    const nav = document.getElementById('mainNav');
+    if (nav) nav.classList.toggle('scrolled', scroll > 10);
+  });
+  function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+  requestAnimationFrame(raf);
+</script>
+</body>
+</html>

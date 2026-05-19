@@ -1,0 +1,292 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Employer Registration — Students in Business</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="mainNav">
+  <div class="nav-brand" onclick="window.location.href='index.html'">
+    <div class="nav-mark">SiB</div>
+    <span class="nav-name">Students in Business</span>
+  </div>
+  <div class="nav-links">
+    <button class="nav-btn" onclick="window.location.href='index.html'">Home</button>
+    <button class="nav-btn" onclick="window.location.href='resources.html'">Resources</button>
+  </div>
+  <div class="nav-actions" id="navActions">
+    <button class="btn-outline-sm" onclick="openAuth('login')">Sign In</button>
+    <button class="btn-fill-sm" onclick="openAuth('signup', 'employer')">Get Started</button>
+  </div>
+</nav>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><span id="toastMsg"></span></div>
+
+<!-- AUTH MODAL -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal" style="max-width:460px;">
+    <button class="modal-close" onclick="closeModal('authModal')">×</button>
+    <div class="modal-logo">
+      <div class="modal-logo-mark">SiB</div>
+      <span class="modal-logo-name">Students in Business</span>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="authTabLogin" onclick="switchAuthTab('login')">Sign In</button>
+      <button class="auth-tab" id="authTabSignup" onclick="switchAuthTab('signup')">Create Account</button>
+    </div>
+    <div id="authLogin">
+      <button class="btn-google" onclick="handleGoogleAuth()">
+        <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Continue with Google
+      </button>
+      <div class="auth-divider"><span>or sign in with email</span></div>
+      <div class="field"><label>Email Address</label><input type="email" id="loginEmail" placeholder="your@email.com"></div>
+      <div class="field"><label>Password</label><input type="password" id="loginPassword" placeholder="••••••••"></div>
+      <button class="btn-primary" style="width:100%;justify-content:center;margin-top:2px;" onclick="doLogin()">Sign In →</button>
+      <div class="no-account-note" id="noAccountNote">No account found with that email. <a onclick="switchAuthTab('signup')">Create one instead?</a></div>
+      <p style="text-align:center;margin-top:14px;font-size:12.5px;color:var(--text-faint);">Don't have an account? <span style="color:var(--blue);cursor:pointer;font-weight:600;" onclick="switchAuthTab('signup')">Sign up</span></p>
+    </div>
+    <div id="authSignup" style="display:none;">
+      <button class="btn-google" onclick="handleGoogleAuth()">
+        <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Continue with Google
+      </button>
+      <div class="auth-divider"><span>or create account with email</span></div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">I am a:</p>
+      <div class="role-selector" id="rolePicker">
+        <div class="role-card selected" id="roleStudent" onclick="selectRole('student')">
+          <div class="role-icon" style="display:flex;align-items:center;justify-content:center;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          </div>
+          <div class="role-name">Student</div>
+          <div class="role-desc">Grade 10–12, co-op applicant</div>
+        </div>
+        <div class="role-card" id="roleEmployer" onclick="selectRole('employer')">
+          <div class="role-icon" style="display:flex;align-items:center;justify-content:center;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+          </div>
+          <div class="role-name">Employer</div>
+          <div class="role-desc">Company looking to host a student</div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>First Name</label><input type="text" id="signupFirst" placeholder="First"></div>
+        <div class="field"><label>Last Name</label><input type="text" id="signupLast" placeholder="Last"></div>
+      </div>
+      <div class="field"><label>Email Address</label><input type="email" id="signupEmail" placeholder="your@email.com"></div>
+      <div class="field"><label>Password <span style="color:var(--text-faint);font-weight:400;">(min. 8 characters)</span></label><input type="password" id="signupPass" placeholder="••••••••"></div>
+      <button class="btn-primary" style="width:100%;justify-content:center;margin-top:2px;" onclick="doSignup()">Create Account →</button>
+      <p style="text-align:center;margin-top:14px;font-size:12.5px;color:var(--text-faint);">Already have an account? <span style="color:var(--blue);cursor:pointer;font-weight:600;" onclick="switchAuthTab('login')">Sign in</span></p>
+    </div>
+  </div>
+</div>
+
+<!-- FORM PAGE -->
+<div class="form-page">
+  <div class="form-wrap" style="max-width:740px;">
+    <button class="form-back" onclick="window.location.href='index.html'" data-aos="fade-up">← Back to Home</button>
+    <h1 class="form-title" data-aos="fade-up" data-aos-delay="60">Employer Registration</h1>
+    <p class="form-sub" data-aos="fade-up" data-aos-delay="140">~10 minutes · Reviewed within 3–5 business days before portal access is granted</p>
+
+    <div id="empFormMain">
+      <div class="emp-step-nav" data-aos="fade-up" data-aos-delay="200">
+        <button class="emp-step-tab active" id="etab0">1 · Company & Contact</button>
+        <button class="emp-step-tab" id="etab1">2 · Placement Details</button>
+        <button class="emp-step-tab" id="etab2">3 · Commitment</button>
+      </div>
+      <div class="form-card" data-aos="fade-up" data-aos-delay="260">
+
+        <!-- EMP STEP 1 -->
+        <div class="emp-form-step active" id="es0">
+          <div class="step-heading">Company Information</div>
+          <div class="step-sub" style="margin-bottom:22px;">Tell us about your company.</div>
+          <div class="field-row">
+            <div class="field"><label>Company Name *</label><input type="text" id="e1company" placeholder="e.g. Acme Technologies"></div>
+            <div class="field"><label>Industry *</label>
+              <select id="e1industry" onchange="handleOther(this,'industryOther')">
+                <option value="">Select industry</option>
+                <option>Software / Technology</option><option>Marketing / Communications</option>
+                <option>Finance / Accounting</option><option>Healthcare</option>
+                <option>Consulting</option><option>Manufacturing / Engineering</option>
+                <option>Non-Profit / Government</option><option value="other">Other</option>
+              </select>
+              <div class="other-elaboration" id="industryOther"><input type="text" placeholder="Please describe your industry..."></div>
+            </div>
+          </div>
+          <div class="field">
+            <label>Company Website *</label>
+            <input type="url" id="e1website" placeholder="https://yourcompany.com or yourcompany.ca">
+            <div class="field-hint">Enter your full website URL (e.g. https://yourcompany.com).</div>
+            <div class="field-error" id="e1websiteErr">Please enter a valid website URL (e.g. https://yourcompany.ca).</div>
+          </div>
+          <div style="margin-top:6px;padding-top:22px;border-top:1px solid var(--line);">
+            <div class="step-heading" style="font-size:19px;margin-bottom:5px;">Primary Contact</div>
+            <div class="step-sub" style="margin-bottom:18px;">The person we'll communicate with about this placement.</div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Contact Name *</label><input type="text" id="e1cname" placeholder="Full name"></div>
+            <div class="field"><label>Title / Role *</label><input type="text" id="e1ctitle" placeholder="e.g. HR Manager"></div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Email Address *</label>
+              <input type="email" id="e1email" placeholder="contact@company.com">
+              <div class="field-error" id="e1emailErr">Please enter a valid email address.</div>
+            </div>
+            <div class="field">
+              <label>Phone Number *</label>
+              <input type="tel" id="e1phone" placeholder="613-555-0100">
+              <div class="field-hint">Canadian or North American number (e.g. 613-555-0100).</div>
+              <div class="field-error" id="e1phoneErr">Please enter a valid phone number (e.g. 613-555-0100).</div>
+            </div>
+          </div>
+          <div class="form-actions">
+            <div style="font-size:13px;color:var(--text-faint);">Step 1 of 3</div>
+            <button class="btn-form-next" onclick="nextEmpStep(0)">Continue →</button>
+          </div>
+        </div>
+
+        <!-- EMP STEP 2 -->
+        <div class="emp-form-step" id="es1">
+          <div class="step-heading">Placement Details</div>
+          <div class="step-sub" style="margin-bottom:22px;">Tell us about the placement you're offering.</div>
+          <div class="field-row">
+            <div class="field">
+              <label>Office Address *</label>
+              <input type="text" id="e2address" placeholder="e.g. 555 Legget Dr, Kanata, ON">
+              <div class="field-hint">Specific address where the student will be working.</div>
+            </div>
+            <div class="field">
+              <label>KNBA Member? *</label>
+              <select id="e2knba" onchange="handleKNBA(this)">
+                <option value="">Select one</option>
+                <option value="yes">Yes</option>
+                <option value="interested">No — but interested in joining</option>
+                <option value="unsure">Unsure</option>
+                <option value="no">No</option>
+              </select>
+              <a class="knba-link" id="knbaJoinLink" href="https://kanatanorthba.com/membership/" target="_blank" style="display:none;">→ Learn about KNBA membership</a>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Number of Candidates Needed *</label>
+              <input type="number" id="e2students" min="1" max="50" placeholder="e.g. 2">
+              <div class="field-hint">Enter how many candidates you need.</div>
+            </div>
+            <div class="field">
+              <label>Work Format *</label>
+              <select id="e2format">
+                <option value="">Select format</option>
+                <option>In-person</option><option>Remote</option><option>Hybrid</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>Preferred Placement Tracks *</label>
+            <div class="field-hint" style="margin-bottom:0;">Select all tracks you would consider hosting a co-op student in.</div>
+            <div class="track-chip-grid">
+              <div class="track-chip" onclick="toggleTrackSel(this,'Technology &amp; IT')">Technology &amp; IT</div>
+              <div class="track-chip" onclick="toggleTrackSel(this,'Business &amp; Finance')">Business &amp; Finance</div>
+              <div class="track-chip" onclick="toggleTrackSel(this,'Marketing &amp; Communications')">Marketing &amp; Communications</div>
+              <div class="track-chip" onclick="toggleTrackSel(this,'Health &amp; Sciences')">Health &amp; Sciences</div>
+              <div class="track-chip" onclick="toggleTrackSel(this,'Education &amp; Social Services')">Education &amp; Social Services</div>
+              <div class="track-chip" onclick="toggleTrackSel(this,'Trades &amp; Engineering')">Trades &amp; Engineering</div>
+              <div class="track-chip" onclick="toggleTrackSel(this,'Arts, Media &amp; Design')">Arts, Media &amp; Design</div>
+              <div class="track-chip" onclick="toggleTrackSel(this,'Law &amp; Government')">Law &amp; Government</div>
+              <div class="track-chip" onclick="toggleTrackSel(this,'Hospitality &amp; Food Services')">Hospitality &amp; Food Services</div>
+              <div class="track-chip" onclick="toggleTrackSel(this,'Retail &amp; Customer Service')">Retail &amp; Customer Service</div>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Hours Required Per Week *</label><input type="number" id="e2hours" min="14" max="40" placeholder="e.g. 20"></div>
+            <div class="field">
+              <label>Preferred Start Date *</label>
+              <input type="date" id="e2startdate">
+              <div class="field-hint">Select the date when you would like the placement to begin.</div>
+            </div>
+          </div>
+          <div class="field"><label>Named Supervisor *</label><input type="text" id="e2supervisor" placeholder="Full name of the direct supervisor"><div class="field-hint">A named individual is required — not a general inbox.</div></div>
+          <div class="field"><label>Placement Description *</label><textarea id="e2desc" style="min-height:140px;" placeholder="Describe what the candidate(s) will actually do during their placement. Be specific."></textarea></div>
+          <div class="form-actions">
+            <button class="btn-form-back" onclick="prevEmpStep(1)">← Back</button>
+            <button class="btn-form-next" onclick="nextEmpStep(1)">Continue →</button>
+          </div>
+        </div>
+
+        <!-- EMP STEP 3 -->
+        <div class="emp-form-step" id="es2">
+          <div class="step-heading">Employer Commitment</div>
+          <div class="step-sub" style="margin-bottom:22px;">Check all boxes to confirm your commitment to the SiB program.</div>
+          <div class="clauses">
+            <div class="clause" onclick="toggleClause(this)"><div class="clause-box">✓</div><p>I commit to providing a professional, supportive work environment for the placed student(s).</p></div>
+            <div class="clause" onclick="toggleClause(this)"><div class="clause-box">✓</div><p>I agree to complete the mid-placement check-in form provided by the SiB coordinator.</p></div>
+            <div class="clause" onclick="toggleClause(this)"><div class="clause-box">✓</div><p>I agree to participate in end-of-term feedback to improve the program for future cohorts.</p></div>
+          </div>
+          <div class="form-actions">
+            <button class="btn-form-back" onclick="prevEmpStep(2)">← Back</button>
+            <button class="btn-form-submit" onclick="submitEmpReg()">Submit Registration →</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="success-wrap" id="empSuccess">
+      <div class="success-card">
+        <div class="success-icon" style="display:flex;align-items:center;justify-content:center;">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--blue);"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+        </div>
+        <div class="success-title">Registration Received!</div>
+        <div class="success-body">Your submission will be reviewed within 3–5 business days. You'll receive portal access by email once approved.</div>
+        <div class="timeline-pills">
+          <div class="tpill"><strong>Now</strong> Confirmation email sent</div>
+          <div class="tpill"><strong>3–5 days</strong> Vetting completed</div>
+          <div class="tpill"><strong>If approved</strong> Portal access granted</div>
+        </div>
+        <div class="success-actions">
+          <button class="btn-primary" onclick="window.location.href='dashboard-employer.html'">Go to Dashboard →</button>
+          <button class="btn-secondary" onclick="window.location.href='index.html'">Back to Home</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="email.js"></script>
+<script src="notifications.js"></script>
+<script src="moderation.js"></script>
+<script src="auth.js"></script>
+<script src="app.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  if (sessionStorage.getItem('sib_emp_data')) {
+    window.location.href = 'dashboard-employer.html';
+  }
+  updateNavForAuth();
+});
+</script>
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>AOS.init({ duration: 600, easing: 'ease-out-cubic', once: true, offset: 60 });</script>
+<script src="https://unpkg.com/@studio-freight/lenis@1.0.23/bundled/lenis.min.js"></script>
+<script>
+  const lenis = new Lenis({ duration: 1.2, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
+  lenis.on('scroll', ({ scroll }) => {
+    const nav = document.getElementById('mainNav');
+    if (nav) nav.classList.toggle('scrolled', scroll > 10);
+  });
+  function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+  requestAnimationFrame(raf);
+</script>
+</body>
+</html>

@@ -1,0 +1,314 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Application — Students in Business</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="mainNav">
+  <div class="nav-brand" onclick="window.location.href='index.html'">
+    <div class="nav-mark">SiB</div>
+    <span class="nav-name">Students in Business</span>
+  </div>
+  <div class="nav-links">
+    <button class="nav-btn" onclick="window.location.href='index.html'">Home</button>
+    <button class="nav-btn" onclick="window.location.href='resources.html'">Resources</button>
+  </div>
+  <div class="nav-actions" id="navActions">
+    <button class="btn-outline-sm" onclick="openAuth('login')">Sign In</button>
+    <button class="btn-fill-sm" onclick="openAuth('signup', 'student')">Get Started</button>
+  </div>
+</nav>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><span id="toastMsg"></span></div>
+
+<!-- AUTH MODAL -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal" style="max-width:460px;">
+    <button class="modal-close" onclick="closeModal('authModal')">×</button>
+    <div class="modal-logo">
+      <div class="modal-logo-mark">SiB</div>
+      <span class="modal-logo-name">Students in Business</span>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="authTabLogin" onclick="switchAuthTab('login')">Sign In</button>
+      <button class="auth-tab" id="authTabSignup" onclick="switchAuthTab('signup')">Create Account</button>
+    </div>
+    <div id="authLogin">
+      <button class="btn-google" onclick="handleGoogleAuth()">
+        <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Continue with Google
+      </button>
+      <div class="auth-divider"><span>or sign in with email</span></div>
+      <div class="field"><label>Email Address</label><input type="email" id="loginEmail" placeholder="your@email.com"></div>
+      <div class="field"><label>Password</label><input type="password" id="loginPassword" placeholder="••••••••"></div>
+      <button class="btn-primary" style="width:100%;justify-content:center;margin-top:2px;" onclick="doLogin()">Sign In →</button>
+      <div class="no-account-note" id="noAccountNote">No account found with that email. <a onclick="switchAuthTab('signup')">Create one instead?</a></div>
+      <p style="text-align:center;margin-top:14px;font-size:12.5px;color:var(--text-faint);">Don't have an account? <span style="color:var(--blue);cursor:pointer;font-weight:600;" onclick="switchAuthTab('signup')">Sign up</span></p>
+    </div>
+    <div id="authSignup" style="display:none;">
+      <button class="btn-google" onclick="handleGoogleAuth()">
+        <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Continue with Google
+      </button>
+      <div class="auth-divider"><span>or create account with email</span></div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">I am a:</p>
+      <div class="role-selector" id="rolePicker">
+        <div class="role-card selected" id="roleStudent" onclick="selectRole('student')"><div class="role-icon">🎓</div><div class="role-name">Student</div><div class="role-desc">Grade 10–12, co-op applicant</div></div>
+        <div class="role-card" id="roleEmployer" onclick="selectRole('employer')"><div class="role-icon">🏢</div><div class="role-name">Employer</div><div class="role-desc">Company looking to host a student</div></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>First Name</label><input type="text" id="signupFirst" placeholder="First"></div>
+        <div class="field"><label>Last Name</label><input type="text" id="signupLast" placeholder="Last"></div>
+      </div>
+      <div class="field"><label>Email Address</label><input type="email" id="signupEmail" placeholder="your@email.com"></div>
+      <div class="field"><label>Password <span style="color:var(--text-faint);font-weight:400;">(min. 8 characters)</span></label><input type="password" id="signupPass" placeholder="••••••••"></div>
+      <button class="btn-primary" style="width:100%;justify-content:center;margin-top:2px;" onclick="doSignup()">Create Account →</button>
+      <p style="text-align:center;margin-top:14px;font-size:12.5px;color:var(--text-faint);">Already have an account? <span style="color:var(--blue);cursor:pointer;font-weight:600;" onclick="switchAuthTab('login')">Sign in</span></p>
+    </div>
+  </div>
+</div>
+
+<!-- FORM PAGE -->
+<div class="form-page">
+  <div class="form-wrap">
+    <button class="form-back" onclick="window.location.href='index.html'" data-aos="fade-up">← Back to Home</button>
+    <h1 class="form-title" data-aos="fade-up" data-aos-delay="60">Student Application</h1>
+    <p class="form-sub" data-aos="fade-up" data-aos-delay="140">5 steps · ~12 minutes · Reviewed within 3–5 business days</p>
+
+    <div id="studentFormMain">
+      <div class="step-dots" data-aos="fade-up" data-aos-delay="200">
+        <div class="sdot current" id="sd0"></div><div class="sdot" id="sd1"></div>
+        <div class="sdot" id="sd2"></div><div class="sdot" id="sd3"></div>
+        <div class="sdot" id="sd4"></div>
+      </div>
+      <div class="form-card" data-aos="fade-up" data-aos-delay="260">
+
+        <!-- STEP 1 -->
+        <div class="form-step active" id="ss0">
+          <div class="step-heading">Personal Info</div>
+          <div class="step-sub">Step 1 of 5 — Basic details about you</div>
+          <div class="field-row">
+            <div class="field"><label>First Name *</label><input type="text" id="s1first" placeholder="First name"></div>
+            <div class="field"><label>Last Name *</label><input type="text" id="s1last" placeholder="Last name"></div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label>Email Address *</label>
+              <input type="email" id="s1email" placeholder="your@email.com">
+              <div class="field-error" id="s1emailErr">Please enter a valid email address.</div>
+            </div>
+            <div class="field">
+              <label>Phone Number <span style="color:var(--text-faint);font-weight:400;">(optional)</span></label>
+              <input type="tel" id="s1phone" placeholder="613-555-0100">
+              <div class="field-error" id="s1phoneErr">Please enter a valid phone number (e.g. 613-555-0100).</div>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>School Name *</label><input type="text" id="s1school" placeholder="e.g. Earl of March SS"></div>
+            <div class="field"><label>Grade *</label>
+              <select id="s1grade">
+                <option value="">Select grade</option>
+                <option>Grade 10</option><option>Grade 11</option><option>Grade 12</option>
+              </select>
+            </div>
+          </div>
+          <div class="field"><label>Co-op Teacher Name *</label><input type="text" id="s1teachername" placeholder="Your co-op teacher's full name"></div>
+          <div class="field"><label>Co-op Teacher Email *</label><input type="email" id="s1teacheremail" placeholder="teacher@ocdsb.ca"></div>
+          <div class="form-actions">
+            <div style="font-size:13px;color:var(--text-faint);">Step 1 of 5</div>
+            <button class="btn-form-next" onclick="nextSStep(0)">Continue →</button>
+          </div>
+        </div>
+
+        <!-- STEP 2 -->
+        <div class="form-step" id="ss1">
+          <div class="step-heading">Track Selection</div>
+          <div class="step-sub">Step 2 of 5 — Choose the areas you want to work in. This drives your employer matching. You can select more than one.</div>
+          <div class="track-grid-sel" id="trackSelGrid">
+            <div class="track-sel-card" onclick="toggleTrackSel(this,'Technology &amp; IT')"><div class="track-sel-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div><div class="track-sel-name">Technology &amp; IT</div></div>
+            <div class="track-sel-card" onclick="toggleTrackSel(this,'Business &amp; Finance')"><div class="track-sel-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div><div class="track-sel-name">Business &amp; Finance</div></div>
+            <div class="track-sel-card" onclick="toggleTrackSel(this,'Marketing &amp; Communications')"><div class="track-sel-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></div><div class="track-sel-name">Marketing &amp; Communications</div></div>
+            <div class="track-sel-card" onclick="toggleTrackSel(this,'Health &amp; Sciences')"><div class="track-sel-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div><div class="track-sel-name">Health &amp; Sciences</div></div>
+            <div class="track-sel-card" onclick="toggleTrackSel(this,'Education &amp; Social Services')"><div class="track-sel-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div><div class="track-sel-name">Education &amp; Social Services</div></div>
+            <div class="track-sel-card" onclick="toggleTrackSel(this,'Trades &amp; Engineering')"><div class="track-sel-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div><div class="track-sel-name">Trades &amp; Engineering</div></div>
+            <div class="track-sel-card" onclick="toggleTrackSel(this,'Arts, Media &amp; Design')"><div class="track-sel-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg></div><div class="track-sel-name">Arts, Media &amp; Design</div></div>
+            <div class="track-sel-card" onclick="toggleTrackSel(this,'Law &amp; Government')"><div class="track-sel-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V2M2 12h20M3 7l4.5 9M16.5 7l4.5 9M3 17H7M17 17h4"/></svg></div><div class="track-sel-name">Law &amp; Government</div></div>
+            <div class="track-sel-card" onclick="toggleTrackSel(this,'Hospitality &amp; Food Services')"><div class="track-sel-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l19-9-9 19-2-8-8-2zM15 9l-4.5 4.5"/><line x1="5" y1="3" x2="5" y2="21"/><path d="M8 3a4 4 0 0 0 4 4"/></svg></div><div class="track-sel-name">Hospitality &amp; Food Services</div></div>
+            <div class="track-sel-card" onclick="toggleTrackSel(this,'Retail &amp; Customer Service')"><div class="track-sel-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></div><div class="track-sel-name">Retail &amp; Customer Service</div></div>
+          </div>
+          <div id="trackSelCount" class="field-hint" style="margin-top:10px;">0 selected</div>
+          <div class="form-actions">
+            <button class="btn-form-back" onclick="prevSStep(1)">← Back</button>
+            <button class="btn-form-next" onclick="nextSStep(1)">Continue →</button>
+          </div>
+        </div>
+
+        <!-- STEP 3 -->
+        <div class="form-step" id="ss2">
+          <div class="step-heading">Availability</div>
+          <div class="step-sub">Step 3 of 5 — You must be available at least 14 hours per week.</div>
+          <div class="field-row">
+            <div class="field">
+              <label>Hours Available Per Week *</label>
+              <input type="number" id="s3hours" min="14" max="40" placeholder="e.g. 20">
+              <div class="field-hint">Minimum 14 hrs/week to proceed.</div>
+            </div>
+            <div class="field">
+              <label>Preferred Start Date *</label>
+              <input type="date" id="s3date">
+              <div class="field-hint">Cannot be earlier than today.</div>
+            </div>
+          </div>
+          <div class="field">
+            <label>Can you commute independently? *</label>
+            <select id="s3commute" onchange="handleOther(this,'s3commuteOther')">
+              <option value="">Select one</option>
+              <option>Yes — I have my own transportation</option>
+              <option>Yes — I can take public transit</option>
+              <option>No — I would need support</option>
+              <option value="other">Other</option>
+            </select>
+            <div class="other-elaboration" id="s3commuteOther">
+              <input type="text" id="s3commuteDesc" placeholder="Please describe your commute situation... (optional)">
+            </div>
+          </div>
+          <div class="field">
+            <label>Parent / Guardian Authorization *</label>
+            <select id="s3auth">
+              <option value="">Select one</option>
+              <option value="yes">Yes — My parent/guardian has authorized this application</option>
+              <option value="no">No — I still need to get authorization</option>
+            </select>
+            <div class="field-hint">Parent/guardian approval is required to proceed.</div>
+          </div>
+          <div class="form-actions">
+            <button class="btn-form-back" onclick="prevSStep(2)">← Back</button>
+            <button class="btn-form-next" onclick="nextSStep(2)">Continue →</button>
+          </div>
+        </div>
+
+        <!-- STEP 4 -->
+        <div class="form-step" id="ss3">
+          <div class="step-heading">Screening Questions</div>
+          <div class="step-sub">Step 4 of 5 — Answer honestly. These help match you with the right employer.</div>
+          <div class="field"><label>Why do you want a co-op placement, and what are you hoping to learn? *</label><textarea id="s4q1" placeholder="What draws you to the track(s) you selected? What skills or experiences do you want to gain?"></textarea></div>
+          <div class="field"><label>Describe a time you took on responsibility or worked through a challenge. *</label><textarea id="s4q2" placeholder="This could be a school project, part-time job, volunteer activity, sport, creative pursuit — anything where you showed initiative or problem-solving."></textarea></div>
+          <div class="field"><label>Any scheduling conflicts or important context your placement supervisor should know? *</label><textarea id="s4q3" placeholder="Exams, medical appointments, religious observances, team commitments, or anything else that may affect your schedule..."></textarea></div>
+          <div class="form-actions">
+            <button class="btn-form-back" onclick="prevSStep(3)">← Back</button>
+            <button class="btn-form-next" onclick="nextSStep(3)">Continue →</button>
+          </div>
+        </div>
+
+        <!-- STEP 5 -->
+        <div class="form-step" id="ss4">
+          <div class="step-heading">Resume Upload</div>
+          <div class="step-sub">Step 5 of 5 — PDF only, max 2MB. Employers will see this as part of your profile.</div>
+          <div class="upload-zone" id="uploadZone" onclick="document.getElementById('resumeInput').click()">
+            <div class="upload-icon">📄</div>
+            <div class="upload-label" id="uploadLabel">Click to upload your resume</div>
+            <div class="upload-hint">PDF only · Max 2MB · Naming: FirstName_LastName_Resume.pdf</div>
+          </div>
+          <div class="upload-file-info" id="uploadFileInfo">
+            <span>📎</span>
+            <span class="upload-file-name" id="uploadFileName"></span>
+            <span class="upload-file-size" id="uploadFileSize"></span>
+          </div>
+          <input type="file" id="resumeInput" accept=".pdf" style="display:none" onchange="handleUpload(this)">
+          <div style="margin-top:18px;padding:16px 18px;background:rgba(26,108,246,0.04);border-radius:var(--radius-sm);border:1px solid rgba(26,108,246,0.11);">
+            <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:7px;">Need help with your resume?</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-bottom:9px;">Visit the Resource Centre for templates, guides, and tips.</div>
+            <a class="resource-link" onclick="goToResourceFromForm()">→ Go to Resource Centre</a>
+          </div>
+          <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--line);">
+            <div class="step-heading" style="font-size:19px;margin-bottom:5px;">Commitment Agreement</div>
+            <div class="step-sub">All boxes must be checked to submit.</div>
+            <div class="clauses">
+              <div class="clause" onclick="toggleClause(this)"><div class="clause-box">✓</div><p>I confirm that I am a Grade 10–12 student enrolled in an Ottawa-area high school and am eligible for co-op credit.</p></div>
+              <div class="clause" onclick="toggleClause(this)"><div class="clause-box">✓</div><p>I understand that I may not contact employers directly — all communication is routed through the SiB coordinator.</p></div>
+              <div class="clause" onclick="toggleClause(this)"><div class="clause-box">✓</div><p>I consent to my profile information (excluding full name and contact details) being shared with vetted employers on this platform.</p></div>
+              <div class="clause" onclick="toggleClause(this)"><div class="clause-box">✓</div><p>I agree to maintain professional conduct throughout the placement and notify the coordinator of any issues or concerns.</p></div>
+              <div class="clause" onclick="toggleClause(this)"><div class="clause-box">✓</div><p>I understand that I cannot reapply within the same semester if I am screened out due to misrepresentation.</p></div>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn-form-back" onclick="prevSStep(4)">← Back</button>
+            <button class="btn-form-submit" onclick="submitStudentApp()">Submit Application →</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="success-wrap" id="studentSuccess">
+      <div class="success-card">
+        <div class="success-icon">🎉</div>
+        <div class="success-title">Application Submitted!</div>
+        <div class="success-body">Your application is in the SiB queue. You'll receive a confirmation email shortly. Here's what happens next:</div>
+        <div class="timeline-pills">
+          <div class="tpill"><strong>Now</strong> Confirmation email sent</div>
+          <div class="tpill"><strong>3–5 days</strong> Coordinator review</div>
+          <div class="tpill"><strong>If approved</strong> Profile goes live</div>
+          <div class="tpill"><strong>Match found</strong> You'll be notified</div>
+        </div>
+        <div class="success-actions">
+          <button class="btn-primary" onclick="window.location.href='dashboard-student.html'">View Your Dashboard →</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="email.js"></script>
+<script src="notifications.js"></script>
+<script src="moderation.js"></script>
+<script src="auth.js"></script>
+<script src="app.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const token = getToken();
+  if (token) {
+    try {
+      const res = await fetch(`${API_BASE}/auth/session`, { headers: { 'Authorization': 'Bearer ' + token } });
+      const result = await res.json();
+      if (result.success) {
+        const role = result.data.user?.role;
+        if (role === 'coordinator') { window.location.href = 'coordinator-dashboard.html'; return; }
+        if (role === 'employer')    { window.location.href = 'employer-register.html'; return; }
+        // Sync localStorage with the authoritative role from the server
+        const stored = loadCurrentUser();
+        if (stored && stored.role !== role) { stored.role = role; saveCurrentUser(stored); }
+      }
+    } catch (_) {}
+  }
+  if (sessionStorage.getItem('sib_student_app')) {
+    window.location.href = 'dashboard-student.html';
+  }
+  updateNavForAuth();
+});
+</script>
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>AOS.init({ duration: 600, easing: 'ease-out-cubic', once: true, offset: 60 });</script>
+<script src="https://unpkg.com/@studio-freight/lenis@1.0.23/bundled/lenis.min.js"></script>
+<script>
+  const lenis = new Lenis({ duration: 1.2, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
+  lenis.on('scroll', ({ scroll }) => {
+    const nav = document.getElementById('mainNav');
+    if (nav) nav.classList.toggle('scrolled', scroll > 10);
+  });
+  function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+  requestAnimationFrame(raf);
+</script>
+</body>
+</html>

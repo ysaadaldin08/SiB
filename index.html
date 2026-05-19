@@ -1,0 +1,437 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Students in Business — Ottawa Co-op Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+<style>
+.jobs-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+.job-card {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  padding: 26px 28px;
+  transition: border-color 0.2s cubic-bezier(0.4,0,0.2,1), background 0.2s cubic-bezier(0.4,0,0.2,1);
+  cursor: default;
+}
+.job-card:hover {
+  border-color: rgba(26,108,246,0.55);
+  background: rgba(26,108,246,0.04);
+}
+.job-company {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.35);
+  margin-bottom: 8px;
+}
+.job-title {
+  font-family: var(--serif);
+  font-size: 19px;
+  font-weight: 400;
+  color: white;
+  letter-spacing: -0.01em;
+  margin-bottom: 14px;
+  line-height: 1.2;
+}
+.job-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.job-tag {
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 11.5px;
+  font-weight: 600;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.6);
+}
+.job-tag.track {
+  background: rgba(26,108,246,0.15);
+  border-color: rgba(26,108,246,0.3);
+  color: #93c5fd;
+}
+.job-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.job-hours {
+  font-size: 13px;
+  color: rgba(255,255,255,0.4);
+}
+.job-start {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.35);
+}
+.jobs-preview-footer {
+  display: flex;
+  justify-content: center;
+  margin-top: 36px;
+}
+.btn-ghost-white {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 11px 24px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.75);
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 0.2s cubic-bezier(0.4,0,0.2,1), background 0.2s cubic-bezier(0.4,0,0.2,1), color 0.2s;
+}
+.btn-ghost-white:hover {
+  border-color: rgba(255,255,255,0.4);
+  background: rgba(255,255,255,0.09);
+  color: white;
+}
+.value-icon-svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+.track-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--blue);
+  opacity: 0.55;
+}
+@media (max-width: 768px) {
+  .jobs-preview-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="mainNav">
+  <div class="nav-brand" onclick="window.location.href='index.html'">
+    <div class="nav-mark">SiB</div>
+    <span class="nav-name">Students in Business</span>
+  </div>
+  <div class="nav-links">
+    <button class="nav-btn" onclick="window.location.href='index.html'" style="color:var(--ink);font-weight:600;">Home</button>
+    <button class="nav-btn" onclick="window.location.href='job-listings.html'">Browse Jobs</button>
+    <button class="nav-btn" onclick="window.location.href='resources.html'">Resources</button>
+    <button class="nav-btn" onclick="handleApplyNav()">Apply</button>
+  </div>
+  <div class="nav-actions" id="navActions">
+    <button class="btn-outline-sm" onclick="openAuth('login')">Sign In</button>
+    <button class="btn-fill-sm" onclick="openAuth('signup')">Get Started</button>
+  </div>
+</nav>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><span id="toastMsg"></span></div>
+
+<!-- AUTH MODAL -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal" style="max-width:460px;">
+    <button class="modal-close" onclick="closeModal('authModal')">×</button>
+    <div class="modal-logo">
+      <div class="modal-logo-mark">SiB</div>
+      <span class="modal-logo-name">Students in Business</span>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="authTabLogin" onclick="switchAuthTab('login')">Sign In</button>
+      <button class="auth-tab" id="authTabSignup" onclick="switchAuthTab('signup')">Create Account</button>
+    </div>
+    <!-- LOGIN -->
+    <div id="authLogin">
+      <button class="btn-google" onclick="handleGoogleAuth()">
+        <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Continue with Google
+      </button>
+      <div class="auth-divider"><span>or sign in with email</span></div>
+      <div class="field"><label>Email Address</label><input type="email" id="loginEmail" placeholder="your@email.com"></div>
+      <div class="field"><label>Password</label><input type="password" id="loginPassword" placeholder="••••••••"></div>
+      <button class="btn-primary" style="width:100%;justify-content:center;margin-top:2px;" onclick="doLogin()">Sign In →</button>
+      <div class="no-account-note" id="noAccountNote">
+        No account found with that email. <a onclick="switchAuthTab('signup')">Create one instead?</a>
+      </div>
+      <p style="text-align:center;margin-top:14px;font-size:12.5px;color:var(--text-faint);">Don't have an account? <span style="color:var(--blue);cursor:pointer;font-weight:600;" onclick="switchAuthTab('signup')">Sign up</span></p>
+    </div>
+    <!-- SIGNUP -->
+    <div id="authSignup" style="display:none;">
+      <button class="btn-google" onclick="handleGoogleAuth()">
+        <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Continue with Google
+      </button>
+      <div class="auth-divider"><span>or create account with email</span></div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">I am a:</p>
+      <div class="role-selector" id="rolePicker">
+        <div class="role-card selected" id="roleStudent" onclick="selectRole('student')">
+          <div class="role-icon" style="display:flex;align-items:center;justify-content:center;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          </div>
+          <div class="role-name">Student</div>
+          <div class="role-desc">Grade 10–12, co-op applicant</div>
+        </div>
+        <div class="role-card" id="roleEmployer" onclick="selectRole('employer')">
+          <div class="role-icon" style="display:flex;align-items:center;justify-content:center;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+          </div>
+          <div class="role-name">Employer</div>
+          <div class="role-desc">Company looking to host a student</div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>First Name</label><input type="text" id="signupFirst" placeholder="First"></div>
+        <div class="field"><label>Last Name</label><input type="text" id="signupLast" placeholder="Last"></div>
+      </div>
+      <div class="field"><label>Email Address</label><input type="email" id="signupEmail" placeholder="your@email.com"></div>
+      <div class="field"><label>Password <span style="color:var(--text-faint);font-weight:400;">(min. 8 characters)</span></label><input type="password" id="signupPass" placeholder="••••••••"></div>
+      <button class="btn-primary" style="width:100%;justify-content:center;margin-top:2px;" onclick="doSignup()">Create Account →</button>
+      <p style="text-align:center;margin-top:14px;font-size:12.5px;color:var(--text-faint);">Already have an account? <span style="color:var(--blue);cursor:pointer;font-weight:600;" onclick="switchAuthTab('login')">Sign in</span></p>
+    </div>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid-lines"></div>
+  <div class="hero-inner">
+    <h1 class="reveal reveal-delay-1" data-aos="fade-up" data-aos-delay="100">Students in Business.<br><em>Co-op Matters.</em></h1>
+    <p class="hero-body reveal reveal-delay-2" data-aos="fade-up" data-aos-delay="220">Students in Business connects Ottawa-area high school co-op students with vetted employers across every industry — from healthcare and trades to tech, arts, and beyond.</p>
+    <div class="hero-ctas reveal reveal-delay-3" id="heroCtas" data-aos="fade-up" data-aos-delay="340">
+      <button class="btn-primary" id="heroStudentBtn" onclick="heroStudentCta()">Apply as a Student →</button>
+      <button class="btn-secondary" id="heroEmployerBtn" style="border-color:rgba(255,255,255,0.18);color:rgba(255,255,255,0.78);background:rgba(255,255,255,0.05);" onclick="heroEmployerCta()">Register Your Company</button>
+      <button class="btn-primary" id="heroDashBtn" style="display:none;" onclick="goToDashboard()">Go to Dashboard →</button>
+    </div>
+    <form class="hero-search-bar reveal reveal-delay-4" data-aos="fade-up" data-aos-delay="460" onsubmit="heroSearch(event)">
+      <input type="text" id="heroSearchInput" placeholder="Search co-op placements, companies, or tracks…" autocomplete="off">
+      <button type="submit">Browse Jobs →</button>
+    </form>
+  </div>
+</section>
+
+<!-- VALUE -->
+<section class="section" style="background:white;">
+  <div class="section-inner">
+    <div style="max-width:620px;">
+      <div class="section-eyebrow reveal" data-aos="fade-up">Why SiB</div>
+      <h2 class="section-title reveal reveal-delay-1" data-aos="fade-up" data-aos-delay="100">Three gaps. One platform.</h2>
+      <p class="section-body reveal reveal-delay-2" data-aos="fade-up" data-aos-delay="200">SiB fills the missing link between Ottawa-area employers of every kind and the next generation of talent — at zero cost to everyone.</p>
+    </div>
+    <div class="value-grid">
+      <div class="value-card reveal reveal-delay-1" data-aos="fade-up" data-aos-delay="100">
+        <div class="value-icon vi-blue">
+          <svg class="value-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#1a6cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
+        </div>
+        <h3>Vetted Students</h3>
+        <p>Every applicant completes a 5-step screening process. Resumes reviewed. Commitment verified. Only serious students reach employer profiles.</p>
+      </div>
+      <div class="value-card reveal reveal-delay-2" data-aos="fade-up" data-aos-delay="200">
+        <div class="value-icon vi-green">
+          <svg class="value-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#1a7f4b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+        </div>
+        <h3>Zero Cost to Employers</h3>
+        <p>No fees, no subscriptions. Co-op placements are a genuine zero-cost way to bring motivated, school-board-supervised talent into your team.</p>
+      </div>
+      <div class="value-card reveal reveal-delay-3" data-aos="fade-up" data-aos-delay="300">
+        <div class="value-icon vi-amber">
+          <svg class="value-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+        </div>
+        <h3>Co-op Credit Guaranteed</h3>
+        <p>All placements run through Ottawa-area school co-op programs. School boards confirm credit — no extra paperwork for companies.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section">
+  <div class="section-inner">
+    <div class="section-eyebrow reveal" data-aos="fade-up">The Process</div>
+    <h2 class="section-title reveal reveal-delay-1" data-aos="fade-up" data-aos-delay="100">From application to placement</h2>
+    <p class="section-body reveal reveal-delay-2" data-aos="fade-up" data-aos-delay="200">A transparent, coordinator-managed process designed to make every match count.</p>
+    <div class="how-grid" style="margin-top:52px;">
+      <div class="how-steps reveal reveal-left" data-aos="fade-right" data-aos-delay="100">
+        <div class="how-step"><div class="how-step-num">1</div><div><h4>Student applies online</h4><p>Complete personal info, track selection, screening questions, resume upload, and commitment agreement.</p></div></div>
+        <div class="how-step"><div class="how-step-num">2</div><div><h4>Application reviewed</h4><p>Reviewed within 3–5 business days. Human judgment — not automated scoring.</p></div></div>
+        <div class="how-step"><div class="how-step-num">3</div><div><h4>Profile goes live</h4><p>Approved students appear in the employer browse portal. Name initial shown — full details only after intro confirmation.</p></div></div>
+        <div class="how-step"><div class="how-step-num">4</div><div><h4>Employer requests an intro</h4><p>Company requests an introduction. Coordinator schedules a brief meeting between both parties.</p></div></div>
+        <div class="how-step"><div class="how-step-num">5</div><div><h4>Placement confirmed</h4><p>Both sides agree. Coordinator updates the match — your dashboard shows placement details.</p></div></div>
+      </div>
+      <div class="how-visual reveal reveal-right" data-aos="fade-left" data-aos-delay="200">
+        <div style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-faint);margin-bottom:14px;">Placement Tracks</div>
+        <div class="tracks-list">
+          <div class="track-item"><span class="track-dot"></span><div><div class="track-name">Technology &amp; IT</div><div class="track-desc">Dev, IT, product, data</div></div></div>
+          <div class="track-item"><span class="track-dot"></span><div><div class="track-name">Business &amp; Finance</div><div class="track-desc">Operations, accounting, analysis</div></div></div>
+          <div class="track-item"><span class="track-dot"></span><div><div class="track-name">Marketing &amp; Communications</div><div class="track-desc">Social, content, PR, events</div></div></div>
+          <div class="track-item"><span class="track-dot"></span><div><div class="track-name">Health &amp; Sciences</div><div class="track-desc">Healthcare, lab, public health</div></div></div>
+          <div class="track-item"><span class="track-dot"></span><div><div class="track-name">Education &amp; Social Services</div><div class="track-desc">Schools, social work, community</div></div></div>
+          <div class="track-item"><span class="track-dot"></span><div><div class="track-name">Trades &amp; Engineering</div><div class="track-desc">Civil, mechanical, skilled trades</div></div></div>
+          <div class="track-item"><span class="track-dot"></span><div><div class="track-name">Arts, Media &amp; Design</div><div class="track-desc">UX, graphic design, film, music</div></div></div>
+          <div class="track-item"><span class="track-dot"></span><div><div class="track-name">Law &amp; Government</div><div class="track-desc">Policy, legal, civic administration</div></div></div>
+          <div class="track-item"><span class="track-dot"></span><div><div class="track-name">Hospitality &amp; Food Services</div><div class="track-desc">Restaurants, hotels, catering</div></div></div>
+          <div class="track-item"><span class="track-dot"></span><div><div class="track-name">Retail &amp; Customer Service</div><div class="track-desc">Sales, customer experience, retail</div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LIVE LISTINGS PREVIEW -->
+<section class="section" style="background:var(--ink);padding-top:88px;padding-bottom:88px;">
+  <div class="section-inner">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:44px;flex-wrap:wrap;gap:20px;">
+      <div>
+        <div class="section-eyebrow reveal" data-aos="fade-up" style="color:rgba(255,255,255,0.4);">Open Now</div>
+        <h2 class="section-title reveal reveal-delay-1" data-aos="fade-up" data-aos-delay="100" style="color:white;margin-bottom:8px;">Live Listings</h2>
+        <p class="section-body reveal reveal-delay-2" data-aos="fade-up" data-aos-delay="200" style="color:rgba(255,255,255,0.5);max-width:440px;">Real co-op postings from Ottawa-area employers across every industry. No login required to browse.</p>
+      </div>
+    </div>
+    <div class="jobs-preview-grid" id="liveListingsGrid">
+      <!-- Populated dynamically from data.js -->
+    </div>
+    <div class="jobs-preview-footer">
+      <a href="job-listings.html" class="btn-ghost-white" style="text-decoration:none;">Browse all open listings →</a>
+    </div>
+  </div>
+</section>
+
+<!-- PARTNER -->
+<div class="partner-strip reveal" data-aos="fade-up">
+  <div class="partner-inner">
+    <span class="partner-label">Official Partner</span>
+    <div class="partner-chip">
+      <img src="brand_assets/KNBA_Logo.webp" alt="Kanata North Business Association" style="height:26px;width:auto;object-fit:contain;">
+      <span>Kanata North Business Association</span>
+    </div>
+  </div>
+</div>
+
+<!-- FAQ -->
+<section class="section" style="background:white;">
+  <div class="section-inner" style="max-width:760px;">
+    <div class="section-eyebrow reveal" data-aos="fade-up">FAQ</div>
+    <h2 class="section-title reveal reveal-delay-1" data-aos="fade-up" data-aos-delay="100" style="font-size:36px;">Common questions</h2>
+    <div class="faq-list" style="margin-top:32px;">
+      <div class="faq-item reveal reveal-delay-1" data-aos="fade-up" data-aos-delay="100"><div class="faq-q" onclick="toggleFaq(this)">Is there a cost? <span class="faq-chev">▼</span></div><div class="faq-a">No. This is a zero-cost program for everyone — students, employers, and schools. There are no fees of any kind.</div></div>
+      <div class="faq-item reveal reveal-delay-2" data-aos="fade-up" data-aos-delay="150"><div class="faq-q" onclick="toggleFaq(this)">Who can see a student's full details? <span class="faq-chev">▼</span></div><div class="faq-a">Only the coordinator has full details at all times. Employers see first name + last initial, school, grade, skills, and availability. Full name and contact info are only shared after both parties confirm an intro meeting.</div></div>
+      <div class="faq-item reveal reveal-delay-3" data-aos="fade-up" data-aos-delay="200"><div class="faq-q" onclick="toggleFaq(this)">How are students screened? <span class="faq-chev">▼</span></div><div class="faq-a">All students complete a 5-step application including a screening questionnaire, resume upload, and commitment agreement. The coordinator reviews each application manually before approving any profile.</div></div>
+      <div class="faq-item reveal reveal-delay-1" data-aos="fade-up" data-aos-delay="250"><div class="faq-q" onclick="toggleFaq(this)">Do employers need to be a KNBA member? <span class="faq-chev">▼</span></div><div class="faq-a">No. Any Ottawa-area employer is welcome to participate. KNBA members receive expedited vetting, but the platform is open to all organizations — the coordinator will verify that your site is real, Ottawa-based, and has a named supervisor.</div></div>
+      <div class="faq-item reveal reveal-delay-2" data-aos="fade-up" data-aos-delay="300"><div class="faq-q" onclick="toggleFaq(this)">How do I contact the coordinator? <span class="faq-chev">▼</span></div><div class="faq-a">Email <a href="mailto:ysaadaldin08@gmail.com" style="color:var(--blue);font-weight:600;">ysaadaldin08@gmail.com</a>. Expected response time is 1–2 business days. All student-employer communication is routed through this address.</div></div>
+      <div class="faq-item reveal reveal-delay-3" data-aos="fade-up" data-aos-delay="350"><div class="faq-q" onclick="toggleFaq(this)">Can a student edit their application after submitting? <span class="faq-chev">▼</span></div><div class="faq-a">Not directly. After submission, changes must be requested by emailing the coordinator. This protects the integrity of the review process.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div><div class="footer-brand">Students in Business</div><div class="footer-tagline">Co-op Placement Platform · Ottawa</div></div>
+    <div style="text-align:right;">
+      <div class="footer-email">Coordinator: <a href="mailto:ysaadaldin08@gmail.com" style="color:var(--blue);font-weight:600;">ysaadaldin08@gmail.com</a></div>
+      <div class="footer-note">Built &amp; managed by Yousef Saadaldin · Spring 2026</div>
+    </div>
+  </div>
+</footer>
+
+<script src="config.js"></script>
+<script src="data.js"></script>
+<script src="email.js"></script>
+<script src="notifications.js"></script>
+<script src="moderation.js"></script>
+<script src="auth.js"></script>
+<script src="app.js"></script>
+<script src="demo.js"></script>
+<script>
+function heroStudentCta() {
+  if (currentUser) { goToDashboard(); return; }
+  openAuth('signup', 'student');
+}
+function heroEmployerCta() {
+  if (currentUser) { goToDashboard(); return; }
+  openAuth('signup', 'employer');
+}
+function goToDashboard() {
+  if (!currentUser) { openAuth('login'); return; }
+  window.location.href = currentUser.role === 'employer' ? 'dashboard-employer.html' : 'dashboard-student.html';
+}
+function handleApplyNav() {
+  if (!currentUser) { openModal('authModal'); return; }
+  if (currentUser.role === 'employer') {
+    if (sessionStorage.getItem('sib_emp_data')) { goDashboard(); return; }
+    window.location.href = 'employer-register.html';
+  } else {
+    if (sessionStorage.getItem('sib_student_app')) { goDashboard(); return; }
+    window.location.href = 'student-apply.html';
+  }
+}
+function heroSearch(e) {
+  e.preventDefault();
+  const q = document.getElementById('heroSearchInput').value.trim();
+  window.location.href = 'job-listings.html' + (q ? '?q=' + encodeURIComponent(q) : '');
+}
+
+function renderLiveListings() {
+  const grid = document.getElementById('liveListingsGrid');
+  if (!grid) return;
+  const postings = getActivePostings().slice(0, 4);
+  if (!postings.length) {
+    grid.innerHTML = '<p style="color:rgba(255,255,255,0.4);font-size:14px;">No active listings yet.</p>';
+    return;
+  }
+  grid.innerHTML = postings.map((p, i) => `
+    <a class="job-card" data-aos="fade-up" data-aos-delay="${i * 100}" href="posting.html?id=${p.id}" style="text-decoration:none;">
+      <div class="job-company">${p.companyName}</div>
+      <div class="job-title">${p.title}</div>
+      <div class="job-tags">
+        <span class="job-tag track">${p.track}</span>
+        <span class="job-tag">${p.workMode}</span>
+        <span class="job-tag">${p.hoursPerWeek} hrs/week</span>
+      </div>
+      <div class="job-meta">
+        <span class="job-hours">${p.location}</span>
+        ${p.startDate ? `<span class="job-start">Start: ${p.startDate}</span>` : ''}
+      </div>
+    </a>`).join('');
+  if (typeof AOS !== 'undefined') AOS.refresh();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (currentUser) {
+    document.getElementById('heroStudentBtn').style.display = 'none';
+    document.getElementById('heroEmployerBtn').style.display = 'none';
+    document.getElementById('heroDashBtn').style.display = '';
+  }
+  renderLiveListings();
+});
+</script>
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>AOS.init({ duration: 600, easing: 'ease-out-cubic', once: true, offset: 60 });</script>
+<script src="https://unpkg.com/@studio-freight/lenis@1.0.23/bundled/lenis.min.js"></script>
+<script>
+  const lenis = new Lenis({ duration: 1.2, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
+  lenis.on('scroll', ({ scroll }) => {
+    const nav = document.getElementById('mainNav');
+    if (nav) nav.classList.toggle('scrolled', scroll > 10);
+  });
+  function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
+  requestAnimationFrame(raf);
+</script>
+</body>
+</html>

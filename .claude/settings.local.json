@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__supabase__list_tables",
+      "mcp__supabase__execute_sql",
+      "PowerShell(ls \"C:\\\\Users\\\\ysaad\\\\SiB\\\\server\" -Recurse | Select-Object FullName, Attributes | Where-Object { $_.Attributes -notmatch 'Directory' } | Sort-Object FullName)",
+      "mcp__supabase__apply_migration",
+      "Bash(Select-Object -First 30)"
+    ]
+  }
+}

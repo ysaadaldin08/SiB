@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coordinator Login — Students in Business</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+.coord-login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  background: #f8f9fb;
+}
+.coord-login-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 44px 40px 36px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 8px 48px rgba(0,0,0,0.09);
+  border: 1px solid #e5e7eb;
+}
+.coord-login-logo {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 28px;
+}
+.coord-login-mark {
+  width: 42px; height: 42px;
+  background: #0d1117;
+  border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif); font-size: 17px; color: white;
+}
+.coord-login-title {
+  font-family: var(--serif);
+  font-size: 26px;
+  color: #0d1117;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+.coord-login-sub {
+  font-size: 13.5px;
+  color: #6b7280;
+  margin-bottom: 28px;
+  line-height: 1.6;
+}
+.coord-login-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.coord-login-divider::before,
+.coord-login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e5e7eb;
+}
+.coord-login-divider span {
+  font-size: 11.5px;
+  color: #9ca3af;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.coord-login-note {
+  margin-top: 20px;
+  padding: 13px 16px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  font-size: 12.5px;
+  color: #92400e;
+  line-height: 1.6;
+}
+@media (max-width: 480px) {
+  .coord-login-card { padding: 32px 22px 28px; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><span id="toastMsg"></span></div>
+
+<!-- NAV -->
+<nav id="mainNav">
+  <div class="nav-brand" onclick="window.location.href='index.html'" style="cursor:pointer;">
+    <div class="nav-mark">SiB</div>
+    <span class="nav-name">Students in Business</span>
+  </div>
+  <div class="nav-links">
+    <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-faint);padding:7px 14px;">Coordinator Portal</span>
+  </div>
+  <div class="nav-actions">
+    <button class="btn-outline-sm" onclick="window.location.href='index.html'">← Main Site</button>
+  </div>
+</nav>
+
+<div class="coord-login-page">
+  <div class="coord-login-card">
+
+    <div class="coord-login-logo">
+      <div class="coord-login-mark">SiB</div>
+      <div>
+        <div style="font-size:13.5px;font-weight:700;color:#0d1117;letter-spacing:-0.01em;">Students in Business</div>
+        <div style="font-size:12px;color:#9ca3af;">Coordinator Portal</div>
+      </div>
+    </div>
+
+    <div class="coord-login-title">Coordinator Sign In</div>
+    <div class="coord-login-sub">
+      This portal is for registered co-op coordinators only. Coordinator accounts are added manually — there is no public signup.
+    </div>
+
+    <div class="coord-login-divider"><span>sign in with email</span></div>
+
+    <div class="field">
+      <label>Email Address</label>
+      <input type="email" id="coordEmail" placeholder="your@ocdsb.ca" autocomplete="email">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="coordPass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+
+    <button class="btn-primary" style="width:100%;justify-content:center;margin-top:4px;" onclick="doCoordinatorLogin()">
+      Sign In to Coordinator Dashboard →
+    </button>
+
+    <div class="coord-login-note">
+      <strong>Not a coordinator?</strong>
+      Student and employer accounts use the
+      <a href="index.html" style="color:#92400e;font-weight:700;">main site</a>.
+      <br>
+      Need coordinator access? Contact the SiB administrator.
+      <!-- TODO Phase 6: Replace shared password with a proper email-based invite flow -->
+    </div>
+
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="data.js"></script>
+<script src="email.js"></script>
+<script src="notifications.js"></script>
+<script src="auth.js"></script>
+<script src="app.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Redirect already-signed-in coordinators straight to their dashboard
+  if (currentUser && currentUser.role === 'coordinator') {
+    window.location.href = 'coordinator-dashboard.html';
+    return;
+  }
+
+  // Allow Enter key on both fields
+  ['coordEmail', 'coordPass'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') doCoordinatorLogin(); });
+  });
+});
+
+async function doCoordinatorLogin() {
+  const email = (document.getElementById('coordEmail').value || '').trim().toLowerCase();
+  const pass  = (document.getElementById('coordPass').value  || '');
+  if (!email || !pass) { showToast('Enter your email and password.', true); return; }
+
+  const btn = document.querySelector('.coord-login-card .btn-primary');
+  if (btn) { btn.disabled = true; btn.textContent = 'Signing in…'; }
+
+  try {
+    const res = await fetch(API_BASE + '/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass })
+    });
+    const json = await res.json();
+
+    if (!json.success) {
+      showToast('Invalid credentials. Contact the SiB administrator if you need access.', true);
+      return;
+    }
+    if (json.data.user.role !== 'coordinator') {
+      showToast('This account does not have coordinator access.', true);
+      return;
+    }
+
+    const apiUser = json.data.user;
+    const user = _mergeVerificationState({
+      ...apiUser,
+      name:  apiUser.name || apiUser.first || email,
+      first: apiUser.first || (apiUser.name || '').split(' ')[0] || '',
+    });
+    saveCurrentUser(user);
+    currentUser = user;
+    saveToken(json.data.token);
+
+    showToast('✓ Welcome, ' + (user.first || 'Coordinator') + '!');
+    setTimeout(() => { window.location.href = 'coordinator-dashboard.html'; }, 500);
+  } catch (err) {
+    console.error('Coordinator login error:', err);
+    showToast('Could not reach the server. Check your connection.', true);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Sign In to Coordinator Dashboard →'; }
+  }
+}
+</script>
+</body>
+</html>
