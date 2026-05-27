@@ -124,20 +124,11 @@
   </div>
 </div>
 
+<!-- CDN loaded synchronously so window._supabase is ready before the inline script runs -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script>
-(async function() {
-  // ── Parse the URL fragment Supabase returns after OAuth ──
-  function parseFragment() {
-    const hash = window.location.hash.substring(1);
-    const params = {};
-    hash.split('&').forEach(pair => {
-      const [k, v] = pair.split('=');
-      if (k) params[decodeURIComponent(k)] = decodeURIComponent((v || '').replace(/\+/g, ' '));
-    });
-    return params;
-  }
-
+(async function () {
   function showError(msg) {
     document.getElementById('stateLoading').innerHTML = `
       <div class="error-icon">✕</div>
@@ -146,27 +137,49 @@
       <button class="btn-back" onclick="window.location.href='index.html'">← Back to home</button>`;
   }
 
-  function completeLogin(user) {
+  // Maps a Supabase auth user to the SiB user shape.
+  function _userFromSupabase(su) {
+    const m     = su.user_metadata || {};
+    const first = m.first_name || (m.full_name || '').split(' ')[0] || '';
+    const last  = m.last_name  || (m.full_name || '').split(' ').slice(1).join(' ') || '';
+    return {
+      id:    su.id,
+      name:  m.full_name || [first, last].filter(Boolean).join(' '),
+      first,
+      email: su.email,
+      role:  m.role || null,  // null signals that role selection is still needed
+      emailVerified:              true,  // Google OAuth verifies email
+      emailVerificationToken:     null,
+      emailVerificationExpiresAt: null,
+      notificationPreferences: {
+        signupConfirm: 'immediate', newApplication: 'immediate',
+        applicationStatus: 'immediate', newListing: 'immediate', newMessage: 'immediate'
+      },
+      createdAt:           su.created_at || new Date().toISOString(),
+      domainVerified:      true,
+      coordinatorApproved: false,
+    };
+  }
+
+  function completeLogin(user, token) {
     localStorage.setItem('sib_user', JSON.stringify(user));
-    // Route to the appropriate next page
+    if (token) localStorage.setItem('sib_token', token);
     const redirect = sessionStorage.getItem('sib_auth_redirect');
     const target   = sessionStorage.getItem('sib_auth_target');
     sessionStorage.removeItem('sib_auth_redirect');
     sessionStorage.removeItem('sib_auth_target');
     if (redirect) { window.location.href = redirect; return; }
-    if (target) { window.location.href = target + '.html'; return; }
+    if (target)   { window.location.href = target + '.html'; return; }
     if (user.role === 'coordinator') { window.location.href = 'coordinator-dashboard.html'; return; }
     window.location.href = user.role === 'employer' ? 'employer-register.html' : 'student-apply.html';
   }
 
-  // ── Role selection UI ──
-  let _pendingToken = null;
-  let _pendingUser  = null;
-  let _selectedRole = null;
+  // —— Role selection UI ——
+  let _pendingSession = null;
+  let _selectedRole   = null;
 
-  function showRolePicker(token, user) {
-    _pendingToken = token;
-    _pendingUser  = user;
+  function showRolePicker(session, user) {
+    _pendingSession = session;
     document.getElementById('stateLoading').innerHTML = `
       <div class="role-heading">One last step</div>
       <div class="role-sub">Welcome, ${user.first || 'there'}! How will you be using SiB?</div>
@@ -185,62 +198,50 @@
       <button class="btn-confirm" id="confirmBtn" onclick="confirmRole()" disabled>Continue →</button>`;
   }
 
-  window.pickRole = function(role) {
+  window.pickRole = function (role) {
     _selectedRole = role;
     document.getElementById('roleStudent').classList.toggle('selected', role === 'student');
     document.getElementById('roleEmployer').classList.toggle('selected', role === 'employer');
     document.getElementById('confirmBtn').disabled = false;
   };
 
-  window.confirmRole = async function() {
+  window.confirmRole = async function () {
     const btn = document.getElementById('confirmBtn');
     btn.disabled = true;
     btn.textContent = 'Setting up your account…';
     try {
-      const res = await fetch(API_BASE + '/auth/setup-profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _pendingToken },
-        body: JSON.stringify({ role: _selectedRole })
-      });
-      const result = await res.json();
-      if (!result.success) { showError(result.error || 'Setup failed. Please try again.'); return; }
-      completeLogin(result.data.user);
+      const { data, error } = await window._supabase.auth.updateUser({ data: { role: _selectedRole } });
+      if (error) { showError(error.message || 'Setup failed. Please try again.'); return; }
+      completeLogin(_userFromSupabase(data.user), _pendingSession.access_token);
     } catch (e) {
-      showError('Could not reach the server. Is it running?');
+      showError('An unexpected error occurred.');
     }
   };
 
-  // ── Main flow ──
-  const params = parseFragment();
-
-  if (params.error) {
-    showError(params.error_description || 'Google sign-in was cancelled or failed.');
+  // —— Main flow ——
+  const sb = window._supabase;
+  if (!sb) {
+    showError('Auth service failed to initialize. Please try again.');
     return;
   }
 
-  const token = params.access_token;
-  if (!token) {
-    showError('No authentication token received. Please try signing in again.');
+  // getSession() awaits the client's internal initialization, which includes
+  // processing the access_token from the OAuth redirect URL fragment.
+  const { data: { session }, error: sessionError } = await sb.auth.getSession();
+
+  if (sessionError || !session) {
+    showError(sessionError?.message || 'No authentication session found. Please try signing in again.');
     return;
   }
 
-  // Store the token now — it's valid regardless of profile state
-  localStorage.setItem('sib_token', token);
+  localStorage.setItem('sib_token', session.access_token);
 
-  try {
-    const res = await fetch(API_BASE + '/auth/session', {
-      headers: { 'Authorization': 'Bearer ' + token }
-    });
-    const result = await res.json();
-    if (!result.success) { showError(result.error || 'Could not load your account.'); return; }
+  const user = _userFromSupabase(session.user);
 
-    if (result.data.needsRoleSetup) {
-      showRolePicker(token, result.data.user);
-    } else {
-      completeLogin(result.data.user);
-    }
-  } catch (e) {
-    showError('Could not reach the server. Make sure the API server is running on port 3001.');
+  if (!user.role) {
+    showRolePicker(session, user);
+  } else {
+    completeLogin(user, session.access_token);
   }
 })();
 </script>

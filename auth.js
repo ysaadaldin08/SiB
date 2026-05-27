@@ -62,6 +62,30 @@ function _mergeVerificationState(apiUser) {
   return apiUser;
 }
 
+// Maps a Supabase auth user object to the SiB internal user shape.
+function _userFromSupabase(su) {
+  const m     = su.user_metadata || {};
+  const first = m.first_name || (m.full_name || '').split(' ')[0] || '';
+  const last  = m.last_name  || (m.full_name || '').split(' ').slice(1).join(' ') || '';
+  return {
+    id:    su.id,
+    name:  m.full_name || [first, last].filter(Boolean).join(' '),
+    first,
+    email: su.email,
+    role:  m.role || 'student',
+    emailVerified:              !!su.email_confirmed_at,
+    emailVerificationToken:     null,
+    emailVerificationExpiresAt: null,
+    notificationPreferences:    (typeof _defaultNotificationPreferences === 'function')
+                                  ? _defaultNotificationPreferences()
+                                  : { signupConfirm:'immediate', newApplication:'immediate',
+                                      applicationStatus:'immediate', newListing:'immediate', newMessage:'immediate' },
+    createdAt:           su.created_at || new Date().toISOString(),
+    domainVerified:      false,
+    coordinatorApproved: false,
+  };
+}
+
 // —— PASSWORD VISIBILITY TOGGLE ——
 const EYE_OPEN = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
 const EYE_OFF  = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
@@ -125,26 +149,24 @@ async function doLogin() {
   if (!email || !pass) { showToast('Please enter your email and password.', true); return; }
   if (!isValidEmail(email)) { showToast('Please enter a valid email address.', true); return; }
 
-  try {
-    const res = await fetch(`${API_BASE}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password: pass })
-    });
-    const result = await res.json();
+  const sb = window._supabase;
+  if (!sb) { showToast('Auth service not ready — please wait a moment and try again.', true); return; }
 
-    if (!result.success) {
-      if (res.status === 401) {
+  try {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+
+    if (error) {
+      if (error.status === 400 || (error.message || '').toLowerCase().includes('invalid')) {
         document.getElementById('noAccountNote').classList.add('show');
       } else {
-        showToast(result.error || 'Login failed.', true);
+        showToast(error.message || 'Login failed.', true);
       }
       return;
     }
 
     document.getElementById('noAccountNote').classList.remove('show');
-    saveToken(result.data.token);
-    currentUser = _mergeVerificationState(result.data.user);
+    saveToken(data.session.access_token);
+    currentUser = _mergeVerificationState(_userFromSupabase(data.user));
     saveCurrentUser(currentUser);
     closeModal('authModal');
     updateNavForAuth();
@@ -158,7 +180,7 @@ async function doLogin() {
     showToast('✓ Welcome back, ' + currentUser.first + '!');
     afterAuth();
   } catch (err) {
-    showToast('Could not reach the server. Is it running?', true);
+    showToast('An unexpected error occurred.', true);
   }
 }
 
@@ -177,21 +199,23 @@ async function doSignup() {
     return;
   }
 
-  try {
-    const res = await fetch(`${API_BASE}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password: pass, first_name: first, last_name: last, role: selectedRole })
-    });
-    const result = await res.json();
+  const sb = window._supabase;
+  if (!sb) { showToast('Auth service not ready — please wait a moment and try again.', true); return; }
 
-    if (!result.success) {
-      showToast(result.error || 'Registration failed.', true);
+  try {
+    const { data, error } = await sb.auth.signUp({
+      email,
+      password: pass,
+      options: { data: { first_name: first, last_name: last, full_name: first + ' ' + last, role: selectedRole } }
+    });
+
+    if (error) {
+      showToast(error.message || 'Registration failed.', true);
       return;
     }
 
-    saveToken(result.data.token);
-    currentUser = result.data.user;
+    saveToken(data.session?.access_token || null);
+    currentUser = _userFromSupabase(data.user);
 
     // New signups must verify their email before accessing the platform
     currentUser.emailVerified              = false;
@@ -204,7 +228,7 @@ async function doSignup() {
     const _domainTrusted = selectedRole === 'student'
       ? (typeof isStudentTrustedDomain === 'function' && isStudentTrustedDomain(currentUser.email))
       : (typeof isEmployerTrustedDomain === 'function' && isEmployerTrustedDomain(currentUser.email));
-    currentUser.domainVerified    = _domainTrusted;
+    currentUser.domainVerified     = _domainTrusted;
     currentUser.coordinatorApproved = _domainTrusted; // trusted domains auto-approve
     saveCurrentUser(currentUser);
 
@@ -237,19 +261,16 @@ async function doSignup() {
     });
     _showVerifyPending(currentUser.email);
   } catch (err) {
-    showToast('Could not reach the server. Is it running?', true);
+    showToast('An unexpected error occurred.', true);
   }
 }
 
 // —— SIGN OUT ——
 async function doSignOut() {
   try {
-    await fetch(`${API_BASE}/auth/logout`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${getToken()}` }
-    });
+    if (window._supabase) await window._supabase.auth.signOut();
   } catch (_) {
-    // Proceed with local logout even if server is unreachable
+    // Proceed with local logout even if Supabase is unreachable
   }
   currentUser = null;
   saveCurrentUser(null);
