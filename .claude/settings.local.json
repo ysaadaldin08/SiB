@@ -5,7 +5,16 @@
       "mcp__supabase__execute_sql",
       "PowerShell(ls \"C:\\\\Users\\\\ysaad\\\\SiB\\\\server\" -Recurse | Select-Object FullName, Attributes | Where-Object { $_.Attributes -notmatch 'Directory' } | Sort-Object FullName)",
       "mcp__supabase__apply_migration",
-      "Bash(Select-Object -First 30)"
+      "Bash(Select-Object -First 30)",
+      "Bash(claude mcp *)",
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(claude mcp *)",
+      "PowerShell(Test-Path *)",
+      "Bash(supabase projects *)",
+      "Bash(supabase db *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
     ]
   }
 }

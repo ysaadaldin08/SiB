@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+
+# Local environment secrets — NEVER commit these
+# PAF-1 / PAF-2: .env files may contain API keys, Supabase service_role keys,
+# coordinator passwords, or other secrets. Adding them here prevents accidental commits.
+.env
+.env.local
+.env.development
+.env.production
+.env.staging
+*.env
+
+# Supabase local config (may contain service_role key)
+.supabase/
+supabase/.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Claude Code local config (contains MCP access tokens — never commit)
+.claude/mcp.json
+.claude/settings.local.json
+
+# Test artifacts — screenshots contain user data, do not commit
+temporary screenshots/
+screenshots/
+
+# Build artifacts
+dist/
+build/
