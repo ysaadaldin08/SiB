@@ -9,7 +9,9 @@ node_modules/
 .env.development
 .env.production
 .env.staging
+.env.*
 *.env
+!.env.example
 
 # Supabase local config (may contain service_role key)
 .supabase/
@@ -38,3 +40,6 @@ screenshots/
 # Build artifacts
 dist/
 build/
+
+# BFG password list — never commit
+passwords.txt

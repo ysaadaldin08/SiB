@@ -7,7 +7,7 @@ Items discovered during Phase 1 that are out of scope for this phase. Each is no
 ## Security Phase (planned)
 
 ### S-1 — Coordinator password is plaintext in localStorage (pre-existing)
-`data.js:migrateExistingData()` seeds Mr. Caap with `password: '***REMOVED***'` in plaintext in localStorage. After Phase 1, coordinator login goes through the Supabase Auth API, so this localStorage record is no longer consulted for actual authentication. The localStorage seed is kept for fallback compatibility but the field is unused. Confirm removal once Phase 6 replaces the seed with an invite flow.
+`data.js:migrateExistingData()` seeds Mr. Caap with `password: '[redacted — see SECURITY.md PAF-1]'` in plaintext in localStorage. After Phase 1, coordinator login goes through the Supabase Auth API, so this localStorage record is no longer consulted for actual authentication. The localStorage seed is kept for fallback compatibility but the field is unused. Confirm removal once Phase 6 replaces the seed with an invite flow.
 
 ### S-2 — Service-role key bypasses all Supabase RLS
 `server/middleware/auth.js` initializes the Supabase client with `SUPABASE_SERVICE_KEY`. Every new route added in Phase 2 (notifications, threads, messages) must include the `authenticate` middleware — authorization is enforced entirely in Express. The security review must audit every Phase 2 route for missing auth middleware.

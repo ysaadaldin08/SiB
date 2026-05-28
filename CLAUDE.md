@@ -277,7 +277,7 @@ Coordinators are co-op teachers (e.g. Mr. Caap, OCDSB) who oversee placements. T
 
 **Login:** `coordinator-login.html` — checks against `sib_coordinators[]` in localStorage. On success, sets `currentUser.role = 'coordinator'` and redirects to dashboard. No Supabase JWT is issued; API calls in the dashboard fail gracefully if the server is unreachable.
 
-**Seeded account:** `ysaadaldin08@gmail.com` / `***REMOVED***` (seeded in `migrateExistingData()` if the list is empty).
+**Seeded account:** `ysaadaldin08@gmail.com` / `[redacted — see SECURITY.md PAF-1; rotate via Supabase Dashboard]` (seeded in `migrateExistingData()` if the list is empty).
 TODO Phase 6: Replace shared password with an email-based invite-and-activate flow.
 
 **Coordinator dashboard sections:**

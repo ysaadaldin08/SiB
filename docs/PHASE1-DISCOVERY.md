@@ -270,7 +270,7 @@ The following test cases will be run after each sub-migration. All cross-device 
 - [ ] `markNotificationRead` persists across browser reload.
 
 ### After Sub-migration 2.2 — Coordinators
-- [ ] Browser B (fresh incognito): navigate to `coordinator-login.html`, sign in as Mr. Caap with email `ysaadaldin08@gmail.com` / `***REMOVED***`. Dashboard loads with coordinator content from the API.
+- [ ] Browser B (fresh incognito): navigate to `coordinator-login.html`, sign in as Mr. Caap with email `ysaadaldin08@gmail.com` / `[redacted — see SECURITY.md PAF-1]`. Dashboard loads with coordinator content from the API.
 - [ ] Mr. Caap's coordinator token grants access to `GET /api/coordinator/users` and `GET /api/coordinator/postings`.
 - [ ] `notifyCoordinators()` writes to the correct user IDs (now Supabase UUIDs, not `coord-seed-1`).
 
