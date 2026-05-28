@@ -5,9 +5,15 @@ const { supabase } = require('../middleware/auth');
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, first_name, last_name, role } = req.body;
+    const { email, password, first_name, last_name, role, tos_accepted } = req.body;
     if (!email || !password || !first_name || !last_name || !role) {
       return res.status(400).json({ success: false, error: 'All fields are required' });
+    }
+    if (!tos_accepted) {
+      return res.status(400).json({
+        success: false,
+        error: 'You must accept the Terms of Use and Privacy Policy to register.'
+      });
     }
     if (!['student', 'employer'].includes(role)) {
       return res.status(400).json({ success: false, error: 'Role must be student or employer' });
@@ -33,7 +39,13 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ success: false, error: signInErr.message });
     }
 
-    // Create profile row
+    // Record ToS acceptance timestamp on the profile row
+    // Requires tos_accepted_at TIMESTAMPTZ column in profiles (add via migration if missing)
+    await supabase.from('profiles')
+      .update({ tos_accepted_at: new Date().toISOString() })
+      .eq('id', created.user.id);
+
+    // Create role-specific profile row
     if (role === 'student') {
       await supabase.from('students').insert({
         id: created.user.id,
@@ -57,7 +69,7 @@ router.post('/register', async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('register error:', err);
+    console.error('register error:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
@@ -105,7 +117,7 @@ router.post('/login', async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('login error:', err);
+    console.error('login error:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
@@ -174,7 +186,7 @@ router.get('/session', async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('session error:', err);
+    console.error('session error:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
@@ -232,7 +244,7 @@ router.post('/setup-profile', async (req, res) => {
       }
     });
   } catch (err) {
-    console.error('setup-profile error:', err);
+    console.error('setup-profile error:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });

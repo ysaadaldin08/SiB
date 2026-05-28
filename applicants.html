@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- SECURITY: CSP, MIME-type, and referrer headers. 'unsafe-inline' in script-src is required
+     by the current inline-script architecture; migrate to nonces in Phase 8 build pipeline. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src https://fonts.gstatic.com; img-src 'self' https://placehold.co https://mhauftulhvnguualfcfw.supabase.co data: blob:; connect-src 'self' https://mhauftulhvnguualfcfw.supabase.co http://localhost:3001; frame-ancestors 'none'; object-src 'none'; base-uri 'self';">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
 <title>Applicants — Students in Business</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
@@ -94,20 +99,22 @@ async function renderApplicants(posting) {
     </div>`;
   } else {
     html += apps.map(a => {
-      const initial = a.studentName ? a.studentName.charAt(0).toUpperCase() : '?';
-      const resumeLink = a.resumeUrl
-        ? `<a href="${a.resumeUrl}" target="_blank" rel="noopener" class="applicant-resume-link">📎 Resume</a>`
+      const initial = a.studentName ? _htmlEsc(a.studentName.charAt(0).toUpperCase()) : '?';
+      // Only allow https:// resume URLs to prevent javascript: or data: link injection
+      const safeResumeUrl = a.resumeUrl && /^https?:\/\//i.test(a.resumeUrl) ? a.resumeUrl : null;
+      const resumeLink = safeResumeUrl
+        ? `<a href="${_htmlEsc(safeResumeUrl)}" target="_blank" rel="noopener noreferrer" class="applicant-resume-link">📎 Resume</a>`
         : `<span style="font-size:12.5px;color:var(--text-faint);">No resume</span>`;
       const coverHtml = a.coverNote
-        ? `<div class="applicant-cover">"${a.coverNote}"</div>`
+        ? `<div class="applicant-cover">"${_htmlEsc(a.coverNote)}"</div>`
         : '';
       return `
-        <div class="applicant-card" id="acard-${a.id}">
+        <div class="applicant-card" id="acard-${_htmlEsc(a.id)}">
           <div class="applicant-card-top">
             <div class="applicant-avatar">${initial}</div>
             <div class="applicant-info">
-              <div class="applicant-name">${a.studentName}</div>
-              <div class="applicant-detail">${a.school}${a.grade ? ' · Grade ' + a.grade : ''} · ${a.studentEmail}</div>
+              <div class="applicant-name">${_htmlEsc(a.studentName)}</div>
+              <div class="applicant-detail">${_htmlEsc(a.school)}${a.grade ? ' · Grade ' + _htmlEsc(String(a.grade)) : ''} · ${_htmlEsc(a.studentEmail || '')}</div>
             </div>
             ${statusPill(a.status)}
           </div>
@@ -117,7 +124,7 @@ async function renderApplicants(posting) {
             ${buildStatusSelect(a.id, a.status)}
             ${resumeLink}
             ${a.status === 'Accepted'
-              ? `<button onclick="goMessageStudent('${a.id}','${a.studentEmail || a.studentId}','${_htmlEsc(a.studentName)}','${a.postingId}','${_currentPosting ? _htmlEsc(_currentPosting.title) : ''}')"
+              ? `<button onclick="goMessageStudent('${_htmlEsc(a.id)}','${_htmlEsc(a.studentId || '')}','${_htmlEsc(a.studentName)}','${_htmlEsc(a.postingId)}','${_currentPosting ? _htmlEsc(_currentPosting.title) : ''}')"
                   style="display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:7px;background:#dbeafe;color:#1d4ed8;font-family:var(--sans);font-size:12.5px;font-weight:700;border:none;cursor:pointer;">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                   Message student</button>`

@@ -1,8 +1,25 @@
 # SiB Security, Legal Compliance & Operational Resilience Audit
 
 **Platform:** Students in Business (SiB) — Ottawa co-op placement platform  
-**Audit date:** 2026-05-25  
-**Status:** In-progress hardening pass — Phase 8 items listed under DEFERRED
+**Audit date:** 2026-05-25 (updated 2026-05-28)  
+**Status:** Code-level CRITICAL/HIGH items resolved — manual actions required before launch
+
+---
+
+## Audit Status — 2026-05-28
+
+**Automated fixes applied:** All CRITICAL and HIGH code-level items resolved by
+Claude Code audit pass (2026-05-28). See AUTO-FIXES APPLIED section of the audit
+report for full change log.
+
+**Remaining manual actions required before launch:**
+- [ ] CRITICAL: Rotate coordinator password + BFG Git history purge
+- [ ] CRITICAL: Verify and apply Supabase migrations in Dashboard SQL Editor
+- [ ] CRITICAL: Confirm server/.env has never been committed (git log check)
+- [ ] HIGH: Deploy audit-log and daily-export Edge Functions
+- [ ] HIGH: Engage lawyer for privacy.html and terms.html review
+- [ ] HIGH: Confirm Supabase plan tier (PITR availability)
+- [ ] HIGH: Age verification gate (Phase 8)
 
 ---
 

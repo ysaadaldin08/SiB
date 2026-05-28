@@ -14,26 +14,47 @@ router.get('/', authenticate, async (req, res) => {
     if (error) return res.status(500).json({ success: false, error: error.message });
     res.json({ success: true, data: data || [] });
   } catch (err) {
-    console.error('notifications GET /:', err);
+    console.error('notifications GET /:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
 
+const VALID_NOTIFICATION_TYPES = [
+  'signupConfirm', 'newListing', 'applicationSubmitted', 'newApplication',
+  'applicationStatus', 'newMessage', 'messageFlagged', 'newPlacement',
+  'newUserReview', 'employerPendingApproval', 'concernReport'
+];
+
 // POST /api/notifications — insert one notification
-// user_id in body allows coordinator fan-out; falls back to own id.
+// Coordinators may fan-out to any user_id; other roles may only notify themselves.
 router.post('/', authenticate, async (req, res) => {
   try {
     const { user_id, type, payload } = req.body;
     if (!type) return res.status(400).json({ success: false, error: 'type is required' });
+    if (!VALID_NOTIFICATION_TYPES.includes(type)) {
+      return res.status(400).json({ success: false, error: 'Invalid notification type.' });
+    }
+
+    // Only coordinators may post notifications for other users
+    let targetUserId = req.user.id;
+    if (user_id && user_id !== req.user.id) {
+      const { data: profile } = await supabase
+        .from('profiles').select('role').eq('id', req.user.id).single();
+      if (profile?.role !== 'coordinator') {
+        return res.status(403).json({ success: false, error: 'Cannot create notifications for other users' });
+      }
+      targetUserId = user_id;
+    }
+
     const { data, error } = await supabase
       .from('notifications')
-      .insert({ user_id: user_id || req.user.id, type, payload: payload || {} })
+      .insert({ user_id: targetUserId, type, payload: payload || {} })
       .select()
       .single();
     if (error) return res.status(500).json({ success: false, error: error.message });
     res.json({ success: true, data });
   } catch (err) {
-    console.error('notifications POST /:', err);
+    console.error('notifications POST /:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
@@ -50,7 +71,7 @@ router.put('/read-all', authenticate, async (req, res) => {
     if (error) return res.status(500).json({ success: false, error: error.message });
     res.json({ success: true });
   } catch (err) {
-    console.error('notifications PUT /read-all:', err);
+    console.error('notifications PUT /read-all:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
@@ -68,7 +89,7 @@ router.put('/:id/read', authenticate, async (req, res) => {
     if (error) return res.status(400).json({ success: false, error: error.message });
     res.json({ success: true, data });
   } catch (err) {
-    console.error('notifications PUT /:id/read:', err);
+    console.error('notifications PUT /:id/read:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
@@ -86,7 +107,7 @@ router.put('/:id/emailed', authenticate, async (req, res) => {
     if (error) return res.status(400).json({ success: false, error: error.message });
     res.json({ success: true, data });
   } catch (err) {
-    console.error('notifications PUT /:id/emailed:', err);
+    console.error('notifications PUT /:id/emailed:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });

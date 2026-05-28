@@ -3,6 +3,8 @@ const router = express.Router();
 const { supabase, authenticate } = require('../middleware/auth');
 const messagesRouter = require('./messages');
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // Nest messages under /:id/messages
 router.use('/:id/messages', messagesRouter);
 
@@ -64,7 +66,7 @@ router.get('/', authenticate, async (req, res) => {
     const enriched = await _enrichThreads(data || []);
     res.json({ success: true, data: enriched });
   } catch (err) {
-    console.error('threads GET /:', err);
+    console.error('threads GET /:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
@@ -116,7 +118,7 @@ router.post('/', authenticate, async (req, res) => {
     if (error) return res.status(500).json({ success: false, error: error.message });
     res.json({ success: true, data });
   } catch (err) {
-    console.error('threads POST /:', err);
+    console.error('threads POST /:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
@@ -124,6 +126,7 @@ router.post('/', authenticate, async (req, res) => {
 // GET /api/threads/:id — single thread (participant or coordinator)
 router.get('/:id', authenticate, async (req, res) => {
   try {
+    if (!UUID_RE.test(req.params.id)) return res.status(400).json({ success: false, error: 'Invalid thread ID' });
     const { data, error } = await supabase
       .from('message_threads')
       .select('*')
@@ -138,7 +141,7 @@ router.get('/:id', authenticate, async (req, res) => {
     }
     res.json({ success: true, data });
   } catch (err) {
-    console.error('threads GET /:id:', err);
+    console.error('threads GET /:id:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
@@ -146,6 +149,7 @@ router.get('/:id', authenticate, async (req, res) => {
 // PUT /api/threads/:id/status — update status (participant or coordinator)
 router.put('/:id/status', authenticate, async (req, res) => {
   try {
+    if (!UUID_RE.test(req.params.id)) return res.status(400).json({ success: false, error: 'Invalid thread ID' });
     const { status } = req.body;
     if (!['open', 'closed', 'flagged'].includes(status)) {
       return res.status(400).json({ success: false, error: 'status must be open, closed, or flagged' });
@@ -171,7 +175,7 @@ router.put('/:id/status', authenticate, async (req, res) => {
     if (error) return res.status(500).json({ success: false, error: error.message });
     res.json({ success: true, data });
   } catch (err) {
-    console.error('threads PUT /:id/status:', err);
+    console.error('threads PUT /:id/status:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
@@ -179,6 +183,7 @@ router.put('/:id/status', authenticate, async (req, res) => {
 // PUT /api/threads/:id/review — coordinator-only: record review + optional note
 router.put('/:id/review', authenticate, async (req, res) => {
   try {
+    if (!UUID_RE.test(req.params.id)) return res.status(400).json({ success: false, error: 'Invalid thread ID' });
     const role = await _getUserRole(req.user.id);
     if (role !== 'coordinator') {
       return res.status(403).json({ success: false, error: 'Coordinator access required' });
@@ -197,7 +202,7 @@ router.put('/:id/review', authenticate, async (req, res) => {
     if (error) return res.status(500).json({ success: false, error: error.message });
     res.json({ success: true, data });
   } catch (err) {
-    console.error('threads PUT /:id/review:', err);
+    console.error('threads PUT /:id/review:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });

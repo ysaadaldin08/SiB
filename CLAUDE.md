@@ -273,7 +273,7 @@ The following is the complete list of safety controls implemented for the minor-
 
 ## Coordinator Role (`coordinator-login.html` + `coordinator-dashboard.html`)
 
-Coordinators are co-op teachers (e.g. Mr. Caap, OCDSB) who oversee placements. There is no public coordinator signup — accounts are seeded in `data.js` and manually managed.
+Coordinators are co-op teachers who oversee placements. There is no public coordinator signup — accounts are seeded in `data.js` and manually managed.
 
 **Login:** `coordinator-login.html` — checks against `sib_coordinators[]` in localStorage. On success, sets `currentUser.role = 'coordinator'` and redirects to dashboard. No Supabase JWT is issued; API calls in the dashboard fail gracefully if the server is unreachable.
 

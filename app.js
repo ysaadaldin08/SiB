@@ -161,18 +161,18 @@ function renderStudents(list) {
     return;
   }
   grid.innerHTML = list.map((s, i) => `
-    <div class="scard" data-aos="fade-up" data-aos-delay="${Math.min(i * 80, 320)}" onclick="openSProfile(${s.id})">
+    <div class="scard" data-aos="fade-up" data-aos-delay="${Math.min(i * 80, 320)}" onclick="openSProfile(${Number(s.id)})">
       <div class="scard-top">
-        <div class="scard-avatar">${s.name.charAt(0)}</div>
+        <div class="scard-avatar">${_htmlEsc(s.name.charAt(0))}</div>
         <span class="${s.status==='verified'?'badge-v':'badge-p'}">${s.status==='verified'?'Verified Ready':'Pending Review'}</span>
       </div>
-      <div class="scard-name">${s.name}</div>
-      <div class="scard-school">${s.school} · Grade ${s.grade}</div>
-      <div class="tag-row">${s.tracks.map(t=>`<span class="ttag ${TRACK_CLASS[t]||'tt-biz'}">${t}</span>`).join('')}</div>
-      <div class="scard-skills">Skills: ${s.skills.slice(0,3).join(', ')}</div>
+      <div class="scard-name">${_htmlEsc(s.name)}</div>
+      <div class="scard-school">${_htmlEsc(s.school)} · Grade ${_htmlEsc(String(s.grade))}</div>
+      <div class="tag-row">${s.tracks.map(t=>`<span class="ttag ${TRACK_CLASS[t]||'tt-biz'}">${_htmlEsc(t)}</span>`).join('')}</div>
+      <div class="scard-skills">Skills: ${_htmlEsc(s.skills.slice(0,3).join(', '))}</div>
       <div class="scard-footer">
-        <div class="avail-label"><strong>${s.availability}</strong> available</div>
-        <button class="btn-intro" onclick="event.stopPropagation();openIntroModal(${s.id})">Request Intro</button>
+        <div class="avail-label"><strong>${_htmlEsc(s.availability)}</strong> available</div>
+        <button class="btn-intro" onclick="event.stopPropagation();openIntroModal(${Number(s.id)})">Request Intro</button>
       </div>
     </div>
   `).join('');
@@ -191,26 +191,26 @@ function openSProfile(id) {
   const s = students.find(x => x.id === id);
   if (!s) return;
   document.getElementById('profileModalContent').innerHTML = `
-    <div class="pmodal-avatar">${s.name.charAt(0)}</div>
+    <div class="pmodal-avatar">${_htmlEsc(s.name.charAt(0))}</div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
-      <div class="modal-title" style="margin-bottom:0;">${s.name}</div>
+      <div class="modal-title" style="margin-bottom:0;">${_htmlEsc(s.name)}</div>
       <span class="${s.status==='verified'?'badge-v':'badge-p'}">${s.status==='verified'?'Verified Ready':'Pending Review'}</span>
     </div>
-    <div class="modal-sub">${s.school} · Grade ${s.grade}</div>
-    <div class="pmodal-bio">${s.bio}</div>
+    <div class="modal-sub">${_htmlEsc(s.school)} · Grade ${_htmlEsc(String(s.grade))}</div>
+    <div class="pmodal-bio">${_htmlEsc(s.bio)}</div>
     <div class="pmodal-sec">Tracks</div>
-    <div class="tag-row" style="margin-bottom:16px;">${s.tracks.map(t=>`<span class="ttag ${TRACK_CLASS[t]||'tt-biz'}">${t}</span>`).join('')}</div>
+    <div class="tag-row" style="margin-bottom:16px;">${s.tracks.map(t=>`<span class="ttag ${TRACK_CLASS[t]||'tt-biz'}">${_htmlEsc(t)}</span>`).join('')}</div>
     <div class="pmodal-sec">Skills</div>
-    <div class="skills-row">${s.skills.map(sk=>`<span class="skill-chip">${sk}</span>`).join('')}</div>
+    <div class="skills-row">${s.skills.map(sk=>`<span class="skill-chip">${_htmlEsc(sk)}</span>`).join('')}</div>
     <div class="pmeta">
-      <div class="pmeta-item"><div class="pk">Availability</div><div class="pv">${s.availability}</div></div>
-      <div class="pmeta-item"><div class="pk">Commute</div><div class="pv">${s.commute}</div></div>
-      <div class="pmeta-item"><div class="pk">Preferred Start</div><div class="pv">${s.startDate}</div></div>
-      <div class="pmeta-item"><div class="pk">References</div><div class="pv">${s.references}</div></div>
+      <div class="pmeta-item"><div class="pk">Availability</div><div class="pv">${_htmlEsc(s.availability)}</div></div>
+      <div class="pmeta-item"><div class="pk">Commute</div><div class="pv">${_htmlEsc(s.commute)}</div></div>
+      <div class="pmeta-item"><div class="pk">Preferred Start</div><div class="pv">${_htmlEsc(s.startDate)}</div></div>
+      <div class="pmeta-item"><div class="pk">References</div><div class="pv">${_htmlEsc(s.references)}</div></div>
     </div>
     <div class="modal-btns">
       <button class="btn-modal-outline" onclick="showToast('Resume request sent to coordinator')">Request Resume</button>
-      <button class="btn-modal-fill" onclick="closeModal('profileModal');openIntroModal(${s.id})">Request Introduction →</button>
+      <button class="btn-modal-fill" onclick="closeModal('profileModal');openIntroModal(${Number(s.id)})">Request Introduction →</button>
     </div>
   `;
   openModal('profileModal');

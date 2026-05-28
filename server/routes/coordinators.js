@@ -14,7 +14,7 @@ router.get('/', authenticate, async (req, res) => {
     if (error) return res.status(500).json({ success: false, error: error.message });
     res.json({ success: true, data: data || [] });
   } catch (err) {
-    console.error('coordinators GET /:', err);
+    console.error('coordinators GET /:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });

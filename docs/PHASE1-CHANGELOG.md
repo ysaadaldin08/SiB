@@ -88,7 +88,7 @@ All changes made during Phase 1. Each entry notes what was changed, why, and wha
 ### Blocker 1 — Coordinator login: localStorage → real Supabase API
 **File:** `coordinator-login.html`  
 **Change:** `doCoordinatorLogin()` converted from sync to `async`. Now POSTs to `API_BASE + '/auth/login'` (the existing route already reads `profiles.role` and returns it in the token payload). Checks that the returned role is `'coordinator'` before proceeding. Falls back to a user-friendly error toast on network failure.  
-**Prerequisite:** Mr. Caap's Supabase Auth user (`419dca7c...`) must have a password set — this is done by the `/api/dev/seed` endpoint on first demo run (see Blocker 2). The coordinator UUID and `profiles.role = 'coordinator'` row were confirmed to already exist.  
+**Prerequisite:** the SiB coordinator's Supabase Auth user (`419dca7c...`) must have a password set — this is done by the `/api/dev/seed` endpoint on first demo run (see Blocker 2). The coordinator UUID and `profiles.role = 'coordinator'` row were confirmed to already exist.  
 **Known issue:** The `GET /coordinator/users` route selects a non-existent `full_name` column from `profiles` and will error — tracked as PHASE1-FINDINGS.md B-1, fixed in Phase 2.2.  
 **Tested:** After running `demoAsCoordinator()` once (which calls `/api/dev/seed` to set the password), coordinator login via `coordinator-login.html` returns a real JWT and redirects to the dashboard.
 

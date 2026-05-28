@@ -264,28 +264,29 @@ function postingCardHTML(posting, opts = {}) {
     ? 'Deadline: ' + formatDeadlineDate(posting.deadline)
     : 'Open until filled';
   const deadlineCls = posting.deadline ? 'posting-card-deadline' : 'posting-card-date';
-  const href = opts.href || ('posting.html?id=' + posting.id);
+  // Only allow relative URLs or same-origin hrefs to prevent open-redirect
+  const safeHref = (opts.href && /^[^:]*$/.test(opts.href)) ? opts.href : ('posting.html?id=' + encodeURIComponent(posting.id));
   return `
-    <a class="posting-card" href="${href}">
+    <a class="posting-card" href="${_htmlEsc(safeHref)}">
       <div class="posting-card-top">
-        <div class="posting-company-logo">${initial}</div>
+        <div class="posting-company-logo">${_htmlEsc(initial)}</div>
         <div class="posting-card-info">
-          <div class="posting-card-company">${posting.companyName}</div>
-          <div class="posting-card-title">${posting.title}</div>
+          <div class="posting-card-company">${_htmlEsc(posting.companyName)}</div>
+          <div class="posting-card-title">${_htmlEsc(posting.title)}</div>
         </div>
         ${workModeBadge(posting.workMode)}
       </div>
       <div class="posting-card-tags">
         ${trackTag(posting.track)}
-        <span class="ttag" style="background:var(--mist);color:var(--text-muted);">${posting.hoursPerWeek} hrs/week</span>
+        <span class="ttag" style="background:var(--mist);color:var(--text-muted);">${_htmlEsc(String(posting.hoursPerWeek))} hrs/week</span>
       </div>
       <div class="posting-card-meta">
-        <span>${posting.location}</span>
-        ${posting.startDate ? `<span>Start: ${posting.startDate}</span>` : ''}
+        <span>${_htmlEsc(posting.location)}</span>
+        ${posting.startDate ? `<span>Start: ${_htmlEsc(posting.startDate)}</span>` : ''}
       </div>
       <div class="posting-card-footer">
         <span class="posting-card-date">Posted ${timeAgo(posting.createdAt)}</span>
-        <span class="${deadlineCls}">${deadlineText}</span>
+        <span class="${deadlineCls}">${_htmlEsc(deadlineText)}</span>
       </div>
     </a>`;
 }

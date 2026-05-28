@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { supabase, authenticate } = require('../middleware/auth');
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 async function requireCoordinator(req, res, next) {
   try {
     const { data: profile } = await supabase
@@ -10,8 +12,6 @@ async function requireCoordinator(req, res, next) {
       .eq('id', req.user.id)
       .single();
     if (profile?.role === 'coordinator') return next();
-    // Fallback: user_metadata (if profiles table doesn't exist yet)
-    if (req.user.user_metadata?.role === 'coordinator') return next();
     return res.status(403).json({ success: false, error: 'Coordinator access required.' });
   } catch (_) {
     return res.status(403).json({ success: false, error: 'Coordinator access required.' });
@@ -36,7 +36,7 @@ router.get('/postings', authenticate, requireCoordinator, async (req, res) => {
       data: postings.map(p => ({ ...p, applicant_count: countMap[p.id] || 0 }))
     });
   } catch (err) {
-    console.error('coordinator GET /postings:', err);
+    console.error('coordinator GET /postings:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
@@ -51,7 +51,7 @@ router.get('/applications', authenticate, requireCoordinator, async (req, res) =
     if (error) return res.status(500).json({ success: false, error: error.message });
     res.json({ success: true, data });
   } catch (err) {
-    console.error('coordinator GET /applications:', err);
+    console.error('coordinator GET /applications:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
@@ -59,6 +59,7 @@ router.get('/applications', authenticate, requireCoordinator, async (req, res) =
 // PUT /api/coordinator/applications/:id — update application status
 router.put('/applications/:id', authenticate, requireCoordinator, async (req, res) => {
   try {
+    if (!UUID_RE.test(req.params.id)) return res.status(400).json({ success: false, error: 'Invalid application ID' });
     const { status } = req.body;
     const valid = ['Applied', 'Under Review', 'Interview', 'Rejected', 'Accepted'];
     if (!status || !valid.includes(status)) {
@@ -73,7 +74,7 @@ router.put('/applications/:id', authenticate, requireCoordinator, async (req, re
     if (error) return res.status(400).json({ success: false, error: error.message });
     res.json({ success: true, data });
   } catch (err) {
-    console.error('coordinator PUT /applications/:id:', err);
+    console.error('coordinator PUT /applications/:id:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
@@ -81,6 +82,7 @@ router.put('/applications/:id', authenticate, requireCoordinator, async (req, re
 // PUT /api/coordinator/postings/:id — update any posting field
 router.put('/postings/:id', authenticate, requireCoordinator, async (req, res) => {
   try {
+    if (!UUID_RE.test(req.params.id)) return res.status(400).json({ success: false, error: 'Invalid posting ID' });
     const allowed = ['title', 'description', 'responsibilities', 'requirements', 'track', 'work_mode', 'hours_per_week', 'location', 'start_date', 'deadline', 'is_active'];
     const updates = { updated_at: new Date().toISOString() };
     for (const key of allowed) {
@@ -95,7 +97,7 @@ router.put('/postings/:id', authenticate, requireCoordinator, async (req, res) =
     if (error) return res.status(400).json({ success: false, error: error.message });
     res.json({ success: true, data });
   } catch (err) {
-    console.error('coordinator PUT /postings/:id:', err);
+    console.error('coordinator PUT /postings/:id:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
@@ -103,12 +105,13 @@ router.put('/postings/:id', authenticate, requireCoordinator, async (req, res) =
 // DELETE /api/coordinator/postings/:id — delete posting and all its applications
 router.delete('/postings/:id', authenticate, requireCoordinator, async (req, res) => {
   try {
+    if (!UUID_RE.test(req.params.id)) return res.status(400).json({ success: false, error: 'Invalid posting ID' });
     await supabase.from('applications').delete().eq('posting_id', req.params.id);
     const { error } = await supabase.from('postings').delete().eq('id', req.params.id);
     if (error) return res.status(400).json({ success: false, error: error.message });
     res.json({ success: true });
   } catch (err) {
-    console.error('coordinator DELETE /postings/:id:', err);
+    console.error('coordinator DELETE /postings/:id:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
@@ -166,7 +169,7 @@ router.get('/users', authenticate, requireCoordinator, async (req, res) => {
       }))
     });
   } catch (err) {
-    console.error('coordinator GET /users:', err);
+    console.error('coordinator GET /users:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
@@ -174,12 +177,13 @@ router.get('/users', authenticate, requireCoordinator, async (req, res) => {
 // PUT /api/coordinator/users/:id — email-verify a user (fix for B-2)
 router.put('/users/:id', authenticate, requireCoordinator, async (req, res) => {
   try {
+    if (!UUID_RE.test(req.params.id)) return res.status(400).json({ success: false, error: 'Invalid user ID' });
     if (req.body.email_verified) {
       await supabase.auth.admin.updateUserById(req.params.id, { email_confirm: true });
     }
     res.json({ success: true });
   } catch (err) {
-    console.error('coordinator PUT /users/:id:', err);
+    console.error('coordinator PUT /users/:id:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
@@ -187,6 +191,7 @@ router.put('/users/:id', authenticate, requireCoordinator, async (req, res) => {
 // PUT /api/coordinator/employers/:id/approve — grant employer posting rights
 router.put('/employers/:id/approve', authenticate, requireCoordinator, async (req, res) => {
   try {
+    if (!UUID_RE.test(req.params.id)) return res.status(400).json({ success: false, error: 'Invalid employer ID' });
     const { data, error } = await supabase
       .from('employers')
       .update({ coordinator_approved: true })
@@ -196,7 +201,7 @@ router.put('/employers/:id/approve', authenticate, requireCoordinator, async (re
     if (error) return res.status(400).json({ success: false, error: error.message });
     res.json({ success: true, data });
   } catch (err) {
-    console.error('coordinator PUT /employers/:id/approve:', err);
+    console.error('coordinator PUT /employers/:id/approve:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
@@ -214,7 +219,7 @@ router.get('/threads', authenticate, requireCoordinator, async (req, res) => {
     const enriched = await _enrichCoordThreads(threads || []);
     res.json({ success: true, data: enriched });
   } catch (err) {
-    console.error('coordinator GET /threads:', err);
+    console.error('coordinator GET /threads:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
@@ -222,6 +227,7 @@ router.get('/threads', authenticate, requireCoordinator, async (req, res) => {
 // PUT /api/coordinator/messages/:id/review — mark a message as coordinator-reviewed
 router.put('/messages/:id/review', authenticate, requireCoordinator, async (req, res) => {
   try {
+    if (!UUID_RE.test(req.params.id)) return res.status(400).json({ success: false, error: 'Invalid message ID' });
     const { data, error } = await supabase
       .from('messages')
       .update({ reviewed_by_coordinator: true })
@@ -231,7 +237,7 @@ router.put('/messages/:id/review', authenticate, requireCoordinator, async (req,
     if (error) return res.status(400).json({ success: false, error: error.message });
     res.json({ success: true, data });
   } catch (err) {
-    console.error('coordinator PUT /messages/:id/review:', err);
+    console.error('coordinator PUT /messages/:id/review:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });

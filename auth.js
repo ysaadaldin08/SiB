@@ -26,7 +26,7 @@ function isValidPhone(p) {
 
 // Shared HTML escaper — also defined in email.js; var allows safe redeclaration
 var _htmlEsc = function (s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 };
 
 // —— VERIFICATION CONSTANTS ——
@@ -194,7 +194,8 @@ async function doSignup() {
   if (!isValidEmail(email)) { showToast('Please enter a valid email address.', true); return; }
   if (pass.length < 8) { showToast('Password must be at least 8 characters.', true); return; }
   const termsBox = document.getElementById('_termsCheck');
-  if (termsBox && !termsBox.checked) {
+  const tosAccepted = termsBox ? termsBox.checked : false;
+  if (!tosAccepted) {
     showToast('Please accept the Terms of Use and Privacy Policy to continue.', true);
     return;
   }
@@ -206,7 +207,13 @@ async function doSignup() {
     const { data, error } = await sb.auth.signUp({
       email,
       password: pass,
-      options: { data: { first_name: first, last_name: last, full_name: first + ' ' + last, role: selectedRole } }
+      options: { data: {
+        first_name: first, last_name: last,
+        full_name: first + ' ' + last,
+        role: selectedRole,
+        tos_accepted: tosAccepted,
+        tos_accepted_at: new Date().toISOString()
+      }}
     });
 
     if (error) {
@@ -275,6 +282,8 @@ async function doSignOut() {
   currentUser = null;
   saveCurrentUser(null);
   saveToken(null);
+  // Clear ALL sib_* keys so no stale PII remains after logout (PIPEDA data minimization)
+  Object.keys(localStorage).filter(k => k.startsWith('sib_')).forEach(k => localStorage.removeItem(k));
   _removeVerifyOverlays();
   updateNavForAuth();
   window.location.href = 'index.html';
@@ -332,7 +341,7 @@ function updateNavForAuth() {
           style="display:flex;align-items:center;gap:7px;padding:7px 13px;border-radius:9px;
                  border:1.5px solid #e5e7eb;background:#fff;font-size:13.5px;font-weight:600;
                  color:var(--ink);cursor:pointer;">
-          <span>${currentUser.name}</span>${unverifiedBadge}
+          <span>${_htmlEsc(currentUser.name)}</span>${unverifiedBadge}
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4l4 4 4-4"/></svg>
         </button>
         <div id="_userDropdown"

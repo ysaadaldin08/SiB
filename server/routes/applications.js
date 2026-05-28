@@ -1,9 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { supabase } = require('../middleware/auth');
+const { supabase, authenticate } = require('../middleware/auth');
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const MAX_COVER_NOTE  = 2000;
+const MAX_RESUME_URL  = 500;
 
 // POST /api/applications — student applies to a posting
-router.post('/', async (req, res) => {
+router.post('/', authenticate, async (req, res) => {
   try {
     const { data: student } = await supabase
       .from('students')
@@ -14,6 +18,34 @@ router.post('/', async (req, res) => {
 
     const { posting_id, cover_note, resume_url } = req.body;
     if (!posting_id) return res.status(400).json({ success: false, error: 'posting_id is required' });
+    if (!UUID_RE.test(posting_id)) return res.status(400).json({ success: false, error: 'Invalid posting_id format' });
+
+    // Validate optional fields
+    if (cover_note && cover_note.length > MAX_COVER_NOTE) {
+      return res.status(400).json({ success: false, error: `Cover note must be ${MAX_COVER_NOTE} characters or fewer` });
+    }
+    if (resume_url) {
+      if (resume_url.length > MAX_RESUME_URL) {
+        return res.status(400).json({ success: false, error: `Resume URL must be ${MAX_RESUME_URL} characters or fewer` });
+      }
+      if (!/^https?:\/\//i.test(resume_url)) {
+        return res.status(400).json({ success: false, error: 'Resume URL must start with https://' });
+      }
+    }
+
+    // Server-side daily application limit: 5 applications per student per day
+    const dayAgo = new Date(Date.now() - 86_400_000).toISOString();
+    const { count: appCount } = await supabase
+      .from('applications')
+      .select('*', { count: 'exact', head: true })
+      .eq('student_id', req.user.id)
+      .gte('created_at', dayAgo);
+    if (appCount >= 5) {
+      return res.status(429).json({
+        success: false,
+        error: "You've reached the daily application limit. Try again tomorrow."
+      });
+    }
 
     // Check if posting exists and is active
     const { data: posting } = await supabase
@@ -37,13 +69,13 @@ router.post('/', async (req, res) => {
     }
     res.status(201).json({ success: true, data });
   } catch (err) {
-    console.error('applications POST /:', err);
+    console.error('applications POST /:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
 
 // GET /api/applications/mine — student sees their own applications
-router.get('/mine', async (req, res) => {
+router.get('/mine', authenticate, async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('applications')
@@ -53,14 +85,15 @@ router.get('/mine', async (req, res) => {
     if (error) return res.status(500).json({ success: false, error: error.message });
     res.json({ success: true, data });
   } catch (err) {
-    console.error('applications GET /mine:', err);
+    console.error('applications GET /mine:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
 
 // GET /api/applications/posting/:id — employer sees applicants for a posting
-router.get('/posting/:id', async (req, res) => {
+router.get('/posting/:id', authenticate, async (req, res) => {
   try {
+    if (!UUID_RE.test(req.params.id)) return res.status(400).json({ success: false, error: 'Invalid posting ID' });
     const { data: posting } = await supabase
       .from('postings')
       .select('employer_id')
@@ -77,14 +110,15 @@ router.get('/posting/:id', async (req, res) => {
     if (error) return res.status(500).json({ success: false, error: error.message });
     res.json({ success: true, data });
   } catch (err) {
-    console.error('applications GET /posting/:id:', err);
+    console.error('applications GET /posting/:id:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
 
 // PUT /api/applications/:id — employer updates application status
-router.put('/:id', async (req, res) => {
+router.put('/:id', authenticate, async (req, res) => {
   try {
+    if (!UUID_RE.test(req.params.id)) return res.status(400).json({ success: false, error: 'Invalid application ID' });
     const { status } = req.body;
     const valid = ['Applied', 'Under Review', 'Interview', 'Rejected', 'Accepted'];
     if (!status || !valid.includes(status)) {
@@ -109,7 +143,7 @@ router.put('/:id', async (req, res) => {
     if (error) return res.status(400).json({ success: false, error: error.message });
     res.json({ success: true, data });
   } catch (err) {
-    console.error('applications PUT /:id:', err);
+    console.error('applications PUT /:id:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });

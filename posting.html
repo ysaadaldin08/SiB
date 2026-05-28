@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- SECURITY: CSP, MIME-type, and referrer headers. 'unsafe-inline' in script-src is required
+     by the current inline-script architecture; migrate to nonces in Phase 8 build pipeline. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src https://fonts.gstatic.com; img-src 'self' https://placehold.co https://mhauftulhvnguualfcfw.supabase.co data: blob:; connect-src 'self' https://mhauftulhvnguualfcfw.supabase.co http://localhost:3001; frame-ancestors 'none'; object-src 'none'; base-uri 'self';">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
 <title>Placement Detail — Students in Business</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
@@ -184,20 +189,20 @@ function renderPage(posting) {
           <!-- Main -->
           <div class="posting-detail-main">
             <div class="posting-header-company">
-              <div style="width:38px;height:38px;border-radius:9px;background:var(--ink);display:inline-flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:15px;color:white;flex-shrink:0;">${posting.companyName.charAt(0)}</div>
-              ${posting.companyName}
+              <div style="width:38px;height:38px;border-radius:9px;background:var(--ink);display:inline-flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:15px;color:white;flex-shrink:0;">${_htmlEsc(posting.companyName.charAt(0))}</div>
+              ${_htmlEsc(posting.companyName)}
             </div>
-            <div class="posting-header-title">${posting.title}</div>
-            <div class="posting-header-meta">${posting.location}${posting.startDate ? ' &middot; Start: ' + posting.startDate : ''}</div>
+            <div class="posting-header-title">${_htmlEsc(posting.title)}</div>
+            <div class="posting-header-meta">${_htmlEsc(posting.location)}${posting.startDate ? ' &middot; Start: ' + _htmlEsc(posting.startDate) : ''}</div>
             <div class="posting-header-tags">
               ${trackTag(posting.track)}
               ${workModeBadge(posting.workMode)}
-              <span class="ttag" style="background:var(--mist);color:var(--text-muted);">${posting.hoursPerWeek} hrs/week</span>
+              <span class="ttag" style="background:var(--mist);color:var(--text-muted);">${_htmlEsc(String(posting.hoursPerWeek))} hrs/week</span>
             </div>
 
-            ${posting.description ? `<div class="posting-section"><div class="posting-section-title">About this placement</div><div class="posting-section-body">${posting.description}</div></div>` : ''}
-            ${posting.responsibilities ? `<div class="posting-section"><div class="posting-section-title">Responsibilities</div><div class="posting-section-body">${posting.responsibilities}</div></div>` : ''}
-            ${posting.requirements ? `<div class="posting-section"><div class="posting-section-title">Requirements</div><div class="posting-section-body">${posting.requirements}</div></div>` : ''}
+            ${posting.description ? `<div class="posting-section"><div class="posting-section-title">About this placement</div><div class="posting-section-body">${_htmlEsc(posting.description).replace(/\n/g,'<br>')}</div></div>` : ''}
+            ${posting.responsibilities ? `<div class="posting-section"><div class="posting-section-title">Responsibilities</div><div class="posting-section-body">${_htmlEsc(posting.responsibilities).replace(/\n/g,'<br>')}</div></div>` : ''}
+            ${posting.requirements ? `<div class="posting-section"><div class="posting-section-title">Requirements</div><div class="posting-section-body">${_htmlEsc(posting.requirements).replace(/\n/g,'<br>')}</div></div>` : ''}
           </div>
 
           <!-- Aside -->
@@ -213,18 +218,18 @@ function renderPage(posting) {
             <div class="aside-card">
               <div class="aside-card-title">Role snapshot</div>
               <div class="aside-dl">
-                <div><div class="aside-dt">Location</div><div class="aside-dd">${posting.location}</div></div>
-                <div><div class="aside-dt">Hours / week</div><div class="aside-dd">${posting.hoursPerWeek} hrs</div></div>
-                <div><div class="aside-dt">Work mode</div><div class="aside-dd">${posting.workMode}</div></div>
-                <div><div class="aside-dt">Start date</div><div class="aside-dd">${posting.startDate || 'TBD'}</div></div>
-                <div><div class="aside-dt">Application deadline</div><div class="aside-dd">${formatDeadlineDate(posting.deadline)}</div></div>
-                <div><div class="aside-dt">Named supervisor</div><div class="aside-dd">${posting.supervisorName || 'On file'}</div></div>
+                <div><div class="aside-dt">Location</div><div class="aside-dd">${_htmlEsc(posting.location)}</div></div>
+                <div><div class="aside-dt">Hours / week</div><div class="aside-dd">${_htmlEsc(String(posting.hoursPerWeek))} hrs</div></div>
+                <div><div class="aside-dt">Work mode</div><div class="aside-dd">${_htmlEsc(posting.workMode)}</div></div>
+                <div><div class="aside-dt">Start date</div><div class="aside-dd">${_htmlEsc(posting.startDate || 'TBD')}</div></div>
+                <div><div class="aside-dt">Application deadline</div><div class="aside-dd">${_htmlEsc(formatDeadlineDate(posting.deadline))}</div></div>
+                <div><div class="aside-dt">Named supervisor</div><div class="aside-dd">${_htmlEsc(posting.supervisorName || 'On file')}</div></div>
               </div>
             </div>
 
             <!-- Company -->
             <div class="aside-card">
-              <div class="aside-card-title">${posting.companyName}</div>
+              <div class="aside-card-title">${_htmlEsc(posting.companyName)}</div>
               <p style="font-size:13.5px;color:var(--text-muted);line-height:1.65;">Ottawa-area employer participating in the SiB co-op program. Full company details shared after intro confirmation.</p>
             </div>
 

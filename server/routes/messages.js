@@ -3,6 +3,10 @@
 const express = require('express');
 const router = express.Router({ mergeParams: true });
 const { supabase, authenticate } = require('../middleware/auth');
+const { analyzeMessage } = require('../utils/moderation');
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const MAX_BODY_LENGTH = 2000;
 
 async function _getUserRole(userId) {
   const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
@@ -13,6 +17,7 @@ async function _getUserRole(userId) {
 router.get('/', authenticate, async (req, res) => {
   try {
     const threadId = req.params.id;
+    if (!UUID_RE.test(threadId)) return res.status(400).json({ success: false, error: 'Invalid thread ID' });
     const userId   = req.user.id;
     const role     = await _getUserRole(userId);
 
@@ -34,7 +39,7 @@ router.get('/', authenticate, async (req, res) => {
     if (error) return res.status(500).json({ success: false, error: error.message });
     res.json({ success: true, data: data || [] });
   } catch (err) {
-    console.error('messages GET /:', err);
+    console.error('messages GET /:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });
@@ -43,8 +48,10 @@ router.get('/', authenticate, async (req, res) => {
 router.post('/', authenticate, async (req, res) => {
   try {
     const threadId = req.params.id;
-    const userId   = req.user.id;
-    const role     = await _getUserRole(userId);
+    if (!UUID_RE.test(threadId)) return res.status(400).json({ success: false, error: 'Invalid thread ID' });
+
+    const userId = req.user.id;
+    const role   = await _getUserRole(userId);
 
     const { data: thread } = await supabase
       .from('message_threads')
@@ -56,9 +63,12 @@ router.post('/', authenticate, async (req, res) => {
       return res.status(403).json({ success: false, error: 'Access denied' });
     }
 
-    const { body, flagged, flag_reasons } = req.body;
+    const { body } = req.body;
     if (!body || !body.trim()) {
       return res.status(400).json({ success: false, error: 'body is required' });
+    }
+    if (body.length > MAX_BODY_LENGTH) {
+      return res.status(400).json({ success: false, error: `Message body must be ${MAX_BODY_LENGTH} characters or fewer` });
     }
 
     // Server-side rate limit: 20 messages per sender per hour
@@ -75,7 +85,9 @@ router.post('/', authenticate, async (req, res) => {
       });
     }
 
-    const isFlagged = !!flagged;
+    // Server-side moderation — always recompute; ignore client-supplied flagged/flag_reasons
+    const { flagged: serverFlagged, reasons: serverReasons } = analyzeMessage(body.trim());
+
     const { data: msg, error } = await supabase
       .from('messages')
       .insert({
@@ -83,8 +95,8 @@ router.post('/', authenticate, async (req, res) => {
         sender_id:    userId,
         sender_role:  role,
         body:         body.trim(),
-        flagged:      isFlagged,
-        flag_reasons: flag_reasons || []
+        flagged:      serverFlagged,
+        flag_reasons: serverReasons
       })
       .select()
       .single();
@@ -92,12 +104,12 @@ router.post('/', authenticate, async (req, res) => {
 
     // Update thread.last_message_at; also flip status to flagged if needed
     const updates = { last_message_at: msg.created_at };
-    if (isFlagged && thread.status !== 'flagged') updates.status = 'flagged';
+    if (serverFlagged && thread.status !== 'flagged') updates.status = 'flagged';
     await supabase.from('message_threads').update(updates).eq('id', threadId);
 
     res.json({ success: true, data: msg });
   } catch (err) {
-    console.error('messages POST /:', err);
+    console.error('messages POST /:', err.message);
     res.status(500).json({ success: false, error: 'Server error' });
   }
 });

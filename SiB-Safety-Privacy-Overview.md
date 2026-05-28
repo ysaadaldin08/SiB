@@ -1,7 +1,7 @@
 # SiB Safety and Privacy Overview
 
 **Students in Business — Co-op Placement Platform**  
-Prepared for: Mr. Caap, OCDSB Co-op Office, KNBA  
+Prepared for: the SiB coordinator, OCDSB Co-op Office, KNBA  
 Last updated: May 12, 2026
 
 ---
@@ -239,5 +239,5 @@ Passwords are hashed before storage. No plain-text passwords are stored (coordin
 For questions about this platform's safety design:
 
 - **Platform developer:** Yousef Saadaldin — ysaadaldin08@gmail.com
-- **Co-op coordinator:** Mr. Caap, OCDSB
+- **Co-op coordinator:** the SiB coordinator, OCDSB
 - **Concern reporting:** Available at every page's footer ("Report a concern")

@@ -1,3 +1,11 @@
+-- ⚠️  LEGACY FILE — DO NOT USE FOR NEW DEPLOYMENTS
+-- This file is superseded by:
+--   supabase/migrations/20260526000000_initial_schema.sql
+-- Running this file on a fresh project will produce an incomplete,
+-- insecure schema missing RLS, audit_logs, age_verification_consents,
+-- and rate_limit_log tables.
+-- This file is kept for historical reference only and will be deleted in Phase 8.
+
 -- SiB Database Schema
 -- Run this in the Supabase SQL editor to set up all tables.
 

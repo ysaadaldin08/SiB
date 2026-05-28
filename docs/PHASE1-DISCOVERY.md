@@ -56,7 +56,7 @@ From `server/db/schema.sql` (tables confirmed to exist server-side):
 | `created_at` | `timestamptz` | YES | `now()` |
 
 Note: **no `full_name` column**. The `GET /coordinator/users` route selects `full_name` from `profiles`, which will error — this is a pre-existing bug documented in PHASE1-FINDINGS.md.  
-Mr. Caap (`ysaadaldin08@gmail.com`) already has a row with `role = 'coordinator'` and a corresponding `auth.users` row (UUID: `419dca7c-b9a6-4d5a-a7fe-ce91e0781c05`). The auth user was created via Google OAuth and had no password until the dev seed endpoint set one.
+the SiB coordinator (`ysaadaldin08@gmail.com`) already has a row with `role = 'coordinator'` and a corresponding `auth.users` row (UUID: `419dca7c-b9a6-4d5a-a7fe-ce91e0781c05`). The auth user was created via Google OAuth and had no password until the dev seed endpoint set one.
 
 **Tables that do NOT yet exist (needed for Phase 2):**
 - `notifications`
@@ -137,7 +137,7 @@ All calls made from `data.js`, `auth.js`, and page-level scripts are satisfied b
 
 | Called from | Endpoint needed | Exists? |
 |-------------|----------------|---------|
-| `coordinator-login.html doCoordinatorLogin()` | `POST /api/auth/coordinator-login` (or unified login) | ❌ — coordinator login is localStorage-only; the regular `/api/auth/login` could serve this if Mr. Caap has a real Supabase user with `profiles.role = 'coordinator'` |
+| `coordinator-login.html doCoordinatorLogin()` | `POST /api/auth/coordinator-login` (or unified login) | ❌ — coordinator login is localStorage-only; the regular `/api/auth/login` could serve this if the SiB coordinator has a real Supabase user with `profiles.role = 'coordinator'` |
 | `coordinator-dashboard.html approveEmployer()` | `PUT /api/coordinator/employers/:id/approve` | ❌ |
 | `coordinator-dashboard.html manualVerifyUser()` | `PUT /api/coordinator/users/:id` | ❌ — CLAUDE.md documents this but the route doesn't exist |
 | Phase 2 notification CRUD | `/api/notifications/*` | ❌ |
@@ -210,7 +210,7 @@ All calls made from `data.js`, `auth.js`, and page-level scripts are satisfied b
 | Read | `data.js:581` | `getCoordinatorById(id)` |
 | Read | `data.js:587` | `getCoordinatorByEmail(email)` |
 | Write | `data.js:592` | `createCoordinator(data)` |
-| Write | `data.js:634-643` | `migrateExistingData()` — seeds Mr. Caap if list is empty |
+| Write | `data.js:634-643` | `migrateExistingData()` — seeds the SiB coordinator if list is empty |
 | Read | `data.js:656` | `sibDump()` |
 | Read | `coordinator-login.html:179` | `doCoordinatorLogin()` → calls `getCoordinatorByEmail()` |
 | Read | `notifications.js:167` | `notifyCoordinators()` → calls `getCoordinators()` |
@@ -241,7 +241,7 @@ All calls made from `data.js`, `auth.js`, and page-level scripts are satisfied b
 | `sib_student_app` (sessionStorage) | Student onboarding form state | Stays client-side (form draft) |
 | `sib_emp_data` (sessionStorage) | Employer registration form state | Stays client-side (form draft) |
 
-**Critical constraint:** The demo personas (Alex Thompson, Shopify Ottawa, Mr. Caap) use fake IDs (`demo-student-1`, `demo-employer-1`, `coord-seed-1`) and empty JWTs. After Phase 2, the server won't recognise these IDs. Two acceptable paths forward:
+**Critical constraint:** The demo personas (Alex Thompson, Shopify Ottawa, the SiB coordinator) use fake IDs (`demo-student-1`, `demo-employer-1`, `coord-seed-1`) and empty JWTs. After Phase 2, the server won't recognise these IDs. Two acceptable paths forward:
 
 - **Option A (recommended):** Add a `/api/dev/seed` endpoint (localhost-only gate, e.g. `if (process.env.NODE_ENV !== 'development') return 403`) that creates the three demo users in Supabase Auth + profile tables and seeds all threads, messages, and notifications server-side. The demo personas then log in via real JWTs. The `demoAsStudent/Employer/Coordinator` functions call this endpoint before setting `sib_user`.
 - **Option B:** Keep the demo as a pure localStorage layer. After Phase 2, the demo seeder populates localStorage with the same fake data it does now; the server-backed functions are never called from demo sessions (fake users get 401s from every API call). This is simpler but means the coordinator demo still shows only local data — which defeats the cross-device goal.
@@ -265,30 +265,30 @@ The following test cases will be run after each sub-migration. All cross-device 
 
 ### After Sub-migration 2.1 — Notifications
 - [ ] **Cross-device test:** Browser A: log in as Shopify Ottawa, accept Alex's application in `applicants.html`. Browser B: log in as Alex (student), open notification bell — the `applicationStatus` notification must appear without any localStorage.
-- [ ] **Coordinator test:** Browser A: log in as Mr. Caap; coordinator dashboard Reports tab shows the `newPlacement` notification fired in the previous step — without having been on that device.
+- [ ] **Coordinator test:** Browser A: log in as the SiB coordinator; coordinator dashboard Reports tab shows the `newPlacement` notification fired in the previous step — without having been on that device.
 - [ ] Bell badge count is accurate for each persona.
 - [ ] `markNotificationRead` persists across browser reload.
 
 ### After Sub-migration 2.2 — Coordinators
-- [ ] Browser B (fresh incognito): navigate to `coordinator-login.html`, sign in as Mr. Caap with email `ysaadaldin08@gmail.com` / `[redacted — see SECURITY.md PAF-1]`. Dashboard loads with coordinator content from the API.
-- [ ] Mr. Caap's coordinator token grants access to `GET /api/coordinator/users` and `GET /api/coordinator/postings`.
+- [ ] Browser B (fresh incognito): navigate to `coordinator-login.html`, sign in as the SiB coordinator with email `ysaadaldin08@gmail.com` / `[redacted — see SECURITY.md PAF-1]`. Dashboard loads with coordinator content from the API.
+- [ ] the SiB coordinator's coordinator token grants access to `GET /api/coordinator/users` and `GET /api/coordinator/postings`.
 - [ ] `notifyCoordinators()` writes to the correct user IDs (now Supabase UUIDs, not `coord-seed-1`).
 
 ### After Sub-migration 2.3 — Approved Employers
 - [ ] Sign up a new employer with a Gmail address → posting blocked ("pending approval" toast).
-- [ ] Log in as Mr. Caap → approve that employer via the coordinator dashboard "Approve to Post →" button (which now calls `PUT /api/coordinator/employers/:id/approve`).
+- [ ] Log in as the SiB coordinator → approve that employer via the coordinator dashboard "Approve to Post →" button (which now calls `PUT /api/coordinator/employers/:id/approve`).
 - [ ] Sign back in as the employer (same session, no re-login) → posting is now permitted. (The `currentUser.coordinatorApproved` field should be read from the server on each login.)
 
 ### After Sub-migration 2.4 — Message Threads
 - [ ] **Cross-device test:** Browser A: Shopify Ottawa initiates a thread with Alex from `applicants.html`. Browser B: Alex logs in → thread appears in the Messages section of the student dashboard.
-- [ ] Browser C (Mr. Caap, incognito): coordinator dashboard Messages section shows both demo threads — including the flagged TechCorp ↔ Maya thread.
+- [ ] Browser C (the SiB coordinator, incognito): coordinator dashboard Messages section shows both demo threads — including the flagged TechCorp ↔ Maya thread.
 - [ ] `msOpenOrCreate` correctly reuses an existing thread (does not duplicate).
 
 ### After Sub-migration 2.5 — Messages
 - [ ] **End-to-end send test:** Browser A (Shopify Ottawa) sends "Hello!" in the thread with Alex. Browser B (Alex) reloads Messages — the message appears, persists across logout/login.
-- [ ] **Flagged-message test:** Browser A sends a message containing "call me at 613-555-0192". Pre-flight warning dialog appears. After confirming "Send anyway", message arrives in thread with a flag indicator. Mr. Caap (Browser C) receives a `messageFlagged` notification in the coordinator dashboard immediately.
+- [ ] **Flagged-message test:** Browser A sends a message containing "call me at 613-555-0192". Pre-flight warning dialog appears. After confirming "Send anyway", message arrives in thread with a flag indicator. the SiB coordinator (Browser C) receives a `messageFlagged` notification in the coordinator dashboard immediately.
 - [ ] **Rate limit test:** Send 20 messages rapidly as one user — the 21st is blocked with a toast ("You've reached the limit of 20 messages per hour").
-- [ ] Demo seeder produces the two pre-loaded threads with all 6 messages visible in Mr. Caap's coordinator dashboard on a fresh browser.
+- [ ] Demo seeder produces the two pre-loaded threads with all 6 messages visible in the SiB coordinator's coordinator dashboard on a fresh browser.
 
 ### Final end-to-end (all phases complete)
 Run `sibDump()` in the console — no migrated collection (notifications, threads, messages, coordinators, approved employers) should be the source of truth from localStorage alone; writes go to the server.
@@ -305,7 +305,7 @@ Run the full journey:
 
 1. **Missing `profiles` table in schema.sql.** The `profiles` table (referenced by auth and coordinator routes) exists in Supabase but is absent from the local schema file. Before Phase 2, we need to add its `CREATE TABLE` statement to `schema.sql` so the migration history is complete.
 
-2. **Coordinator login is entirely localStorage.** `coordinator-login.html` checks `sib_coordinators[]` in localStorage — there is no API call. Mr. Caap has no Supabase Auth user. This means: (a) the coordinator gets an empty token, (b) all API coordinator endpoints return 401 for the coordinator persona today. Sub-migration 2.2 must fix this by creating a real Supabase user for Mr. Caap with `profiles.role = 'coordinator'`.
+2. **Coordinator login is entirely localStorage.** `coordinator-login.html` checks `sib_coordinators[]` in localStorage — there is no API call. the SiB coordinator has no Supabase Auth user. This means: (a) the coordinator gets an empty token, (b) all API coordinator endpoints return 401 for the coordinator persona today. Sub-migration 2.2 must fix this by creating a real Supabase user for the SiB coordinator with `profiles.role = 'coordinator'`.
 
 3. **Missing server endpoints vs. CLAUDE.md spec.** `PUT /api/coordinator/users/:id` (for manual email verification) and `PUT /api/coordinator/employers/:id/approve` do not exist in the server yet. These need to be added in Phase 2.
 
