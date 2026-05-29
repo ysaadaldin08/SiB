@@ -2,6 +2,8 @@
 
 All changes made during Phase 1. Each entry notes what was changed, why, and what was tested.
 
+> **Historical note (demo removal):** This changelog references the demo seeder (`demo.js`), the demo activation gate (`?demo=1`, `<meta name="sib-demo">`), `/api/dev/seed`, `server/routes/dev.js`, and demo personas. All demo functionality has since been fully removed from the project. The entries below are retained for historical accuracy only and no longer describe any code that exists.
+
 ---
 
 ## Phase 0 — Discovery

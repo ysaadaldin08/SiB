@@ -19,7 +19,6 @@ const notificationRoutes = require('./routes/notifications');
 const coordinatorsListRoute = require('./routes/coordinators');
 const threadRoutes = require('./routes/threads');
 const { authenticate } = require('./middleware/auth');
-// server/routes/dev.js was deleted in Phase 7 hardening pass (see SECURITY.md PAF-1)
 
 const app = express();
 const PORT = process.env.PORT || 3001;

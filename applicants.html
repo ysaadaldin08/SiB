@@ -224,7 +224,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!posting) { renderNotFound(); return; }
 
   // Verify this employer owns the posting
-  if (posting.employerId !== '__seed__' && posting.employerId !== currentUser.email.toLowerCase()) {
+  if (posting.employerId !== currentUser.email.toLowerCase()) {
     renderAccessDenied(); return;
   }
 

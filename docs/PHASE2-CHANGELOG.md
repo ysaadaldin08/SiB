@@ -2,6 +2,8 @@
 
 All changes made during Phase 2. Each entry notes what was changed, why, and what to test.
 
+> **Historical note (demo removal):** This changelog references `demo.js`, `demoAsCoordinator()`, `/api/dev/seed`, and demo localStorage seeding. All demo functionality has since been fully removed from the project. The references below are retained for historical accuracy only and no longer describe any code that exists.
+
 ---
 
 ## Phase 2 — Server-Side Migration of localStorage Entities

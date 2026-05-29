@@ -3,6 +3,8 @@
 Generated: 2026-05-13  
 Status: **READY FOR REVIEW** — stop here and wait for approval before Phase 1 begins.
 
+> **Historical note (demo removal):** This discovery doc maps the demo seeder (`demo.js`, `_seedAll()`), demo personas (DEMO_STUDENT/EMPLOYER/COORDINATOR, "Alex Thompson", "Shopify Ottawa"), the demo panel, and `/api/dev/seed` options. All demo functionality has since been fully removed from the project. The contents below are retained for historical accuracy only and no longer describe any code that exists.
+
 ---
 
 ## 1. Backend Location
