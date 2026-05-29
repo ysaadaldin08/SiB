@@ -1,5 +1,15 @@
 # CLAUDE.md — Frontend Website Rules
 
+# Project Context
+
+**What this is:** Students in Business (SiB) — a real HR / co-op management platform. Think Indeed, but built specifically for high school co-op programs: connecting Grade 10–12 co-op students with employers willing to host placements, and giving co-op coordinators the tools to review and approve both sides.
+
+**Roles:** students (co-op applicants), employers (hosts), and coordinators (school board staff who oversee placements).
+
+**Stack:** static front-end (HTML/CSS/vanilla JS) hosted on GitHub Pages at the /SiB/ subpath, with Supabase for auth (email/password + Google OAuth) and backend. Note the /SiB/ subpath matters — URLs must not assume the site lives at the domain root.
+
+**Workflow:** Edited and run through Claude Code in VS Code, pushed to GitHub from there. Prefer concrete, applyable edits. This is a production app handling real student/employer PII (PIPEDA applies), not a demo.
+
 ## Always Do First
 - **Invoke the `frontend-design` skill** before writing any frontend code, every session, no exceptions.
 
