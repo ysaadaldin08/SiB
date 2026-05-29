@@ -24,6 +24,12 @@ function isValidPhone(p) {
   return (digits.length === 10) || (digits.length === 11 && digits[0] === '1');
 }
 
+// Origin + current directory path (with trailing slash). Subpath-aware so URLs
+// resolve on both localhost (served from /) and GitHub Pages (served from /SiB/).
+function _siteBaseUrl() {
+  return window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
+}
+
 // Shared HTML escaper — also defined in email.js; var allows safe redeclaration
 var _htmlEsc = function (s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -138,7 +144,7 @@ function selectRole(r) {
 // —— GOOGLE OAUTH ——
 // Google auth implicitly verifies the email — skip the token flow for OAuth users.
 function handleGoogleAuth() {
-  const redirectTo = encodeURIComponent(window.location.origin + '/auth-callback.html');
+  const redirectTo = encodeURIComponent(_siteBaseUrl() + 'auth-callback.html');
   window.location.href = SUPABASE_URL + '/auth/v1/authorize?provider=google&redirect_to=' + redirectTo;
 }
 
@@ -466,7 +472,7 @@ function requireVerified(callback) {
 // —— VERIFICATION FLOW ——
 
 function _sendVerificationEmail(user) {
-  const link = window.location.origin + '/index.html#verify?token=' + user.emailVerificationToken;
+  const link = _siteBaseUrl() + 'index.html#verify?token=' + user.emailVerificationToken;
   sendEmail({
     to:      user.email,
     subject: 'Verify your SiB email address',
