@@ -1,7 +1,7 @@
 # SiB Safety and Privacy Overview
 
 **Students in Business — Co-op Placement Platform**  
-Prepared for: the SiB coordinator, OCDSB Co-op Office, KNBA  
+Prepared for: the SiB coordinator, the school board Co-op Office, employer partners  
 Last updated: May 12, 2026
 
 ---
@@ -23,7 +23,7 @@ Every new account must verify their email address before accessing protected fea
 | Verification method | One-time link emailed to the registered address; expires in 24 hours |
 | Unverified users | Redirected to a verification-pending screen; cannot apply, post, or message |
 | Resend rate limit | Once per 60 seconds to prevent email abuse |
-| Board email filtering | @ocdsb.ca and @ocdsbstudents.ca addresses may be filtered by OCDSB mail systems. Students are warned to check spam, and coordinators can manually verify accounts |
+| Board email filtering | School board email addresses may be filtered by the school board's mail systems. Students are warned to check spam, and coordinators can manually verify accounts |
 | Manual verification | Coordinator can verify any account through the coordinator dashboard (API call) or via console command fallback (`sibVerifyUser("email@domain.com")`) |
 | Existing accounts | Backfilled as verified on first load so live sessions are not disrupted during rollout |
 
@@ -34,9 +34,7 @@ Every new account must verify their email address before accessing protected fea
 SiB distinguishes between board-issued and external email addresses at signup.
 
 **Trusted student domains** (configured in `data.js`):
-- `ocdsb.ca`
-- `ocdsbstudents.ca`
-- `ocsb.ca`
+- School board student and staff email domains, configured per deployment
 
 Students signing up with one of these addresses receive a **"✓ Verified school account"** badge and are automatically trusted. Students using personal or other email addresses can still sign up, but:
 
@@ -45,7 +43,7 @@ Students signing up with one of these addresses receive a **"✓ Verified school
 - Their accounts remain functional but are visible to coordinators for review
 
 **Trusted employer domains** (configured in `data.js`, initially empty):
-- Intended for known KNBA-member company domains
+- Intended for known partner company domains
 - Employers on this list bypass the coordinator approval gate automatically
 - List is populated by the SiB administrator — not publicly editable
 
@@ -108,7 +106,7 @@ Limits are enforced before any message is stored or displayed. Users see a clear
 Only plain text messages are permitted in v1. There is no file input. No images, documents, or links can be sent as file attachments.
 
 ### 3.10 Coordinator accounts
-All registered OCDSB co-op teachers are listed in `sib_coordinators[]`. They receive all flagged-message and placement notifications, and can read every thread on the platform regardless of which students or employers are involved.
+All registered school board co-op teachers are listed in `sib_coordinators[]`. They receive all flagged-message and placement notifications, and can read every thread on the platform regardless of which students or employers are involved.
 
 ---
 
@@ -174,7 +172,7 @@ A full Privacy Policy is available at `/privacy.html`. It covers 11 sections:
 1. Who we are
 2. Information we collect (from students, employers, coordinators, and automatically)
 3. How we use your information
-4. **Student data and OCDSB compliance** — includes the explanation of domain trust, messaging logging, and coordinator access
+4. **Student data and school board compliance** — includes the explanation of domain trust, messaging logging, and coordinator access
 5. Messaging and content moderation
 6. Data storage and security (Supabase + localStorage)
 7. Email communications (opt-in/out by type)
@@ -239,5 +237,5 @@ Passwords are hashed before storage. No plain-text passwords are stored (coordin
 For questions about this platform's safety design:
 
 - **Platform developer:** Yousef Saadaldin — ysaadaldin08@gmail.com
-- **Co-op coordinator:** the SiB coordinator, OCDSB
+- **Co-op coordinator:** the SiB coordinator, school board
 - **Concern reporting:** Available at every page's footer ("Report a concern")

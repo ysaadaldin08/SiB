@@ -1,12 +1,12 @@
 {
   "name": "sib",
   "version": "1.0.0",
-  "description": "Students in Business — co-op placement platform for OCDSB students and employers",
+  "description": "Students in Business — co-op placement platform for school board students and employers",
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["coop", "education", "ocdsb", "placement", "students"],
+  "keywords": ["coop", "education", "school-board", "placement", "students"],
   "author": "Yousef Saadaldin <ysaadaldin08@gmail.com>",
   "license": "ISC",
   "type": "commonjs",

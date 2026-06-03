@@ -272,7 +272,7 @@ CREATE POLICY "applications: coordinator read all"
     )
   );
 
--- No role has DELETE on applications (permanent record for OCDSB audit trail)
+-- No role has DELETE on applications (permanent record for school board audit trail)
 
 
 -- ============================================================
@@ -310,7 +310,7 @@ CREATE POLICY "notifications: coordinator read all"
 -- ============================================================
 -- TABLE: message_threads
 -- Minor–adult communication — highest sensitivity
--- OCDSB requires coordinator read access at all times
+-- School board requires coordinator read access at all times
 -- ============================================================
 
 -- Participants (student and employer) read their own threads
@@ -333,7 +333,7 @@ CREATE POLICY "threads: participant update status"
   USING (auth.uid() = student_id OR auth.uid() = employer_id);
 
 -- Coordinators read ALL threads — required for safeguarding oversight
--- Legal basis: OCDSB policy; MFIPPA s.36 institutional oversight
+-- Legal basis: school board policy; MFIPPA s.36 institutional oversight
 CREATE POLICY "threads: coordinator read all"
   ON public.message_threads FOR SELECT
   USING (
@@ -353,7 +353,7 @@ CREATE POLICY "threads: coordinator update all"
     )
   );
 
--- No DELETE on threads — permanent audit trail required by OCDSB policy
+-- No DELETE on threads — permanent audit trail required by school board policy
 
 
 -- ============================================================
@@ -405,7 +405,7 @@ CREATE POLICY "messages: coordinator update review flag"
     )
   );
 
--- No DELETE on messages — permanent audit trail required by OCDSB policy
+-- No DELETE on messages — permanent audit trail required by school board policy
 -- No UPDATE for sender/employer — message body is immutable after send
 
 

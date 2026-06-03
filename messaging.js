@@ -2,7 +2,7 @@
 // Shared UI logic for student and employer dashboards.
 // Depends on: data.js, moderation.js, notifications.js.
 //
-// SAFEGUARDS (required for OCDSB / minor-adult communication):
+// SAFEGUARDS (required for school board / minor-adult communication):
 //   1. Messaging only unlocked on Accepted applications — no cold messages.
 //   2. Every message is permanently logged; participants are notified on every page.
 //   3. analyzeMessage() runs on every outbound message before delivery.

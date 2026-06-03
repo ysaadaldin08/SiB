@@ -508,7 +508,7 @@ CREATE POLICY "messages: coordinator update reviewed flag"
 -- -------------------------------------------------------------
 -- audit_logs — append-only; no UPDATE, no DELETE for any role.
 -- Only service_role (bypasses RLS) may insert.
--- Coordinator may read (transparency / OCDSB oversight).
+-- Coordinator may read (transparency / school board oversight).
 -- -------------------------------------------------------------
 
 CREATE POLICY "audit_logs: coordinator select"

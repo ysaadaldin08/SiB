@@ -465,7 +465,7 @@ Supabase Point-in-Time Recovery (PITR) is only available on the **Pro plan** (CA
    - Include: profile, applications, messages, notifications
    - Delivered as a downloadable file, not shown inline
 2. **Delete my account** — soft-delete with 90-day anonymization grace period
-   - Mark `account_status = 'suspended'`; retain records for 90 days (OCDSB audit requirement)
+   - Mark `account_status = 'suspended'`; retain records for 90 days (school board audit requirement)
    - After 90 days: null all PII fields, retain anonymized application/placement records
 3. **Correct my data** — coordinator-reviewed correction form
    - Student submits correction request (field + new value)
@@ -609,8 +609,8 @@ The following clauses in `privacy.html` and `terms.html` require review by a law
 
 ### Privacy Policy (`privacy.html`)
 1. **Section 3 — How We Use Your Information**: The "improve our services" use case needs a specific lawful basis under PIPEDA. "Legitimate interest" alone may not be sufficient for minor student data.
-2. **Section 5 — Data Retention**: Current language says "as long as necessary." Specify exact retention periods (e.g., student data: 7 years after placement per school board records policy, or as required by OCDSB).
-3. **Section 6 — Your Rights**: The right to erasure language conflicts with the permanent audit trail requirement. Clarify that messaging records are retained for OCDSB oversight purposes even after account deletion.
+2. **Section 5 — Data Retention**: Current language says "as long as necessary." Specify exact retention periods (e.g., student data: 7 years after placement per school board records policy, or as required by the school board).
+3. **Section 6 — Your Rights**: The right to erasure language conflicts with the permanent audit trail requirement. Clarify that messaging records are retained for school board oversight purposes even after account deletion.
 4. **Section 7 — Messaging Monitoring**: Confirm this disclosure is sufficient under MFIPPA s.28 (notice of collection) and that the level of monitoring described is proportionate.
 5. **Minor consent**: Current privacy policy does not address parental/guardian consent for under-18 users. Add a section before launch.
 

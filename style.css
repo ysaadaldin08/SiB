@@ -147,13 +147,6 @@ body {
 .track-name { font-size:13.5px; font-weight:600; color:var(--ink); }
 .track-desc { font-size:11.5px; color:var(--text-muted); margin-top:1px; }
 
-/* —— PARTNER —— */
-.partner-strip { padding:36px 80px; background:#f5f8fc; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
-.partner-inner { max-width:1180px; margin:0 auto; display:flex; align-items:center; gap:28px; flex-wrap:wrap; }
-.partner-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.09em; color:var(--text-faint); white-space:nowrap; }
-.partner-chip { display:flex; align-items:center; gap:8px; padding:9px 18px; background:white; border-radius:var(--radius-sm); border:1px solid var(--line); font-size:13.5px; font-weight:700; color:var(--ink); letter-spacing:-0.01em; box-shadow:var(--shadow-xs); }
-.partner-chip img { width:20px; height:20px; object-fit:contain; }
-
 /* —— AUTH MODAL —— */
 .modal-overlay { display:none; position:fixed; inset:0; z-index:9000; background:rgba(13,17,23,0.52); backdrop-filter:blur(7px); align-items:flex-start; justify-content:center; padding:20px; overflow-y:auto; }
 .modal-overlay.open { display:flex; }
@@ -284,10 +277,6 @@ body {
 .emp-step-tab.done { color:var(--emerald); }
 .emp-form-step { display:none; }
 .emp-form-step.active { display:block; }
-
-/* KNBA link */
-.knba-link { display:inline-flex; align-items:center; gap:5px; margin-top:8px; padding:7px 12px; background:var(--blue-light); border-radius:var(--radius-sm); font-size:13px; font-weight:600; color:var(--blue); text-decoration:none; transition:all var(--transition); }
-.knba-link:hover { background:rgba(26,108,246,0.14); }
 
 /* —— DASHBOARDS —— */
 .dash-layout { display:flex; min-height:100vh; }
@@ -470,7 +459,6 @@ footer { background:var(--ink); color:rgba(255,255,255,0.46); padding:44px 80px;
   .value-grid { grid-template-columns:1fr; }
   .how-grid { grid-template-columns:1fr; }
   .how-visual { position:static; }
-  .partner-strip { padding:28px; }
   .detail-grid { grid-template-columns:1fr; }
   .resource-cards { grid-template-columns:1fr; }
   .stat-row { grid-template-columns:1fr 1fr; }

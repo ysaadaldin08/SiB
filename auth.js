@@ -30,6 +30,14 @@ function _siteBaseUrl() {
   return window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
 }
 
+// Single source of truth for the Supabase auth redirect target. Resolves to the
+// subpath-aware callback URL so it works on both GitHub Pages (/SiB/) and localhost.
+//   prod      → https://ysaadaldin08.github.io/SiB/auth-callback.html
+//   localhost → http://localhost:3000/auth-callback.html
+function _authCallbackUrl() {
+  return _siteBaseUrl() + 'auth-callback.html';
+}
+
 // Shared HTML escaper — also defined in email.js; var allows safe redeclaration
 var _htmlEsc = function (s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -144,7 +152,7 @@ function selectRole(r) {
 // —— GOOGLE OAUTH ——
 // Google auth implicitly verifies the email — skip the token flow for OAuth users.
 function handleGoogleAuth() {
-  const redirectTo = encodeURIComponent(_siteBaseUrl() + 'auth-callback.html');
+  const redirectTo = encodeURIComponent(_authCallbackUrl());
   window.location.href = SUPABASE_URL + '/auth/v1/authorize?provider=google&redirect_to=' + redirectTo;
 }
 
@@ -213,13 +221,18 @@ async function doSignup() {
     const { data, error } = await sb.auth.signUp({
       email,
       password: pass,
-      options: { data: {
-        first_name: first, last_name: last,
-        full_name: first + ' ' + last,
-        role: selectedRole,
-        tos_accepted: tosAccepted,
-        tos_accepted_at: new Date().toISOString()
-      }}
+      options: {
+        // Subpath-aware callback so the confirmation link lands on /SiB/auth-callback.html,
+        // not the bare Site URL. Supabase's {{ .ConfirmationURL }} honours this value.
+        emailRedirectTo: _authCallbackUrl(),
+        data: {
+          first_name: first, last_name: last,
+          full_name: first + ' ' + last,
+          role: selectedRole,
+          tos_accepted: tosAccepted,
+          tos_accepted_at: new Date().toISOString()
+        }
+      }
     });
 
     if (error) {
@@ -485,7 +498,7 @@ function _sendVerificationEmail(user) {
       '',
       'This link expires in 24 hours.',
       '',
-      "If you're using an @ocdsb.ca or other school board address, this message may be",
+      "If you're using a school board email address, this message may be",
       'filtered before reaching your inbox. Check your spam folder, or ask your',
       'co-op coordinator to manually verify your account.',
       '',
@@ -532,8 +545,13 @@ function _handleVerificationToken(token) {
 }
 
 // —— RESEND (rate-limited to once per 60 s) ——
-function resendVerificationEmail() {
-  if (!currentUser) return;
+// Re-triggers Supabase's real signup confirmation email, passing the same
+// subpath-aware emailRedirectTo as signup so the link lands on /SiB/auth-callback.html.
+// `email` lets the callback page (which has no currentUser yet on a fresh device)
+// resend from the otp_expired error state.
+async function resendVerificationEmail(email) {
+  const target = email || (currentUser && currentUser.email);
+  if (!target) return;
   const lastAt = parseInt(sessionStorage.getItem('sib_resend_at') || '0');
   const elapsed = Date.now() - lastAt;
   if (elapsed < RESEND_COOLDOWN_MS) {
@@ -541,10 +559,22 @@ function resendVerificationEmail() {
     showToast('Please wait ' + r + 's before resending.', true);
     return;
   }
-  currentUser.emailVerificationToken     = _generateVerificationToken();
-  currentUser.emailVerificationExpiresAt = new Date(Date.now() + VERIFY_TOKEN_TTL_MS).toISOString();
-  saveCurrentUser(currentUser);
-  _sendVerificationEmail(currentUser);
+
+  const sb = window._supabase;
+  if (!sb) { showToast('Auth service not ready — please wait a moment and try again.', true); return; }
+
+  try {
+    const { error } = await sb.auth.resend({
+      type: 'signup',
+      email: target,
+      options: { emailRedirectTo: _authCallbackUrl() }
+    });
+    if (error) { showToast(error.message || 'Could not resend the email. Please try again.', true); return; }
+  } catch (_) {
+    showToast('Could not resend the email. Please try again.', true);
+    return;
+  }
+
   sessionStorage.setItem('sib_resend_at', String(Date.now()));
   showToast('✓ Verification email resent.');
   _tickResendCooldown();
@@ -602,7 +632,7 @@ function _showVerifyPending(email) {
     <p style="font-size:14px;color:#6b7280;line-height:1.65;margin:0 0 6px;">We sent a verification link to:</p>
     <p style="font-size:15px;font-weight:700;color:#0d1117;margin:0 0 20px;">${_htmlEsc(email)}</p>
     <p style="font-size:13px;color:#9ca3af;line-height:1.65;margin:0 0 28px;padding:0 4px;">
-      Using an <strong style="color:#6b7280;">@ocdsb.ca</strong> or school board address?
+      Using a <strong style="color:#6b7280;">school board email address</strong>?
       External mail may be filtered before it reaches you. Check your spam folder —
       or ask your <strong style="color:#6b7280;">co-op coordinator to verify your account manually</strong>
       if the email doesn't arrive.

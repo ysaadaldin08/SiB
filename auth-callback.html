@@ -142,6 +142,81 @@
       <button class="btn-back" onclick="window.location.href='index.html'">← Back to home</button>`;
   }
 
+  // Subpath-aware callback URL — mirrors auth.js _authCallbackUrl() so resends
+  // from this page land back here on both GitHub Pages (/SiB/) and localhost.
+  function callbackUrl() {
+    return window.location.origin + window.location.pathname.replace(/[^/]*$/, '') + 'auth-callback.html';
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  // Clean, on-brand error state for expired/invalid links, with a working resend form.
+  function showLinkError(title, msg, prefillEmail) {
+    document.getElementById('stateLoading').innerHTML = `
+      <div class="error-icon">✕</div>
+      <div class="state-title">${escapeHtml(title)}</div>
+      <div class="state-sub" style="margin-bottom:20px;">${escapeHtml(msg)}</div>
+      <input id="resendEmail" type="email" placeholder="you@example.com"
+        value="${escapeHtml(prefillEmail || '')}"
+        style="width:100%;padding:12px 14px;border:2px solid #e5e7eb;border-radius:11px;font-size:14px;
+               font-family:inherit;margin-bottom:10px;outline:none;" />
+      <button class="btn-confirm" id="resendBtn" onclick="doResend()">Resend verification email</button>
+      <div id="resendMsg" style="font-size:13px;color:#6b7280;margin-top:12px;min-height:18px;"></div>
+      <button class="btn-back" onclick="window.location.href='index.html'">← Back to home</button>`;
+  }
+
+  window.doResend = async function () {
+    const input = document.getElementById('resendEmail');
+    const btn   = document.getElementById('resendBtn');
+    const out   = document.getElementById('resendMsg');
+    const email = (input.value || '').trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      out.style.color = '#dc2626';
+      out.textContent = 'Please enter a valid email address.';
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    out.textContent = '';
+    try {
+      const { error } = await window._supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: { emailRedirectTo: callbackUrl() }
+      });
+      if (error) {
+        out.style.color = '#dc2626';
+        out.textContent = error.message || 'Could not resend. Please try again.';
+        btn.disabled = false;
+        btn.textContent = 'Resend verification email';
+        return;
+      }
+      out.style.color = '#16a34a';
+      out.textContent = '✓ Sent. Check your inbox (and spam folder).';
+      btn.textContent = 'Email sent';
+    } catch (e) {
+      out.style.color = '#dc2626';
+      out.textContent = 'Could not resend. Please try again.';
+      btn.disabled = false;
+      btn.textContent = 'Resend verification email';
+    }
+  };
+
+  // Reads error/auth params from BOTH the query string and the URL hash fragment.
+  function readParams() {
+    const out = {};
+    const q = new URLSearchParams(window.location.search);
+    q.forEach((v, k) => { out[k] = v; });
+    const h = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.hash;
+    const hp = new URLSearchParams(h);
+    hp.forEach((v, k) => { if (out[k] == null) out[k] = v; });
+    return out;
+  }
+
   // Maps a Supabase auth user to the SiB user shape.
   function _userFromSupabase(su) {
     const m     = su.user_metadata || {};
@@ -175,8 +250,12 @@
     sessionStorage.removeItem('sib_auth_target');
     if (redirect) { window.location.href = redirect; return; }
     if (target)   { window.location.href = target + '.html'; return; }
+    // Role-based landing for a freshly confirmed/authenticated account.
     if (user.role === 'coordinator') { window.location.href = 'coordinator-dashboard.html'; return; }
-    window.location.href = user.role === 'employer' ? 'employer-register.html' : 'student-apply.html';
+    if (user.role === 'employer')    { window.location.href = 'dashboard-employer.html';    return; }
+    if (user.role === 'student')     { window.location.href = 'dashboard-student.html';      return; }
+    // Unknown role and no picker resolution — land signed-in on the home page.
+    window.location.href = 'index.html';
   }
 
   // —— Role selection UI ——
@@ -230,23 +309,78 @@
     return;
   }
 
-  // getSession() awaits the client's internal initialization, which includes
-  // processing the access_token from the OAuth redirect URL fragment.
-  const { data: { session }, error: sessionError } = await sb.auth.getSession();
+  const params = readParams();
 
-  if (sessionError || !session) {
-    showError(sessionError?.message || 'No authentication session found. Please try signing in again.');
+  // 1) Error fragments first (e.g. #error=access_denied&error_code=otp_expired&error_description=...).
+  //    These arrive as hash OR query params and would otherwise leave a raw error in the URL.
+  if (params.error || params.error_code || params.error_description) {
+    const code = params.error_code || params.error || '';
+    const desc = (params.error_description || '').replace(/\+/g, ' ');
+    if (code === 'otp_expired' || /expired/i.test(desc)) {
+      showLinkError(
+        'This link has expired',
+        'Verification links are valid for a limited time. Enter your email below and we’ll send a fresh one.'
+      );
+    } else if (code === 'access_denied') {
+      showLinkError(
+        'This link is no longer valid',
+        desc || 'The link may have already been used or was cancelled. Request a new verification email below.'
+      );
+    } else {
+      showLinkError(
+        'We couldn’t confirm your email',
+        desc || 'Something went wrong confirming your email. Request a new verification link below.'
+      );
+    }
     return;
   }
 
-  localStorage.setItem('sib_token', session.access_token);
+  // 2) PKCE flow: a ?code= is present and must be exchanged for a session.
+  //    The client (detectSessionInUrl) may have already auto-exchanged it, in which
+  //    case this errors with "code already used" — so on failure we fall through to
+  //    getSession() rather than erroring, and only surface an error if no session exists.
+  if (params.code) {
+    try {
+      const { data, error } = await sb.auth.exchangeCodeForSession(params.code);
+      if (!error && data && data.session) { routeSession(data.session); return; }
+    } catch (e) {
+      // Fall through to getSession().
+    }
+  }
 
-  const user = _userFromSupabase(session.user);
+  // 3) Legacy hash-token flow: #access_token=...&refresh_token=...
+  if (params.access_token && params.refresh_token) {
+    try {
+      const { data, error } = await sb.auth.setSession({
+        access_token:  params.access_token,
+        refresh_token: params.refresh_token
+      });
+      if (!error && data && data.session) { routeSession(data.session); return; }
+    } catch (e) {
+      // Fall through to getSession().
+    }
+  }
 
-  if (!user.role) {
-    showRolePicker(session, user);
-  } else {
-    completeLogin(user, session.access_token);
+  // 4) Fallback: the client may have auto-detected the session from the URL on init.
+  const { data: { session }, error: sessionError } = await sb.auth.getSession();
+  if (sessionError || !session) {
+    showLinkError(
+      'No active sign-in found',
+      sessionError?.message ||
+        'This confirmation link may have expired or already been used. Enter your email to get a new one.'
+    );
+    return;
+  }
+  routeSession(session);
+
+  function routeSession(session) {
+    localStorage.setItem('sib_token', session.access_token);
+    const user = _userFromSupabase(session.user);
+    if (!user.role) {
+      showRolePicker(session, user);
+    } else {
+      completeLogin(user, session.access_token);
+    }
   }
 })();
 </script>

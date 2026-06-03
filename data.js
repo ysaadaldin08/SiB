@@ -316,12 +316,12 @@ const flaggedTerms = {
 // ——— DOMAIN TRUST CONFIG ———
 // trustedStudentDomains: board-issued addresses receive a "Verified school account" badge.
 // Non-board students may still sign up but are flagged for coordinator review.
-// trustedEmployerDomains: known KNBA-member company domains bypass coordinator approval.
+// trustedEmployerDomains: known partner company domains bypass coordinator approval.
 // requireEmployerApproval: when true, unknown employer domains cannot post until a
 // coordinator explicitly approves their account.
 const domainConfig = {
-  trustedStudentDomains:   ['ocdsb.ca', 'ocdsbstudents.ca', 'ocsb.ca'],
-  trustedEmployerDomains:  [], // Populate with KNBA-member domains when confirmed
+  trustedStudentDomains:   [], // Populate with school board student/staff domains when confirmed
+  trustedEmployerDomains:  [], // Populate with partner company domains when confirmed
   flagNonBoardStudents:    true,
   requireEmployerApproval: true
 };

@@ -20,7 +20,7 @@ const _MOD_PHONE = [
 ];
 
 // Free / personal email domains. School and company email domains are NOT flagged —
-// a student sharing their OCDSB address is fine; sharing their Gmail is not.
+// a student sharing their school board address is fine; sharing their Gmail is not.
 const _MOD_PERSONAL_EMAIL = /@(gmail|googlemail|hotmail|outlook|live|yahoo|ymail|icloud|proton|protonmail|msn|aol|mail\.com|zoho|fastmail|tutanota)\b/i;
 
 // Explicit URLs only (http/https or www.) — bare domain.com would cause too many

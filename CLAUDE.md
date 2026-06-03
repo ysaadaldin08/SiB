@@ -242,7 +242,7 @@ Messaging is gated exclusively on accepted applications. This is the highest-saf
 **Content moderation (`moderation.js analyzeMessage`):**
 - Runs on every outbound message before delivery
 - Detects: phone numbers (5 regex patterns), personal email domains (gmail/hotmail/yahoo/etc.), URLs (http and www forms), social media platform names + @handles, off-platform phrases (20+ phrases: "text me", "call me", "WhatsApp", etc.)
-- Does NOT block delivery — flagging is for coordinator review only, consistent with OCDSB policy
+- Does NOT block delivery — flagging is for coordinator review only, consistent with school board policy
 - If flagged: sender sees a pre-flight warning modal listing each reason; they must explicitly confirm before the message sends
 - Flagged message stored with `flagged: true`, `flagReasons: string[]`; thread `status` set to `'flagged'`; coordinator notified via `_notifyCoordinators()`
 
@@ -266,9 +266,9 @@ Messaging is gated exclusively on accepted applications. This is the highest-saf
 
 **Notification on new message:** `createNotification({ type: 'newMessage', ... })` — respects recipient's `newMessage` preference; notification links to correct dashboard (role-aware).
 
-## Messaging Safeguards — OCDSB Review Summary
+## Messaging Safeguards — School Board Review Summary
 
-The following is the complete list of safety controls implemented for the minor-adult messaging feature. This section is written for co-op teacher / OCDSB review.
+The following is the complete list of safety controls implemented for the minor-adult messaging feature. This section is written for co-op teacher / school board review.
 
 1. **Gated access**: Messaging is only available after an employer has explicitly accepted a student's application. Neither party can initiate contact with a stranger — the co-op placement must already be confirmed.
 2. **Permanent logging**: Every message is stored permanently and cannot be deleted by either party. The full conversation history is always available to coordinators.
@@ -279,7 +279,7 @@ The following is the complete list of safety controls implemented for the minor-
 7. **Report button**: Either party can report a conversation at any time. This flags the thread and immediately notifies all coordinators.
 8. **Rate limiting**: Senders are capped at 20 messages per hour and 5 new conversations per day to prevent harassment or spam campaigns.
 9. **No file attachments**: Only plain text is allowed in v1. No images, documents, or links can be sent as files.
-10. **Coordinator accounts**: The `sib_coordinators[]` store allows registering one or more OCDSB coordinators who receive all flagged-message notifications.
+10. **Coordinator accounts**: The `sib_coordinators[]` store allows registering one or more school board coordinators who receive all flagged-message notifications.
 
 ## Coordinator Role (`coordinator-login.html` + `coordinator-dashboard.html`)
 
@@ -332,8 +332,8 @@ TODO Phase 6: Replace shared password with an email-based invite-and-activate fl
 `domainConfig` object controls trust policy:
 ```js
 const domainConfig = {
-  trustedStudentDomains:   ['ocdsb.ca', 'ocdsbstudents.ca', 'ocsb.ca'],
-  trustedEmployerDomains:  [],  // KNBA-member domains — populate when confirmed
+  trustedStudentDomains:   [],  // school board student/staff domains — populate when confirmed
+  trustedEmployerDomains:  [],  // partner company domains — populate when confirmed
   flagNonBoardStudents:    true,
   requireEmployerApproval: true
 };
@@ -341,8 +341,8 @@ const domainConfig = {
 
 **Helper functions:**
 - `getDomainFromEmail(email)` — extracts domain suffix
-- `isStudentTrustedDomain(email)` — true for OCDSB/OCSB board addresses
-- `isEmployerTrustedDomain(email)` — true for KNBA-member company domains
+- `isStudentTrustedDomain(email)` — true for recognised school board addresses
+- `isEmployerTrustedDomain(email)` — true for partner company domains
 - `employerCanPost(user)` — returns true if employer can create listings (trusted domain OR coordinator-approved OR in `sib_approved_employers[]`)
 
 **User shape additions** (backfilled with `true` for existing accounts in `migrateExistingData()`):
@@ -386,7 +386,7 @@ Injected via DOMContentLoaded into every `.footer-inner`:
 
 ### Legal pages
 
-- **`privacy.html`** — full Privacy Policy (11 sections): data collected, OCDSB compliance, messaging monitoring, storage, email, rights, cookies, contact
+- **`privacy.html`** — full Privacy Policy (11 sections): data collected, school board compliance, messaging monitoring, storage, email, rights, cookies, contact
 - **`terms.html`** — full Terms of Use (12 sections): eligibility, accounts, acceptable use, messaging rules, employer responsibilities, coordinator oversight, disclaimer, contact
 
 Both pages use shared styles from `style.css` and load the full script stack (`config.js` → `data.js` → `email.js` → `notifications.js` → `auth.js` → `app.js`).
@@ -416,7 +416,7 @@ Both pages use shared styles from `style.css` and load the full script stack (`c
 | `applicants.html` | Employer view of applicants for a specific posting; status management |
 | `coordinator-login.html` | Coordinator-only login (no public signup) |
 | `coordinator-dashboard.html` | Coordinator dashboard: 7 sections (Overview, Users, Placements, Messages, Reports, Listings, Applications) |
-| `privacy.html` | Full Privacy Policy (11 sections, OCDSB-compliant) |
+| `privacy.html` | Full Privacy Policy (11 sections, school board-compliant) |
 | `terms.html` | Full Terms of Use (12 sections) |
 | `listings.html` | Legacy listings page (redirects to job-listings.html) |
 | `resources.html` | Student career resources |

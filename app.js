@@ -389,14 +389,13 @@ function nextEmpStep(from) {
   }
   if (from === 1) {
     const address = document.getElementById('e2address').value.trim();
-    const knba = document.getElementById('e2knba').value;
     const numStudents = document.getElementById('e2students').value;
     const format = document.getElementById('e2format').value;
     const hours = document.getElementById('e2hours').value;
     const startdate = document.getElementById('e2startdate').value;
     const supervisor = document.getElementById('e2supervisor').value.trim();
     const desc = document.getElementById('e2desc').value.trim();
-    if (!address||!knba||!numStudents||!format||!hours||!startdate||!supervisor||!desc) { showToast('Please fill in all required fields.', true); return; }
+    if (!address||!numStudents||!format||!hours||!startdate||!supervisor||!desc) { showToast('Please fill in all required fields.', true); return; }
     const today = new Date(); today.setHours(0,0,0,0);
     const chosenStart = new Date(startdate + 'T00:00:00');
     if (chosenStart < today) { showToast('Start date must be a future date.', true); return; }
@@ -443,13 +442,6 @@ function submitEmpReg() {
   document.getElementById('empFormMain').style.display = 'none';
   document.getElementById('empSuccess').classList.add('show');
   window.scrollTo(0,0);
-}
-
-function handleKNBA(sel) {
-  const link = document.getElementById('knbaJoinLink');
-  if (!link) return;
-  link.style.display = (sel.value === 'interested' || sel.value === 'unsure') ? 'inline-flex' : 'none';
-  link.textContent = sel.value === 'unsure' ? '→ Learn more about KNBA membership' : '→ Learn about KNBA membership';
 }
 
 // —— RESOURCE CENTRE NAVIGATION ——
