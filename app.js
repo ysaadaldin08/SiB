@@ -428,9 +428,44 @@ function prevEmpStep(from) {
   window.scrollTo(0,180);
 }
 
-function submitEmpReg() {
+async function submitEmpReg() {
   const allChecked = [...document.querySelectorAll('#es2 .clause')].every(c => c.classList.contains('checked'));
   if (!allChecked) { showToast('Please check all commitment clauses before submitting.', true); return; }
+
+  // —— Persist the employer profile to Supabase before showing success ——
+  const sb = window._supabase;
+  if (!sb) { showToast('Service not ready — please wait a moment and try again.', true); return; }
+
+  // The employers row id MUST equal the logged-in user's auth id; the
+  // "employers: own insert" RLS policy rejects any other id. Require a session.
+  const { data: authData } = await sb.auth.getUser();
+  const userId = authData?.user?.id;
+  if (!userId) {
+    showToast('Please sign in to submit your registration.', true);
+    if (typeof openAuth === 'function') openAuth('login', 'employer');
+    return;
+  }
+
+  // Map form inputs → existing employers columns only. company_name is NOT NULL.
+  const companyName = (document.getElementById('e1company')?.value || '').trim();
+  if (!companyName) { showToast('Company name is required.', true); return; }
+  const employerRow = {
+    id:                          userId,            // = auth.uid()
+    company_name:                companyName,
+    contact_name:                (document.getElementById('e1cname')?.value  || '').trim() || null,
+    phone:                       (document.getElementById('e1phone')?.value  || '').trim() || null,
+    website:                     (document.getElementById('e1website')?.value || '').trim() || null,
+    obligations_acknowledged_at: new Date().toISOString()
+    // domain_verified / coordinator_approved / verification_status left at DB defaults — never set client-side.
+  };
+
+  const { error } = await sb.from('employers').upsert(employerRow, { onConflict: 'id' });
+  if (error) {
+    // Do NOT advance to the success screen on failure.
+    showToast(error.message || 'Could not save your registration. Please try again.', true);
+    return;
+  }
+
   const el = (id, val) => { const e = document.getElementById(id); if(e) e.textContent = val; };
   el('el-company', empData.company || '—');
   el('el-industry', empData.industry || '—');

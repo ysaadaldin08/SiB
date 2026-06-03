@@ -86,50 +86,95 @@ function _appFromApi(a) {
   };
 }
 
-// ——— POSTINGS ———
+// ——— POSTINGS (direct Supabase — ported from Node API) ———
+// Reads embed the employer via the postings_employer_id_fkey relationship
+// (PostgREST resolves it as the to-one `employers` object). RLS scopes rows:
+// getActivePostings is filtered to is_active; getPostingsByEmployer relies on
+// the postings SELECT policy to return only the caller's own listings.
+
+const POSTING_SELECT = '*, employers(company_name, contact_name)';
 
 async function getActivePostings() {
+  const sb = window._supabase;
+  if (!sb) return [];
   try {
-    const result = await _get('/postings');
-    if (!result.success) return [];
-    return result.data.map(_postingFromApi);
+    const { data, error } = await sb
+      .from('postings')
+      .select(POSTING_SELECT)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
+    if (error) return [];
+    return (data || []).map(_postingFromApi);
   } catch (_) { return []; }
 }
 
 async function getPostingById(id) {
+  const sb = window._supabase;
+  if (!sb) return null;
   try {
-    const result = await _get(`/postings/${id}`);
-    if (!result.success) return null;
-    return _postingFromApi(result.data);
+    const { data, error } = await sb
+      .from('postings')
+      .select(POSTING_SELECT)
+      .eq('id', id)
+      .maybeSingle();
+    if (error || !data) return null;
+    return _postingFromApi(data);
   } catch (_) { return null; }
 }
 
 async function getPostingsByEmployer(_email) {
-  // _email ignored — identity comes from the auth token
+  // _email ignored — RLS scopes the SELECT to the signed-in employer's rows.
+  const sb = window._supabase;
+  if (!sb) return [];
   try {
-    const result = await _get('/postings/mine');
-    if (!result.success) return [];
-    return result.data.map(_postingFromApi);
+    const { data, error } = await sb
+      .from('postings')
+      .select(POSTING_SELECT)
+      .order('created_at', { ascending: false });
+    if (error) return [];
+    return (data || []).map(_postingFromApi);
   } catch (_) { return []; }
 }
 
 async function createPosting(data) {
-  const result = await _post('/postings', _postingToApi(data));
-  if (!result.success) throw new Error(result.error);
-  return _postingFromApi(result.data);
+  const sb = window._supabase;
+  if (!sb) throw new Error('Auth service not ready');
+  // employer_id has no DB default — set it to the signed-in user's id
+  // (employers.id === auth.users.id). The RLS INSERT policy verifies this.
+  const { data: auth } = await sb.auth.getUser();
+  const employerId = auth?.user?.id;
+  if (!employerId) throw new Error('You must be signed in to post a listing.');
+  const { data: row, error } = await sb
+    .from('postings')
+    .insert({ ..._postingToApi(data), employer_id: employerId })
+    .select(POSTING_SELECT)
+    .single();
+  if (error) throw new Error(error.message);
+  return _postingFromApi(row);
 }
 
 async function updatePosting(id, data) {
-  const result = await _put(`/postings/${id}`, _postingToApi(data));
-  return result.success;
+  const sb = window._supabase;
+  if (!sb) return false;
+  try {
+    const { error } = await sb
+      .from('postings')
+      .update(_postingToApi(data))
+      .eq('id', id);
+    return !error;
+  } catch (_) { return false; }
 }
 
 async function archivePosting(id)    { return updatePosting(id, { isActive: false }); }
 async function reactivatePosting(id) { return updatePosting(id, { isActive: true }); }
 
 async function deletePosting(id) {
-  const result = await _del(`/postings/${id}`);
-  return result.success;
+  const sb = window._supabase;
+  if (!sb) return false;
+  try {
+    const { error } = await sb.from('postings').delete().eq('id', id);
+    return !error;
+  } catch (_) { return false; }
 }
 
 // ——— APPLICATIONS ———
