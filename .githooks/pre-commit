@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+#
+# SiB pre-commit secret scanner.
+# Blocks any commit whose STAGED changes contain a secret (matched by gitleaks + .gitleaks.toml).
+#
+# This hook is version-controlled in the repo. Activate it once per clone:
+#
+#     git config core.hooksPath .githooks
+#
+# Requires gitleaks on PATH:  winget install gitleaks   (Windows)
+#
+set -euo pipefail
+
+if command -v gitleaks >/dev/null 2>&1; then
+  # Scan only what is staged. --redact hides the secret value in the output.
+  if ! gitleaks protect --staged --redact --config .gitleaks.toml; then
+    echo ""
+    echo "  COMMIT BLOCKED: a secret was detected in your staged changes (see above)."
+    echo "  Remove the secret, then re-stage and commit again."
+    echo "  Emergency bypass (discouraged — defeats the purpose): git commit --no-verify"
+    exit 1
+  fi
+  exit 0
+else
+  echo "ERROR: gitleaks is not installed, and this repo requires a secret scan before every commit."
+  echo "  Install it:  winget install gitleaks   (or: scoop install gitleaks / choco install gitleaks)"
+  echo "  Then retry your commit."
+  # Fail closed: no scanner == no commit. This is intentional.
+  exit 1
+fi

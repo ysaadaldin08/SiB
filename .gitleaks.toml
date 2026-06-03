@@ -1,0 +1,38 @@
+# gitleaks configuration for SiB
+# Used by the pre-commit hook (.githooks/pre-commit) to block secrets before they are committed.
+# Activate the hook once with:  git config core.hooksPath .githooks
+
+[extend]
+# Start from gitleaks' built-in ruleset (covers AWS, GCP, Stripe, JWTs, generic API keys, etc.)
+useDefault = true
+
+[[rules]]
+# Explicitly catch Supabase SERVICE-ROLE keys (new sb_secret_ format). These bypass all RLS and
+# must NEVER be committed. This is the key we care most about.
+id = "supabase-service-role-key"
+description = "Supabase service_role key (sb_secret_...)"
+regex = '''sb_secret_[A-Za-z0-9_-]{20,}'''
+keywords = ["sb_secret_"]
+
+[allowlist]
+description = "Known-public values and documentation that are safe by design"
+
+# Files that contain only placeholders or documented/redacted examples.
+paths = [
+  '''(^|/)\.env\.example$''',          # server/.env.example and root .env.example — placeholders only
+  '''(^|/)SCRUB-STEPS\.md$''',         # remediation doc — references the secret being scrubbed
+]
+
+regexes = [
+  # Supabase ANON / publishable keys are public by design (they ship in client-side config.js).
+  '''sb_publishable_[A-Za-z0-9_-]+''',
+  # The specific anon (role:"anon") JWT currently shipped in config.js — public client key.
+  # Matched by its unique signature so any OTHER JWT still trips the scanner.
+  '''F0fSEO_1CKsjbH1aaP_UfkjvOHJEyw3-SVV7wM64o8Q''',
+  # Obvious placeholders used in .env.example and docs.
+  '''your-[a-z-]+-here''',
+  '''<[a-z][a-z -]+>''',
+  '''\*\*\*REMOVED\*\*\*''',
+  '''\[REDACTED[^\]]*\]''',
+  '''\[redacted[^\]]*\]''',
+]

@@ -16,23 +16,11 @@
 ## Reference Images
 - If a reference image is provided: match layout, spacing, typography, and color exactly. Swap in placeholder content (images via `https://placehold.co/`, generic copy). Do not improve or add to the design.
 - If no reference image: design from scratch with high craft (see guardrails below).
-- Screenshot your output, compare against reference, fix mismatches, re-screenshot. Do at least 2 comparison rounds. Stop only when no visible differences remain or user says so.
 
 ## Local Server
-- **Always serve on localhost** — never screenshot a `file:///` URL.
 - Start the dev server: `node serve.mjs` (serves the project root at `http://localhost:3000`)
-- `serve.mjs` lives in the project root. Start it in the background before taking any screenshots.
+- `serve.mjs` lives in the project root. Use it to preview the site locally in a browser.
 - If the server is already running, do not start a second instance.
-
-## Screenshot Workflow
-- Puppeteer is installed as a project dependency (`node_modules/puppeteer`). No custom path needed.
-- **Always screenshot from localhost:** `node screenshot.mjs http://localhost:3000`
-- Screenshots are saved automatically to `./temporary screenshots/screenshot-N.png` (auto-incremented, never overwritten).
-- Optional label suffix: `node screenshot.mjs http://localhost:3000 label` → saves as `screenshot-N-label.png`
-- `screenshot.mjs` lives in the project root. Use it as-is.
-- After screenshotting, read the PNG from `temporary screenshots/` with the Read tool — Claude can see and analyze the image directly.
-- When comparing, be specific: "heading is 32px but reference shows ~24px", "card gap is 16px but should be 24px"
-- Check: spacing/padding, font size/weight/line-height, colors (exact hex), alignment, border-radius, shadows, image sizing
 
 ## Output Defaults
 - Single `index.html` file, all styles inline, unless user says otherwise
@@ -466,11 +454,10 @@ Both pages use shared styles from `style.css` and load the full script stack (`c
 
 ### Demo removal
 
-All demo functionality has been fully removed from the project (no demo mode, personas, seeding, or activation paths). `demo.js` and `server/routes/dev.js` are deleted; the `__seed__` ownership-bypass sentinel was removed from `applicants.html`.
+Demo functionality and screenshot tooling are fully removed. This is the production codebase.
 
 ## Hard Rules
 - Do not add sections, features, or content not in the reference
 - Do not "improve" a reference design — match it
-- Do not stop after one screenshot pass
 - Do not use `transition-all`
 - Do not use default Tailwind blue/indigo as primary color

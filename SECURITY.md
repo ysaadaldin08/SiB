@@ -642,6 +642,24 @@ The following clauses in `privacy.html` and `terms.html` require review by a law
 | 2.5 Student data rights (download/delete/correct) | MEDIUM | Phase 8 |
 | 1.6 CSP: migrate from unsafe-inline to nonces | LOW | Phase 8 build pipeline |
 | 1.4 Input length limits server-side | MEDIUM | Phase 8 Edge Functions |
+
+---
+
+## Deployment — required environment variables
+
+The API server (`server/`) reads its configuration from environment variables (locally via `server/.env`, which is **gitignored and never deployed**). The production host must set these in its own environment / dashboard — they are **not** committed anywhere in this repo:
+
+| Variable | Production value | Notes |
+|----------|------------------|-------|
+| `NODE_ENV` | `production` | Arms the startup safety guard in `server/index.js`. If unset, the guard is silently disabled. |
+| `CORS_ORIGIN` | `<exact frontend origin>` | Scheme + host only, **no path** (e.g. `https://example.github.io`, not `https://example.github.io/SiB/`). Fill in your real origin at deploy time. |
+| `SUPABASE_URL` | `<project URL>` | From Supabase dashboard → Settings → API. |
+| `SUPABASE_SERVICE_KEY` | `<service-role key>` | SECRET — bypasses all RLS. Server-side only. |
+| `PORT` | host-assigned | Most hosts inject this automatically; defaults to `3001`. |
+
+**Fail-safe behavior:** In production (`NODE_ENV=production`), `server/index.js` **refuses to boot if `CORS_ORIGIN` is unset** — this is intentional, to prevent shipping with the dev fallback origin (`http://localhost:3000`). If `NODE_ENV` is *not* set to `production`, this guard does not run, so be sure to set `NODE_ENV=production` on the host.
+
+> See `server/.env.example` for the full key list with placeholder values.
 | PITR backup: Supabase Pro upgrade | HIGH | Before school board submission |
 | Privacy Policy: legal review | HIGH | Before launch |
 | Terms of Use: legal review | HIGH | Before launch |
