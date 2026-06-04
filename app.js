@@ -181,7 +181,10 @@ function renderStudents(list) {
 
 function filterStudents(val) {
   const q = (typeof val === 'string' ? val : '').toLowerCase();
-  renderStudents(students.filter(s =>
+  // Candidate data is not wired in Path A yet; treat the list as empty until a
+  // real source exists, so typing in the Browse search never throws.
+  const src = (typeof students !== 'undefined') ? students : [];
+  renderStudents(src.filter(s =>
     !q || s.name.toLowerCase().includes(q) || s.school.toLowerCase().includes(q) ||
     s.skills.some(sk => sk.toLowerCase().includes(q)) || s.tracks.some(t => t.toLowerCase().includes(q))
   ));
@@ -622,8 +625,10 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch(e) {}
   }
 
-  // Render students grid if on employer dashboard
-  if (document.getElementById('studentGrid')) renderStudents(students);
+  // Render the (empty) candidate grid if on the employer dashboard. Real
+  // candidate data is not wired in Path A yet, so render an empty state rather
+  // than referencing a demo array that no longer exists.
+  if (document.getElementById('studentGrid')) renderStudents([]);
 
   // Inject Privacy Policy / Terms of Use links and "Report a concern" into all footers.
   // Single injection point so every page gets them without editing each HTML file.
@@ -651,7 +656,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <p style="font-size:13.5px;color:var(--text-muted);margin:0 0 20px;line-height:1.6;">All reports are reviewed by the SiB co-op coordinator. If this is an urgent safety matter, contact your school or emergency services directly.</p>
         <div class="field">
           <label>Your name <span style="color:var(--text-faint);font-weight:400;">(optional)</span></label>
-          <input type="text" id="_rcName" placeholder="e.g. Alex T.">
+          <input type="text" id="_rcName" placeholder="Your name">
         </div>
         <div class="field">
           <label>Your email <span style="color:var(--text-faint);font-weight:400;">(optional — for follow-up)</span></label>

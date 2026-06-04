@@ -168,13 +168,8 @@
       </div>
       <!-- Recent postings quick list -->
       <div id="edash-recent-postings"></div>
-      <!-- Candidate table -->
-      <div class="app-table" style="margin-top:20px;">
-        <div class="app-table-header"><div>Candidate</div><div class="hide-mob">Track</div><div class="hide-mob">Availability</div><div>Status</div><div>Action</div></div>
-        <div class="app-row" onclick="openSProfile(1)"><div><div class="app-name">Alex T.</div><div class="app-school">Earl of March SS · Gr.12</div></div><div class="app-cell hide-mob">Technology</div><div class="app-cell hide-mob">25 hrs/wk</div><div><span class="status-pill sp-approved">Verified</span></div><div><button class="btn-intro" onclick="event.stopPropagation();openIntroModal(1)">Request Intro</button></div></div>
-        <div class="app-row" onclick="openSProfile(5)"><div><div class="app-name">Jordan C.</div><div class="app-school">Bell HS · Gr.11</div></div><div class="app-cell hide-mob">Technology</div><div class="app-cell hide-mob">20 hrs/wk</div><div><span class="status-pill sp-approved">Verified</span></div><div><button class="btn-intro" onclick="event.stopPropagation();openIntroModal(5)">Request Intro</button></div></div>
-        <div class="app-row" onclick="openSProfile(2)"><div><div class="app-name">Maya S.</div><div class="app-school">A.Y. Jackson SS · Gr.11</div></div><div class="app-cell hide-mob">Marketing</div><div class="app-cell hide-mob">20 hrs/wk</div><div><span class="status-pill sp-review">Pending</span></div><div><button class="btn-intro" onclick="event.stopPropagation();openIntroModal(2)">Request Intro</button></div></div>
-      </div>
+      <!-- Candidate preview (populated once approved candidates are available) -->
+      <div class="empty-state" style="margin-top:20px;"><div class="empty-state-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-faint)"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div class="empty-state-title">No candidates to show yet</div><div class="empty-state-body">Approved student profiles matched to your tracks will appear here. Use Browse Candidates to see who's available.</div></div>
     </div>
 
     <!-- MY POSTINGS -->
@@ -205,11 +200,7 @@
     <!-- REQUESTS -->
     <div id="edash-requests" style="display:none;">
       <div class="dash-header"><div class="dash-title">My Intro Requests</div><div class="dash-sub">Track the status of your introduction requests.</div></div>
-      <div class="app-table">
-        <div class="app-table-header"><div>Candidate</div><div class="hide-mob">Track</div><div class="hide-mob">Requested</div><div>Status</div><div>Action</div></div>
-        <div class="app-row"><div><div class="app-name">Alex T.</div><div class="app-school">Earl of March SS · Gr.12</div></div><div class="app-cell hide-mob">Technology</div><div class="app-cell hide-mob">Mar 28, 2026</div><div><span class="status-pill sp-review">Pending</span></div><div style="font-size:12px;color:var(--text-faint);">Coordinator reviewing</div></div>
-        <div class="app-row"><div><div class="app-name">Jordan C.</div><div class="app-school">Bell HS · Gr.11</div></div><div class="app-cell hide-mob">Technology</div><div class="app-cell hide-mob">Mar 29, 2026</div><div><span class="status-pill sp-review">Pending</span></div><div style="font-size:12px;color:var(--text-faint);">Coordinator reviewing</div></div>
-      </div>
+      <div class="empty-state"><div class="empty-state-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-faint)"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div><div class="empty-state-title">No intro requests yet</div><div class="empty-state-body">When you request an introduction to a candidate, it will appear here while the coordinator reviews it.</div></div>
     </div>
 
     <!-- MESSAGES -->

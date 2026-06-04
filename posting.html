@@ -123,7 +123,7 @@ function buildApplyPanel(posting) {
   return `
     <form onsubmit="submitApplication(event)">
       <div class="field"><label>Full name</label><input id="applyName" value="${currentUser.name || ''}" placeholder="Your full name" required></div>
-      <div class="field"><label>School</label><input id="applySchool" placeholder="Earl of March SS" required></div>
+      <div class="field"><label>School</label><input id="applySchool" placeholder="e.g. your school" required></div>
       <div class="field"><label>Grade</label>
         <select id="applyGrade" required>
           <option value="">Select grade</option>
