@@ -352,27 +352,138 @@ let _coordThreadFilter = 'all';
 
 const STATUS_OPTIONS = ['Applied', 'Under Review', 'Interview', 'Rejected', 'Accepted'];
 
-// —— API HELPERS ——
+// —— DATA HELPERS (Path A — direct Supabase) ——
+// Coordinator RLS grants read access to every table and update/delete on
+// postings/applications/employers. These dispatchers return the SAME
+// { success, data } shapes the old Node routes returned, so the render
+// functions below are unchanged.
 async function cGet(path) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` }
-  });
-  return res.json();
+  const sb = window._supabase;
+  if (!sb) return { success: false, data: [] };
+  try {
+    if (path === '/coordinator/postings') {
+      const { data: posts } = await sb.from('postings').select('*').order('created_at', { ascending: false });
+      const rows = posts || [];
+      const empIds = [...new Set(rows.map(p => p.employer_id))];
+      const [emps, profs, appRows] = await Promise.all([
+        empIds.length ? sb.from('employers').select('id, company_name, contact_name').in('id', empIds).then(r => r.data || []) : Promise.resolve([]),
+        empIds.length ? sb.from('profiles').select('id, email').in('id', empIds).then(r => r.data || []) : Promise.resolve([]),
+        sb.from('applications').select('posting_id').then(r => r.data || [])
+      ]);
+      const emap = {}; emps.forEach(e => { emap[e.id] = e; });
+      const pmap = {}; profs.forEach(p => { pmap[p.id] = p; });
+      const cmap = {}; appRows.forEach(a => { cmap[a.posting_id] = (cmap[a.posting_id] || 0) + 1; });
+      return { success: true, data: rows.map(p => ({
+        ...p,
+        employers: {
+          company_name: emap[p.employer_id]?.company_name || p.company_name || '',
+          contact_name: emap[p.employer_id]?.contact_name || '',
+          email:        pmap[p.employer_id]?.email || ''
+        },
+        applicant_count: cmap[p.id] || 0
+      })) };
+    }
+
+    if (path === '/coordinator/applications') {
+      const { data: apps } = await sb.from('applications').select('*').order('created_at', { ascending: false });
+      const rows = apps || [];
+      const sids = [...new Set(rows.map(a => a.student_id))];
+      const pids = [...new Set(rows.map(a => a.posting_id))];
+      const [studs, profs, posts] = await Promise.all([
+        sids.length ? sb.from('students').select('id, school, grade, profile').in('id', sids).then(r => r.data || []) : Promise.resolve([]),
+        sids.length ? sb.from('profiles').select('id, full_name, email').in('id', sids).then(r => r.data || []) : Promise.resolve([]),
+        pids.length ? sb.from('postings').select('id, title, company_name').in('id', pids).then(r => r.data || []) : Promise.resolve([])
+      ]);
+      const smap = {}; studs.forEach(s => { smap[s.id] = s; });
+      const prmap = {}; profs.forEach(p => { prmap[p.id] = p; });
+      const pmap = {}; posts.forEach(p => { pmap[p.id] = p; });
+      return { success: true, data: rows.map(a => {
+        const s = smap[a.student_id] || {}; const pr = prmap[a.student_id] || {}; const po = pmap[a.posting_id] || {};
+        const name = pr.full_name || [s.profile?.first, s.profile?.last].filter(Boolean).join(' ').trim();
+        return {
+          ...a,
+          students: { full_name: name || '', school: s.school || '', grade: s.grade || '', email: pr.email || '' },
+          postings: { title: po.title || '', employers: { company_name: po.company_name || '' } }
+        };
+      }) };
+    }
+
+    if (path === '/coordinator/users') {
+      const { data: profiles } = await sb.from('profiles').select('id, email, role, created_at, full_name').order('created_at', { ascending: false });
+      const rows = profiles || [];
+      const empIds = rows.filter(u => u.role === 'employer').map(u => u.id);
+      const stuIds = rows.filter(u => u.role === 'student').map(u => u.id);
+      const [emps, studs, appRows, postRows] = await Promise.all([
+        empIds.length ? sb.from('employers').select('id, company_name, contact_name, coordinator_approved').in('id', empIds).then(r => r.data || []) : Promise.resolve([]),
+        stuIds.length ? sb.from('students').select('id, school, grade').in('id', stuIds).then(r => r.data || []) : Promise.resolve([]),
+        stuIds.length ? sb.from('applications').select('student_id').in('student_id', stuIds).then(r => r.data || []) : Promise.resolve([]),
+        empIds.length ? sb.from('postings').select('employer_id').eq('is_active', true).in('employer_id', empIds).then(r => r.data || []) : Promise.resolve([])
+      ]);
+      const companyMap = {}, nameMap = {}, schoolMap = {}, gradeMap = {}, apprMap = {}, appCnt = {}, postCnt = {};
+      emps.forEach(e => { companyMap[e.id] = e.company_name; nameMap[e.id] = e.contact_name || e.company_name; apprMap[e.id] = !!e.coordinator_approved; });
+      studs.forEach(s => { schoolMap[s.id] = s.school; gradeMap[s.id] = s.grade; });
+      appRows.forEach(a => { appCnt[a.student_id] = (appCnt[a.student_id] || 0) + 1; });
+      postRows.forEach(p => { postCnt[p.employer_id] = (postCnt[p.employer_id] || 0) + 1; });
+      return { success: true, data: rows.map(u => ({
+        ...u,
+        full_name:            u.full_name || nameMap[u.id] || null,
+        company_name:         companyMap[u.id] || null,
+        school:               schoolMap[u.id] || null,
+        grade:                gradeMap[u.id] || null,
+        application_count:    appCnt[u.id] || 0,
+        active_posting_count: postCnt[u.id] || 0,
+        coordinator_approved: apprMap[u.id] || false
+      })) };
+    }
+
+    return { success: false, data: [] };
+  } catch (_) {
+    return { success: false, data: [] };
+  }
 }
+
 async function cPut(path, body) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
-    body: JSON.stringify(body)
-  });
-  return res.json();
+  const sb = window._supabase;
+  if (!sb) return { success: false, error: 'Auth service not ready' };
+  try {
+    let m;
+    if ((m = path.match(/^\/coordinator\/applications\/(.+)$/))) {
+      const { data, error } = await sb.from('applications').update({ status: body.status }).eq('id', m[1]).select().single();
+      return error ? { success: false, error: error.message } : { success: true, data };
+    }
+    if ((m = path.match(/^\/coordinator\/employers\/(.+)\/approve$/))) {
+      const { data, error } = await sb.from('employers').update({ coordinator_approved: true }).eq('id', m[1]).select('id, coordinator_approved').single();
+      return error ? { success: false, error: error.message } : { success: true, data };
+    }
+    if ((m = path.match(/^\/coordinator\/postings\/(.+)$/))) {
+      const { data, error } = await sb.from('postings').update(body).eq('id', m[1]).select().single();
+      return error ? { success: false, error: error.message } : { success: true, data };
+    }
+    if (path.match(/^\/coordinator\/users\/(.+)$/)) {
+      // Manual email verification needs the admin API (service_role) — not
+      // available client-side in Path A. Fail clearly so the UI falls back.
+      return { success: false, error: 'Manual email verification needs an admin function (not available client-side).' };
+    }
+    return { success: false, error: 'Unsupported operation' };
+  } catch (_) {
+    return { success: false, error: 'Request failed' };
+  }
 }
+
 async function cDel(path) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` }
-  });
-  return res.json();
+  const sb = window._supabase;
+  if (!sb) return { success: false, error: 'Auth service not ready' };
+  try {
+    const m = path.match(/^\/coordinator\/postings\/(.+)$/);
+    if (m) {
+      // applications cascade via the postings FK (ON DELETE CASCADE).
+      const { error } = await sb.from('postings').delete().eq('id', m[1]);
+      return error ? { success: false, error: error.message } : { success: true };
+    }
+    return { success: false, error: 'Unsupported operation' };
+  } catch (_) {
+    return { success: false, error: 'Request failed' };
+  }
 }
 
 // —— TAB SWITCHING ——

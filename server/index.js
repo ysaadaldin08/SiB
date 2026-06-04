@@ -1,3 +1,10 @@
+// ============================================================================
+// RETIRED — NOT THE DATA PATH. See server/README.md.
+// Path A: the browser talks to Supabase directly; this Express API is not
+// deployed and nothing in the live site calls it. Kept for reference only.
+// Do not deploy this or point the client at it. New server-side logic belongs
+// in Supabase (RLS, SECURITY DEFINER RPCs, triggers, or Edge Functions).
+// ============================================================================
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');

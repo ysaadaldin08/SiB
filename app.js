@@ -342,11 +342,60 @@ function submitStudentApp() {
   }
 }
 
-function doSubmit() {
-  populateStudentDash();
+async function doSubmit() {
+  // Persist to Supabase first; do NOT advance to the success screen on failure.
+  const ok = await _persistStudentProfile();
+  if (!ok) return;
+  populateStudentDash();   // keeps sessionStorage for dashboard display + resume preview
   document.getElementById('studentFormMain').style.display = 'none';
   document.getElementById('studentSuccess').classList.add('show');
   window.scrollTo(0,0);
+}
+
+// Writes the onboarding answers to the signed-in student's row. The row itself
+// is created at signup by the handle_new_user() trigger, so this is an UPDATE
+// (students has no client INSERT grant by design). school + grade are typed
+// columns; the rest is stored in the students.profile jsonb.
+async function _persistStudentProfile() {
+  const sb = window._supabase;
+  if (!sb) { showToast('Service not ready — please wait a moment and try again.', true); return false; }
+
+  const { data: authData } = await sb.auth.getUser();
+  const userId = authData?.user?.id;
+  if (!userId) {
+    showToast('Please sign in to submit your application.', true);
+    if (typeof openAuth === 'function') openAuth('login', 'student');
+    return false;
+  }
+
+  const school = (document.getElementById('s1school')?.value || '').trim();
+  const grade  = document.getElementById('s1grade')?.value || '';
+  const profile = {
+    first:           (document.getElementById('s1first')?.value || '').trim(),
+    last:            (document.getElementById('s1last')?.value  || '').trim(),
+    phone:           (document.getElementById('s1phone')?.value || '').trim(),
+    teacherName:     (document.getElementById('s1teachername')?.value  || '').trim(),
+    teacherEmail:    (document.getElementById('s1teacheremail')?.value || '').trim(),
+    hoursPerWeek:    document.getElementById('s3hours')?.value || '',
+    startDate:       document.getElementById('s3date')?.value  || '',
+    commute:         document.getElementById('s3commute')?.value || '',
+    guardianAuth:    document.getElementById('s3auth')?.value || '',
+    tracks:          [...studentSelectedTracks],
+    goals:           (document.getElementById('s4q1')?.value || '').trim(),
+    experience:      (document.getElementById('s4q2')?.value || '').trim(),
+    schedulingNotes: (document.getElementById('s4q3')?.value || '').trim(),
+    resumeName:      uploadedResume ? uploadedResume.name : null,
+    submittedAt:     new Date().toISOString()
+    // NOTE: the resume FILE is not persisted yet — it stays in sessionStorage as a
+    // data URL. Proper resume storage needs a Supabase Storage bucket (follow-up).
+  };
+
+  const { error } = await sb.from('students').update({ school, grade, profile }).eq('id', userId);
+  if (error) {
+    showToast(error.message || 'Could not save your application. Please try again.', true);
+    return false;
+  }
+  return true;
 }
 
 function populateStudentDash() {

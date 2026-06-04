@@ -1,39 +1,29 @@
-// ——— SiB DATA LAYER — API-backed ———
+// ——— SiB DATA LAYER — direct Supabase (Path A) ———
 // All functions are async. Page-level DOMContentLoaded handlers must use
 // async/await or .then() when calling these functions.
-// API_BASE and getToken() are provided by config.js, loaded before this script.
+// window._supabase is created in config.js (loaded before this script). There is
+// NO Node API in Path A — every read/write goes straight to Supabase and is
+// scoped by Row Level Security (see supabase/migrations/20260603000000_*).
 
-function _authHeaders() {
-  return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` };
-}
-
-async function _get(path) {
-  const res = await fetch(API_BASE + path, { headers: _authHeaders() });
-  return res.json();
-}
-async function _post(path, body) {
-  const res = await fetch(API_BASE + path, { method: 'POST', headers: _authHeaders(), body: JSON.stringify(body) });
-  return res.json();
-}
-async function _put(path, body) {
-  const res = await fetch(API_BASE + path, { method: 'PUT', headers: _authHeaders(), body: JSON.stringify(body) });
-  return res.json();
-}
-async function _del(path) {
-  const res = await fetch(API_BASE + path, { method: 'DELETE', headers: _authHeaders() });
-  return res.json();
+function _sb() { return window._supabase || null; }
+async function _uid() {
+  const sb = _sb();
+  if (!sb) return null;
+  try { const { data } = await sb.auth.getUser(); return data?.user?.id || null; } catch (_) { return null; }
 }
 
 // ——— SHAPE CONVERTERS ———
-// API returns snake_case; the frontend uses camelCase. These translate between them.
+// Supabase returns snake_case; the frontend uses camelCase.
 
 function _postingFromApi(p) {
   if (!p) return null;
   return {
     id: p.id,
     employerId: p.employer_id,
-    companyName: p.employers?.company_name || '',
-    supervisorName: p.employers?.contact_name || '',
+    // company_name is denormalized onto postings (set by a DB trigger from the
+    // employer row) so the public board never has to read the employers table.
+    companyName: p.company_name || p.employers?.company_name || '',
+    supervisorName: p.supervisor_name || p.employers?.contact_name || '',
     title: p.title || '',
     track: p.track || '',
     workMode: p.work_mode || 'On-site',
@@ -52,17 +42,20 @@ function _postingFromApi(p) {
 
 function _postingToApi(data) {
   const body = {};
-  if (data.title !== undefined)           body.title = data.title;
-  if (data.description !== undefined)     body.description = data.description;
+  if (data.title !== undefined)            body.title = data.title;
+  if (data.description !== undefined)      body.description = data.description;
   if (data.responsibilities !== undefined) body.responsibilities = data.responsibilities;
-  if (data.requirements !== undefined)    body.requirements = data.requirements;
-  if (data.track !== undefined)           body.track = data.track;
-  if (data.workMode !== undefined)        body.work_mode = data.workMode;
-  if (data.hoursPerWeek !== undefined)    body.hours_per_week = data.hoursPerWeek;
-  if (data.location !== undefined)        body.location = data.location;
-  if (data.startDate !== undefined)       body.start_date = data.startDate;
-  if (data.deadline !== undefined)        body.deadline = data.deadline;
-  if (data.isActive !== undefined)        body.is_active = data.isActive;
+  if (data.requirements !== undefined)     body.requirements = data.requirements;
+  if (data.track !== undefined)            body.track = data.track;
+  if (data.workMode !== undefined)         body.work_mode = data.workMode;
+  if (data.hoursPerWeek !== undefined)     body.hours_per_week = data.hoursPerWeek;
+  if (data.location !== undefined)         body.location = data.location;
+  if (data.startDate !== undefined)        body.start_date = data.startDate;
+  if (data.deadline !== undefined)         body.deadline = data.deadline;
+  if (data.supervisorName !== undefined)   body.supervisor_name = data.supervisorName;
+  if (data.isActive !== undefined)         body.is_active = data.isActive;
+  // NOTE: company_name is intentionally NOT settable from the client — the DB
+  // trigger derives it from the authoritative employers row.
   return body;
 }
 
@@ -86,22 +79,72 @@ function _appFromApi(a) {
   };
 }
 
-// ——— POSTINGS (direct Supabase — ported from Node API) ———
-// Reads embed the employer via the postings_employer_id_fkey relationship
-// (PostgREST resolves it as the to-one `employers` object). RLS scopes rows:
-// getActivePostings is filtered to is_active; getPostingsByEmployer relies on
-// the postings SELECT policy to return only the caller's own listings.
+function _notificationFromApi(n) {
+  return {
+    id:        n.id,
+    userId:    n.user_id,
+    type:      n.type,
+    payload:   n.payload    || {},
+    createdAt: n.created_at,
+    readAt:    n.read_at    || null,
+    emailedAt: n.emailed_at || null
+  };
+}
 
-const POSTING_SELECT = '*, employers(company_name, contact_name)';
+function _threadFromApi(t) {
+  return {
+    id:               t.id,
+    studentId:        t.student_id,
+    employerId:       t.employer_id,
+    listingId:        t.listing_id        || null,
+    applicationId:    t.application_id    || null,
+    createdAt:        t.created_at,
+    createdBy:        t.created_by        || null,
+    lastMessageAt:    t.last_message_at   || t.created_at,
+    status:           t.status            || 'open',
+    reviewedAt:       t.reviewed_at       || null,
+    reviewedBy:       t.reviewed_by       || null,
+    coordinatorNote:  t.coordinator_note  || null,
+    participantNames: typeof t.participant_names === 'object' && t.participant_names
+      ? {
+          studentName:  t.participant_names.studentName  || 'Student',
+          employerName: t.participant_names.employerName || 'Employer',
+          listingTitle: t.participant_names.listingTitle || ''
+        }
+      : { studentName: 'Student', employerName: 'Employer', listingTitle: '' },
+    preview:            t._preview       || null,
+    messageCount:       t._message_count || 0,
+    flaggedCount:       t._flagged_count || 0,
+    flagReasonsSummary: t._flag_reasons  || []
+  };
+}
+
+function _messageFromApi(m) {
+  return {
+    id:                    m.id,
+    threadId:              m.thread_id,
+    senderId:              m.sender_id,
+    senderRole:            m.sender_role,
+    body:                  m.body,
+    createdAt:             m.created_at,
+    flagged:               m.flagged                 || false,
+    flagReasons:           m.flag_reasons            || [],
+    reviewedByCoordinator: m.reviewed_by_coordinator || false
+  };
+}
+
+// ——— POSTINGS ———
+// Public job board reads the `postings_public` VIEW (active rows, no person-level
+// fields). Employer management + the owner/coordinator/accepted paths read the
+// base `postings` table (RLS scopes the rows; the view hides supervisor_name).
 
 async function getActivePostings() {
-  const sb = window._supabase;
+  const sb = _sb();
   if (!sb) return [];
   try {
     const { data, error } = await sb
-      .from('postings')
-      .select(POSTING_SELECT)
-      .eq('is_active', true)
+      .from('postings_public')
+      .select('*')
       .order('created_at', { ascending: false });
     if (error) return [];
     return (data || []).map(_postingFromApi);
@@ -109,12 +152,12 @@ async function getActivePostings() {
 }
 
 async function getPostingById(id) {
-  const sb = window._supabase;
+  const sb = _sb();
   if (!sb) return null;
   try {
     const { data, error } = await sb
-      .from('postings')
-      .select(POSTING_SELECT)
+      .from('postings_public')
+      .select('*')
       .eq('id', id)
       .maybeSingle();
     if (error || !data) return null;
@@ -123,13 +166,13 @@ async function getPostingById(id) {
 }
 
 async function getPostingsByEmployer(_email) {
-  // _email ignored — RLS scopes the SELECT to the signed-in employer's rows.
-  const sb = window._supabase;
+  // _email ignored — RLS scopes the SELECT to the signed-in employer's own rows.
+  const sb = _sb();
   if (!sb) return [];
   try {
     const { data, error } = await sb
       .from('postings')
-      .select(POSTING_SELECT)
+      .select('*')
       .order('created_at', { ascending: false });
     if (error) return [];
     return (data || []).map(_postingFromApi);
@@ -137,30 +180,24 @@ async function getPostingsByEmployer(_email) {
 }
 
 async function createPosting(data) {
-  const sb = window._supabase;
+  const sb = _sb();
   if (!sb) throw new Error('Auth service not ready');
-  // employer_id has no DB default — set it to the signed-in user's id
-  // (employers.id === auth.users.id). The RLS INSERT policy verifies this.
-  const { data: auth } = await sb.auth.getUser();
-  const employerId = auth?.user?.id;
+  const employerId = await _uid();
   if (!employerId) throw new Error('You must be signed in to post a listing.');
   const { data: row, error } = await sb
     .from('postings')
     .insert({ ..._postingToApi(data), employer_id: employerId })
-    .select(POSTING_SELECT)
+    .select('*')
     .single();
   if (error) throw new Error(error.message);
   return _postingFromApi(row);
 }
 
 async function updatePosting(id, data) {
-  const sb = window._supabase;
+  const sb = _sb();
   if (!sb) return false;
   try {
-    const { error } = await sb
-      .from('postings')
-      .update(_postingToApi(data))
-      .eq('id', id);
+    const { error } = await sb.from('postings').update(_postingToApi(data)).eq('id', id);
     return !error;
   } catch (_) { return false; }
 }
@@ -169,7 +206,7 @@ async function archivePosting(id)    { return updatePosting(id, { isActive: fals
 async function reactivatePosting(id) { return updatePosting(id, { isActive: true }); }
 
 async function deletePosting(id) {
-  const sb = window._supabase;
+  const sb = _sb();
   if (!sb) return false;
   try {
     const { error } = await sb.from('postings').delete().eq('id', id);
@@ -180,19 +217,57 @@ async function deletePosting(id) {
 // ——— APPLICATIONS ———
 
 async function getApplicationsByStudent(_email) {
-  // _email ignored — identity comes from the auth token
+  const sb = _sb();
+  if (!sb) return [];
   try {
-    const result = await _get('/applications/mine');
-    if (!result.success) return [];
-    return result.data.map(_appFromApi);
+    const uid = await _uid();
+    if (!uid) return [];
+    const { data: apps, error } = await sb
+      .from('applications')
+      .select('*')
+      .eq('student_id', uid)
+      .order('created_at', { ascending: false });
+    if (error) return [];
+    // Posting details come from the public view (active listings the student
+    // applied to). RLS won't embed the base postings row for a non-accepted
+    // application, so we join client-side against postings_public.
+    const ids = [...new Set((apps || []).map(a => a.posting_id))];
+    const pmap = {};
+    if (ids.length) {
+      const { data: posts } = await sb.from('postings_public').select('*').in('id', ids);
+      (posts || []).forEach(p => { pmap[p.id] = p; });
+    }
+    return (apps || []).map(a => _appFromApi({ ...a, postings: pmap[a.posting_id] || null }));
   } catch (_) { return []; }
 }
 
 async function getApplicationsByPosting(postingId) {
+  const sb = _sb();
+  if (!sb) return [];
   try {
-    const result = await _get(`/applications/posting/${postingId}`);
-    if (!result.success) return [];
-    return result.data.map(_appFromApi);
+    const { data: apps, error } = await sb
+      .from('applications')
+      .select('*')
+      .eq('posting_id', postingId)
+      .order('created_at', { ascending: false });
+    if (error) return [];
+    // Student identity (name/school/grade) is readable ONLY for Accepted
+    // applicants (RLS). Pre-acceptance these come back empty and the UI shows a
+    // neutral "Applicant" label — by design (PII minimization).
+    const sids = [...new Set((apps || []).map(a => a.student_id))];
+    const smap = {};
+    if (sids.length) {
+      const { data: studs } = await sb.from('students').select('id, school, grade, profile').in('id', sids);
+      (studs || []).forEach(s => { smap[s.id] = s; });
+    }
+    return (apps || []).map(a => {
+      const s = smap[a.student_id];
+      const name = s ? [s.profile?.first, s.profile?.last].filter(Boolean).join(' ').trim() : '';
+      return _appFromApi({
+        ...a,
+        students: s ? { full_name: name || 'Applicant', school: s.school, grade: s.grade } : null
+      });
+    });
   } catch (_) { return []; }
 }
 
@@ -213,18 +288,37 @@ async function getApplicationForPosting(_studentEmail, postingId) {
 }
 
 async function createApplication(data) {
-  const result = await _post('/applications', {
-    posting_id: data.postingId,
-    cover_note: data.coverNote || '',
-    resume_url: data.resumeUrl || ''
-  });
-  if (!result.success) throw new Error(result.error);
-  return _appFromApi(result.data);
+  const sb = _sb();
+  if (!sb) throw new Error('Auth service not ready');
+  const uid = await _uid();
+  if (!uid) throw new Error('You must be signed in to apply.');
+  const { data: row, error } = await sb
+    .from('applications')
+    .insert({
+      posting_id: data.postingId,
+      student_id: uid,
+      cover_note: data.coverNote || '',
+      resume_url: data.resumeUrl || ''
+    })
+    .select('*')
+    .single();
+  if (error) {
+    if (error.code === '23505') throw new Error('You have already applied to this posting.');
+    throw new Error(error.message);
+  }
+  // Cross-user notifications (employer + applicant confirmation) are fired by the
+  // applications INSERT trigger — no client-side notification call needed.
+  return _appFromApi(row);
 }
 
 async function updateApplicationStatus(id, status) {
-  const result = await _put(`/applications/${id}`, { status });
-  return result.success;
+  const sb = _sb();
+  if (!sb) return false;
+  try {
+    // The status-change trigger notifies the student (+ coordinators on Accepted).
+    const { error } = await sb.from('applications').update({ status }).eq('id', id);
+    return !error;
+  } catch (_) { return false; }
 }
 
 // ——— STATS ———
@@ -246,7 +340,7 @@ async function getEmployerStats(_email) {
   };
 }
 
-// ——— FORMATTERS (unchanged — no API dependency) ———
+// ——— FORMATTERS (no API dependency) ———
 
 function formatDateShort(isoString) {
   if (!isoString) return '—';
@@ -273,7 +367,7 @@ function timeAgo(isoString) {
   return Math.floor(days / 30) + 'mo ago';
 }
 
-// ——— BADGE / PILL HELPERS (unchanged) ———
+// ——— BADGE / PILL HELPERS ———
 
 const TRACK_CLASS = {
   'Technology & IT':              'tt-tech',
@@ -337,17 +431,16 @@ function postingCardHTML(posting, opts = {}) {
 }
 
 // ——— FLAGGED TERMS CONFIG ———
-// offPlatformPhrases and profanity are substring-matched (case-insensitive) against
-// every message body. The regex arrays (phoneNumbers, emails, etc.) are reserved for
-// future server-side or custom override use — moderation.js uses its own hard-coded
-// regex patterns which are more reliable.
+// offPlatformPhrases is substring-matched (case-insensitive) against message
+// bodies by moderation.js. The regex arrays are reserved for future use —
+// moderation.js uses its own hard-coded patterns.
 const flaggedTerms = {
-  phoneNumbers:       [],  // RegExp[] — moderation.js handles phone detection via its own patterns
-  emails:             [],  // RegExp[] — moderation.js handles personal email detection
-  socialHandles:      [],  // RegExp[] — moderation.js handles @handle and platform name detection
-  urls:               [],  // RegExp[] — moderation.js handles URL detection
-  profanity:          [],  // string[] — add terms here; matched as substrings, case-insensitive
-  offPlatformPhrases: [    // string[] — phrases that suggest moving off-platform
+  phoneNumbers:       [],
+  emails:             [],
+  socialHandles:      [],
+  urls:               [],
+  profanity:          [],
+  offPlatformPhrases: [
     'text me', 'call me', 'my number is', 'my phone is', 'phone number is',
     'add me on', 'dm me', "let's move this to", 'email me at', 'reach me at',
     'contact me at', 'message me on', 'find me on', 'follow me on',
@@ -359,14 +452,9 @@ const flaggedTerms = {
 };
 
 // ——— DOMAIN TRUST CONFIG ———
-// trustedStudentDomains: board-issued addresses receive a "Verified school account" badge.
-// Non-board students may still sign up but are flagged for coordinator review.
-// trustedEmployerDomains: known partner company domains bypass coordinator approval.
-// requireEmployerApproval: when true, unknown employer domains cannot post until a
-// coordinator explicitly approves their account.
 const domainConfig = {
-  trustedStudentDomains:   [], // Populate with school board student/staff domains when confirmed
-  trustedEmployerDomains:  [], // Populate with partner company domains when confirmed
+  trustedStudentDomains:   [],
+  trustedEmployerDomains:  [],
   flagNonBoardStudents:    true,
   requireEmployerApproval: true
 };
@@ -387,22 +475,35 @@ function isEmployerTrustedDomain(email) {
   return domainConfig.trustedEmployerDomains.some(d => domain === d || domain.endsWith('.' + d));
 }
 
-// Returns true if this employer may create new listings.
-// After 2.3 migration, coordinatorApproved comes from employers.coordinator_approved
-// (reflected on the user object from login) — no localStorage fallback.
+// Client-side UX gate (informational). The RLS policy postings_insert_own_if_approved
+// is the real enforcement. employerCanPost() works off the cached user object;
+// employerCanPostNow() re-reads the authoritative flag from the DB.
 function employerCanPost(user) {
   if (!user || user.role !== 'employer') return false;
   if (!domainConfig.requireEmployerApproval) return true;
   return !!(user.domainVerified || user.coordinatorApproved);
 }
 
-// ——— localStorage HELPERS (legacy — only sib_user and sib_token remain here) ———
+async function employerCanPostNow() {
+  const sb = _sb();
+  if (!sb) return false;
+  try {
+    const uid = await _uid();
+    if (!uid) return false;
+    const { data } = await sb.from('employers')
+      .select('coordinator_approved, domain_verified')
+      .eq('id', uid)
+      .maybeSingle();
+    return !!(data && (data.coordinator_approved || data.domain_verified));
+  } catch (_) { return false; }
+}
+
+// ——— localStorage HELPERS (only sib_user and sib_token live here) ———
 
 function _lsGet(key) {
   try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch (_) { return []; }
 }
 function _lsSet(key, arr) { localStorage.setItem(key, JSON.stringify(arr)); }
-function _uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 
 function _defaultNotificationPreferences() {
   return {
@@ -414,180 +515,233 @@ function _defaultNotificationPreferences() {
   };
 }
 
-// ——— SHAPE CONVERTERS (API → camelCase) ———
+// ——— NOTIFICATIONS ———
+// Clients may only INSERT notifications addressed to THEMSELVES (RLS). Cross-user
+// notifications are created by SECURITY DEFINER triggers / notify_coordinators().
 
-function _notificationFromApi(n) {
-  return {
-    id:        n.id,
-    userId:    n.user_id,
-    type:      n.type,
-    payload:   n.payload    || {},
-    createdAt: n.created_at,
-    readAt:    n.read_at    || null,
-    emailedAt: n.emailed_at || null
-  };
-}
-
-function _threadFromApi(t) {
-  return {
-    id:               t.id,
-    studentId:        t.student_id,
-    employerId:       t.employer_id,
-    listingId:        t.listing_id        || null,
-    applicationId:    t.application_id    || null,
-    createdAt:        t.created_at,
-    createdBy:        t.created_by        || null,
-    lastMessageAt:    t.last_message_at   || t.created_at,
-    status:           t.status            || 'open',
-    reviewedAt:       t.reviewed_at       || null,
-    reviewedBy:       t.reviewed_by       || null,
-    coordinatorNote:  t.coordinator_note  || null,
-    participantNames: typeof t.participant_names === 'object' && t.participant_names
-      ? {
-          studentName:  t.participant_names.studentName  || 'Student',
-          employerName: t.participant_names.employerName || 'Employer',
-          listingTitle: t.participant_names.listingTitle || ''
-        }
-      : { studentName: 'Student', employerName: 'Employer', listingTitle: '' },
-    // Enrichment fields populated by the server on list endpoints
-    preview:            t._preview       || null,
-    messageCount:       t._message_count || 0,
-    flaggedCount:       t._flagged_count || 0,
-    flagReasonsSummary: t._flag_reasons  || []
-  };
-}
-
-function _messageFromApi(m) {
-  return {
-    id:                    m.id,
-    threadId:              m.thread_id,
-    senderId:              m.sender_id,
-    senderRole:            m.sender_role,
-    body:                  m.body,
-    createdAt:             m.created_at,
-    flagged:               m.flagged               || false,
-    flagReasons:           m.flag_reasons          || [],
-    reviewedByCoordinator: m.reviewed_by_coordinator || false
-  };
-}
-
-// ——— NOTIFICATIONS (server-backed — 2.1) ———
-
-async function getNotifications(_userId) {
-  // _userId param kept for call-site compatibility; server filters by JWT token.
+async function getNotifications(userId) {
+  const sb = _sb();
+  if (!sb) return [];
   try {
-    const r = await _get('/notifications');
-    if (!r.success) return [];
-    return (r.data || []).map(_notificationFromApi);
+    const uid = userId || (typeof currentUser !== 'undefined' && currentUser ? currentUser.id : null);
+    if (!uid) return [];
+    const { data, error } = await sb
+      .from('notifications')
+      .select('*')
+      .eq('user_id', uid)
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (error) return [];
+    return (data || []).map(_notificationFromApi);
   } catch (_) { return []; }
 }
 
 async function _insertNotification(data) {
+  const sb = _sb();
+  if (!sb) return null;
   try {
-    const r = await _post('/notifications', {
-      user_id: data.userId,
-      type:    data.type,
-      payload: data.payload || {}
-    });
-    if (!r.success) return null;
-    return _notificationFromApi(r.data);
+    const { data: row, error } = await sb
+      .from('notifications')
+      .insert({ user_id: data.userId, type: data.type, payload: data.payload || {} })
+      .select()
+      .single();
+    if (error) return null;
+    return _notificationFromApi(row);
   } catch (_) { return null; }
 }
 
 async function markNotificationRead(id) {
-  try { await _put(`/notifications/${id}/read`, {}); return true; } catch (_) { return false; }
+  const sb = _sb();
+  if (!sb) return false;
+  try { const { error } = await sb.from('notifications').update({ read_at: new Date().toISOString() }).eq('id', id); return !error; }
+  catch (_) { return false; }
 }
 
 async function markNotificationEmailed(id) {
-  try { await _put(`/notifications/${id}/emailed`, {}); return true; } catch (_) { return false; }
+  const sb = _sb();
+  if (!sb) return false;
+  try { const { error } = await sb.from('notifications').update({ emailed_at: new Date().toISOString() }).eq('id', id); return !error; }
+  catch (_) { return false; }
 }
 
 async function markAllNotificationsRead() {
-  try { await _put('/notifications/read-all', {}); return true; } catch (_) { return false; }
+  const sb = _sb();
+  if (!sb) return false;
+  try {
+    const uid = await _uid();
+    if (!uid) return false;
+    const { error } = await sb.from('notifications')
+      .update({ read_at: new Date().toISOString() })
+      .eq('user_id', uid)
+      .is('read_at', null);
+    return !error;
+  } catch (_) { return false; }
 }
 
-// ——— MESSAGE THREADS (server-backed — 2.4) ———
+// ——— MESSAGE THREADS ———
 
-async function getMessageThreads(_userId, _role) {
-  // _userId/_role kept for call-site compatibility; server filters by JWT token.
+// Attach last-message preview + counts client-side (replaces the old server
+// _enrichThreads). One batched messages query for the whole thread set.
+async function _enrichThreadsClient(threads) {
+  if (!threads.length) return threads;
+  const sb = _sb();
+  const ids = threads.map(t => t.id);
+  const { data: msgs } = await sb
+    .from('messages')
+    .select('thread_id, body, flagged, flag_reasons, created_at')
+    .in('thread_id', ids)
+    .order('created_at', { ascending: true });
+  const prev = {}, cnt = {}, fc = {}, fr = {};
+  (msgs || []).forEach(m => {
+    prev[m.thread_id] = m.body; // asc order → last wins
+    cnt[m.thread_id]  = (cnt[m.thread_id] || 0) + 1;
+    if (m.flagged) {
+      fc[m.thread_id] = (fc[m.thread_id] || 0) + 1;
+      const c = fr[m.thread_id] || [];
+      (m.flag_reasons || []).forEach(r => { if (!c.includes(r)) c.push(r); });
+      fr[m.thread_id] = c;
+    }
+  });
+  return threads.map(t => ({
+    ...t,
+    _preview:       prev[t.id] || null,
+    _message_count: cnt[t.id]  || 0,
+    _flagged_count: fc[t.id]   || 0,
+    _flag_reasons:  fr[t.id]   || []
+  }));
+}
+
+async function getMessageThreads(userId, _role) {
+  const sb = _sb();
+  if (!sb) return [];
   try {
-    const r = await _get('/threads');
-    if (!r.success) return [];
-    return (r.data || []).map(_threadFromApi);
+    const uid = userId || (typeof currentUser !== 'undefined' && currentUser ? currentUser.id : null) || await _uid();
+    if (!uid) return [];
+    const { data, error } = await sb
+      .from('message_threads')
+      .select('*')
+      .or(`student_id.eq.${uid},employer_id.eq.${uid}`)
+      .order('last_message_at', { ascending: false });
+    if (error) return [];
+    const enriched = await _enrichThreadsClient(data || []);
+    return enriched.map(_threadFromApi);
   } catch (_) { return []; }
 }
 
 async function getMessageThreadById(id) {
+  const sb = _sb();
+  if (!sb) return null;
   try {
-    const r = await _get(`/threads/${id}`);
-    if (!r.success) return null;
-    return _threadFromApi(r.data);
+    const { data, error } = await sb.from('message_threads').select('*').eq('id', id).maybeSingle();
+    if (error || !data) return null;
+    return _threadFromApi(data);
   } catch (_) { return null; }
 }
 
 async function createMessageThread(data) {
-  const r = await _post('/threads', {
-    student_id:        data.studentId,
-    employer_id:       data.employerId,
-    listing_id:        data.listingId        || null,
-    application_id:    data.applicationId    || null,
-    participant_names: data.participantNames || {}
-  });
-  if (!r.success) throw new Error(r.error || 'Could not create thread');
-  return _threadFromApi(r.data);
+  const sb = _sb();
+  if (!sb) throw new Error('Auth service not ready');
+  // Idempotent: reuse the existing thread for this application if present.
+  if (data.applicationId) {
+    const { data: existing } = await sb
+      .from('message_threads').select('*').eq('application_id', data.applicationId).maybeSingle();
+    if (existing) return _threadFromApi(existing);
+  }
+  const uid = await _uid();
+  const { data: row, error } = await sb
+    .from('message_threads')
+    .insert({
+      student_id:        data.studentId,
+      employer_id:       data.employerId,
+      listing_id:        data.listingId        || null,
+      application_id:    data.applicationId    || null,
+      participant_names: data.participantNames || {},
+      created_by:        uid
+    })
+    .select()
+    .single();
+  // RLS rejects this insert unless an Accepted application exists between the two
+  // parties — surfaced here as a friendly error.
+  if (error) throw new Error(error.message || 'Could not start this conversation.');
+  return _threadFromApi(row);
 }
 
 async function updateMessageThreadStatus(id, status) {
-  try {
-    const r = await _put(`/threads/${id}/status`, { status });
-    return r.success;
-  } catch (_) { return false; }
+  const sb = _sb();
+  if (!sb) return false;
+  try { const { error } = await sb.from('message_threads').update({ status }).eq('id', id); return !error; }
+  catch (_) { return false; }
 }
 
-// Returns all threads — coordinator-only (calls /api/coordinator/threads).
+// Coordinator-only: all threads (RLS returns everything for a coordinator).
 async function getAllMessageThreads() {
+  const sb = _sb();
+  if (!sb) return [];
   try {
-    const r = await _get('/coordinator/threads');
-    if (!r.success) return [];
-    return (r.data || []).map(_threadFromApi);
+    const { data, error } = await sb
+      .from('message_threads').select('*').order('last_message_at', { ascending: false });
+    if (error) return [];
+    const enriched = await _enrichThreadsClient(data || []);
+    return enriched.map(_threadFromApi);
   } catch (_) { return []; }
 }
 
 async function coordinatorReviewThread(threadId, { note } = {}) {
+  const sb = _sb();
+  if (!sb) return false;
   try {
-    const r = await _put(`/threads/${threadId}/review`, { note: note || null });
-    return r.success;
+    const uid = await _uid();
+    const { error } = await sb.from('message_threads')
+      .update({ reviewed_at: new Date().toISOString(), reviewed_by: uid, coordinator_note: note || null })
+      .eq('id', threadId);
+    return !error;
   } catch (_) { return false; }
 }
 
-// ——— MESSAGES (server-backed — 2.5) ———
+// ——— MESSAGES ———
 
 async function getMessages(threadId) {
+  const sb = _sb();
+  if (!sb) return [];
   try {
-    const r = await _get(`/threads/${threadId}/messages`);
-    if (!r.success) return [];
-    return (r.data || []).map(_messageFromApi);
+    const { data, error } = await sb
+      .from('messages').select('*').eq('thread_id', threadId).order('created_at', { ascending: true });
+    if (error) return [];
+    return (data || []).map(_messageFromApi);
   } catch (_) { return []; }
 }
 
 async function createMessage(data) {
-  const r = await _post(`/threads/${data.threadId}/messages`, {
-    body:         data.body,
-    flagged:      data.flagged      || false,
-    flag_reasons: data.flagReasons  || []
-  });
-  if (!r.success) throw new Error(r.error || 'Could not send message');
-  return _messageFromApi(r.data);
+  const sb = _sb();
+  if (!sb) throw new Error('Auth service not ready');
+  const uid = await _uid();
+  const role = (typeof currentUser !== 'undefined' && currentUser ? currentUser.role : null) || 'student';
+  const { data: row, error } = await sb
+    .from('messages')
+    .insert({
+      thread_id:    data.threadId,
+      sender_id:    uid,
+      sender_role:  role,
+      body:         data.body,
+      flagged:      data.flagged     || false,
+      flag_reasons: data.flagReasons || []
+    })
+    .select()
+    .single();
+  // The message INSERT trigger bumps the thread, flags it if needed, and notifies
+  // the recipient (+ coordinators on a flag).
+  if (error) throw new Error(error.message || 'Could not send message');
+  return _messageFromApi(row);
 }
 
-// flagMessage is now a no-op — flag state is embedded in createMessage call.
+// flag state is embedded in createMessage — kept as a no-op for call-site compatibility.
 async function flagMessage(_id, _reasons) { return true; }
 
 async function markMessageReviewed(id) {
-  try {
-    const r = await _put(`/coordinator/messages/${id}/review`, {});
-    return r.success;
-  } catch (_) { return false; }
+  const sb = _sb();
+  if (!sb) return false;
+  try { const { error } = await sb.from('messages').update({ reviewed_by_coordinator: true }).eq('id', id); return !error; }
+  catch (_) { return false; }
 }
 
 async function getThreadForApplication(applicationId) {
@@ -598,24 +752,27 @@ async function getThreadForApplication(applicationId) {
   } catch (_) { return null; }
 }
 
-// Rate limiting is now enforced server-side (POST /api/threads returns 429 on limit).
-// Always returns allowed on the client; callers handle 429 errors from the server.
+// Rate limiting is no longer enforced server-side in Path A. Always allowed here;
+// add a DB-side limit (rate_limit_log + an Edge Function) if abuse appears.
 function checkMessageRateLimit(_userId) {
   return { allowed: true, reason: '' };
 }
 
-// ——— COORDINATORS (server-backed — 2.2) ———
-// Reads from profiles where role='coordinator' via GET /api/coordinators.
+// ——— COORDINATORS ———
+// Reads profiles where role='coordinator'. RLS returns rows only to coordinators;
+// other users get [] (fan-out to coordinators now happens via the
+// notify_coordinators() RPC, not by enumerating them client-side).
 
 async function getCoordinators() {
+  const sb = _sb();
+  if (!sb) return [];
   try {
-    const r = await _get('/coordinators');
-    if (!r.success) return [];
-    return (r.data || []).map(c => ({ id: c.id, email: c.email, role: c.role }));
+    const { data, error } = await sb.from('profiles').select('id, email, role').eq('role', 'coordinator');
+    if (error) return [];
+    return (data || []).map(c => ({ id: c.id, email: c.email, role: c.role }));
   } catch (_) { return []; }
 }
 
-// Stubs kept for call-site compatibility; filter from the live list.
 async function getCoordinatorById(id) {
   const all = await getCoordinators();
   return all.find(c => c.id === id) || null;
@@ -627,19 +784,15 @@ async function getCoordinatorByEmail(email) {
   return all.find(c => c.email.toLowerCase() === email.toLowerCase()) || null;
 }
 
-// No-op — coordinators are now real Supabase Auth users; creation is out-of-scope.
 function createCoordinator(_data) { return null; }
 
 // ——— MIGRATION ———
-// Runs once on every page load. Version-gated to skip the body on repeat loads.
-// Bump DATA_VERSION any time you change the migration logic.
-const DATA_VERSION = '2026-05-14'; // bumped for Phase 2 (sib_coordinators seed removed)
+// Runs once per page load; version-gated. Backfills new fields on the cached
+// sib_user so existing dev sessions keep working.
+const DATA_VERSION = '2026-06-03'; // Path A
 
 function migrateExistingData() {
   if (localStorage.getItem('sib_data_version') === DATA_VERSION) return;
-
-  // Extend any stored sib_user with the new auth/notification fields.
-  // emailVerified is set to true for existing accounts so dev sessions aren't locked out.
   try {
     const raw = localStorage.getItem('sib_user');
     if (raw) {
@@ -660,7 +813,6 @@ function migrateExistingData() {
       if (dirty) localStorage.setItem('sib_user', JSON.stringify(user));
     }
   } catch (_) {}
-
   localStorage.setItem('sib_data_version', DATA_VERSION);
 }
 

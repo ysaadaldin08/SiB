@@ -1,8 +1,8 @@
 // Shared config — loaded first on every page, before auth.js and data.js.
+// PATH A: the browser talks to Supabase directly; there is NO Node API. The
+// server/ folder is retired and is NOT the data path (see server/README.md).
+// There is intentionally no API_BASE here anymore.
 // Using var so later script loads cannot cause a SyntaxError on re-declaration.
-var API_BASE = (['localhost', '127.0.0.1'].includes(location.hostname))
-  ? 'http://localhost:3001/api'
-  : location.origin + '/api';
 var SUPABASE_URL = 'https://mhauftulhvnguualfcfw.supabase.co';
 var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1oYXVmdHVsaHZuZ3V1YWxmY2Z3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3MjMzMTIsImV4cCI6MjA5NTI5OTMxMn0.F0fSEO_1CKsjbH1aaP_UfkjvOHJEyw3-SVV7wM64o8Q';
 function getToken() { return localStorage.getItem('sib_token') || ''; }

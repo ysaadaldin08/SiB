@@ -156,17 +156,17 @@ async function createNotification({ userId, type, payload = {}, userEmail = null
 }
 
 // ——— COORDINATOR BULK NOTIFY ———
-// Creates an in-app notification record for every registered coordinator.
-// Used by applicants.html (newPlacement) and messaging.js (messageFlagged).
-// If no coordinators are found on the server, writes a sentinel record.
+// Path A: clients cannot insert notifications for other users (RLS). Coordinator
+// fan-out goes through the SECURITY DEFINER notify_coordinators() RPC, which
+// validates the type and writes one record per coordinator server-side.
+// Used by auth.js (newUserReview / employerPendingApproval), app.js
+// (concernReport), and messaging.js (messageFlagged, user-initiated report).
+// newPlacement / messageFlagged-on-send are fired by DB triggers, not here.
 async function notifyCoordinators(type, payload) {
   try {
-    const coords = typeof getCoordinators === 'function' ? await getCoordinators() : [];
-    if (coords.length) {
-      await Promise.all(coords.map(c => _insertNotification({ userId: c.id, type, payload })));
-    } else {
-      await _insertNotification({ userId: 'sib_coordinator', type, payload });
-    }
+    const sb = window._supabase;
+    if (!sb) return;
+    await sb.rpc('notify_coordinators', { p_type: type, p_payload: payload || {} });
   } catch (_) {}
 }
 

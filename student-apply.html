@@ -282,18 +282,18 @@
 <script src="app.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', async () => {
-  const token = getToken();
-  if (token) {
+  const sb = window._supabase;
+  if (sb) {
     try {
-      const res = await fetch(`${API_BASE}/auth/session`, { headers: { 'Authorization': 'Bearer ' + token } });
-      const result = await res.json();
-      if (result.success) {
-        const role = result.data.user?.role;
+      const { data: { user } } = await sb.auth.getUser();
+      if (user) {
+        const { data: prof } = await sb.from('profiles').select('role').eq('id', user.id).maybeSingle();
+        const role = prof?.role || user.user_metadata?.role;
         if (role === 'coordinator') { window.location.href = 'coordinator-dashboard.html'; return; }
         if (role === 'employer')    { window.location.href = 'employer-register.html'; return; }
-        // Sync localStorage with the authoritative role from the server
+        // Sync the cached user with the authoritative role from the DB
         const stored = loadCurrentUser();
-        if (stored && stored.role !== role) { stored.role = role; saveCurrentUser(stored); }
+        if (stored && role && stored.role !== role) { stored.role = role; saveCurrentUser(stored); }
       }
     } catch (_) {}
   }

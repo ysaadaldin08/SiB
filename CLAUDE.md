@@ -6,7 +6,7 @@
 
 **Roles:** students (co-op applicants), employers (hosts), and coordinators (school board staff who oversee placements).
 
-**Stack:** static front-end (HTML/CSS/vanilla JS) hosted on GitHub Pages at the /SiB/ subpath, with Supabase for auth (email/password + Google OAuth) and backend. Note the /SiB/ subpath matters — URLs must not assume the site lives at the domain root.
+**Stack:** static front-end (HTML/CSS/vanilla JS) hosted on GitHub Pages at the /SiB/ subpath, with Supabase for auth (email/password + Google OAuth) and backend, accessed **directly from the browser (Path A)** — the `server/` Express app is retired and is NOT the data path. Note the /SiB/ subpath matters — URLs must not assume the site lives at the domain root.
 
 **Workflow:** Edited and run through Claude Code in VS Code, pushed to GitHub from there. Prefer concrete, applyable edits. This is a production app handling real student/employer PII (PIPEDA applies), not a demo.
 
@@ -46,19 +46,23 @@
 
 ## Data Model
 
-All API-backed entities (postings, applications) live in Supabase and are accessed via the `data.js` async API wrappers. The following entities are stored in **localStorage** until a backend endpoint is added.
+**Architecture: Path A — direct Supabase.** The browser talks to Supabase directly via `window._supabase` (created in `config.js`); there is **no Node API** (the `server/` folder is retired — see `server/README.md`). All entities — postings, applications, notifications, message_threads, messages, profiles/students/employers — live in Supabase and are accessed through the async wrappers in `data.js`. Security is enforced by Postgres **Row Level Security**; treat it as load-bearing.
 
-### localStorage keys
-| Key | Type | Description |
-|-----|------|-------------|
-| `sib_user` | object | Authenticated user (see shape below) |
-| `sib_token` | string | JWT bearer token |
-| `sib_notifications` | array | In-app + email notification queue |
-| `sib_message_threads` | array | Conversation threads |
-| `sib_messages` | array | Individual messages within threads |
-| `sib_coordinators` | array | Coordinator accounts |
-| `sib_student_app` | object | Student onboarding form state |
-| `sib_emp_data` | object | Employer registration form state |
+RLS, grants, locks, triggers, and RPCs are defined in `supabase/migrations/` (run in order):
+- `20260526000000_initial_schema.sql` — tables, base RLS, auth trigger
+- `20260603000000_pathA_grants_rls.sql` — role GRANTs, full RLS policy set, privilege-escalation column locks, `postings_public` view
+- `20260603010000_pathA_onboarding.sql` — per-role signup trigger + `students.profile` jsonb
+- `20260603020000_pathA_rpcs_triggers.sql` — `claim_role()` / `notify_coordinators()` RPCs + cross-user notification triggers
+
+### Client-side storage (the ONLY things not in Supabase)
+| Key | Store | Type | Description |
+|-----|-------|------|-------------|
+| `sib_user` | localStorage | object | Cached authenticated user (display/role convenience; the Supabase session is the source of truth) |
+| `sib_token` | localStorage | string | Cached Supabase access token |
+| `sib_student_app` | sessionStorage | object | Student onboarding form state + résumé data URL (résumé file storage is a follow-up) |
+| `sib_emp_data` | sessionStorage | object | Employer registration form state |
+
+> The former localStorage collections (`sib_notifications`, `sib_message_threads`, `sib_messages`, `sib_coordinators`, `sib_approved_employers`) no longer exist — they are Supabase tables (`notifications`, `message_threads`, `messages`, and `profiles`/`employers.coordinator_approved`). The object shapes documented below are the camelCase forms returned by `data.js` converters.
 
 ### User object (`sib_user`)
 ```js
@@ -178,7 +182,7 @@ All API-backed entities (postings, applications) live in Supabase and are access
 **Entry point:** `createNotification({ userId, type, payload, userEmail })`
 - Always writes an in-app record via `_insertNotification` (data.js)
 - Sends email immediately if recipient's preference for that type is `'immediate'` AND `userEmail` is passed
-- Cross-user notifications (e.g. employer notified when student applies): in-app record only — `userEmail: null`. Server-side will handle email in Phase 5.
+- **Cross-user notifications** (employer notified of an applicant, student of a status change, coordinators of flags/placements) are created by **`SECURITY DEFINER` database triggers**, NOT by the client — `createNotification`/`_insertNotification` can only write a notification addressed to the current user (RLS `notifications_insert_self_only`). Coordinator-targeted client notices (non-board signup, unknown employer, concern report, manual thread report) go through the `notify_coordinators()` RPC.
 - Refreshes the bell badge automatically if the recipient is the current user
 
 **Notification types and where they're fired:**
@@ -273,12 +277,12 @@ The following is the complete list of safety controls implemented for the minor-
 
 Coordinators are co-op teachers who oversee placements. There is no public coordinator signup — accounts are seeded in `data.js` and manually managed.
 
-**Login:** `coordinator-login.html` — checks against `sib_coordinators[]` in localStorage. On success, sets `currentUser.role = 'coordinator'` and redirects to dashboard. No Supabase JWT is issued; API calls in the dashboard fail gracefully if the server is unreachable.
+**Login:** `coordinator-login.html` — signs in with **Supabase Auth** (`signInWithPassword`), then reads `profiles.role` and proceeds only if it is `'coordinator'`; otherwise it signs back out. A real Supabase session/JWT is issued, and the dashboard reads all data directly from Supabase scoped by the coordinator RLS policies (`is_coordinator()` grants read oversight on every table).
 
-**Seeded account:** `ysaadaldin08@gmail.com` / `[redacted — see SECURITY.md PAF-1; rotate via Supabase Dashboard]` (seeded in `migrateExistingData()` if the list is empty).
-TODO Phase 6: Replace shared password with an email-based invite-and-activate flow.
+**Coordinator accounts** are real Supabase Auth users whose `profiles.role` is set to `'coordinator'` **manually** in the Supabase SQL editor. There is no public coordinator signup, and the signup trigger can never assign the coordinator role (it coerces anything that isn't `student`/`employer` to `student`). To promote someone: create/locate their auth user, then `UPDATE public.profiles SET role='coordinator' WHERE id='<uuid>';`.
+TODO (post-launch): email-based coordinator invite-and-activate flow.
 
-**Coordinator dashboard sections:**
+**Coordinator dashboard sections** (all data is read directly from Supabase via the `cGet/cPut/cDel` dispatchers in `coordinator-dashboard.html`, scoped by coordinator RLS — the "API `/coordinator/*`" and "localStorage" labels below are historical):
 | Section | Source | Description |
 |---------|--------|-------------|
 | Overview | API + localStorage | Stat cards: students, employers, listings, applications, placements, flagged threads |
@@ -414,8 +418,8 @@ Both pages use shared styles from `style.css` and load the full script stack (`c
 
 | File | Purpose | Loaded on |
 |------|---------|-----------|
-| `config.js` | API_BASE, SUPABASE_URL, getToken() | Every page |
-| `data.js` | All data functions: API wrappers, localStorage CRUD, shapes, domain config, migration | Every page |
+| `config.js` | SUPABASE_URL, SUPABASE_ANON_KEY, getToken(), Supabase client init (no API_BASE — Path A) | Every page |
+| `data.js` | All data functions: direct Supabase queries, shape converters, domain config, migration | Every page |
 | `email.js` | sendEmail() mock (console log + neutral toast) | Every page |
 | `notifications.js` | createNotification(), notifyCoordinators(), initNotifBell(), buildNotifPrefsHtml() | Every page |
 | `moderation.js` | analyzeMessage() — content scan for phone/email/URL/social/phrases | Dashboard + messaging pages |

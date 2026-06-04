@@ -279,27 +279,13 @@ async function msSendMessage() {
   }
 
   if (analysis.flagged) {
-    // Refresh thread object so the flagged banner shows updated status
+    // The message INSERT trigger flips the thread to 'flagged' and notifies all
+    // coordinators server-side — just refresh the thread so the banner updates.
     _msActiveThread = await getMessageThreadById(_msActiveThread.id) || _msActiveThread;
-    _notifyCoordinators('messageFlagged', {
-      threadId:       _msActiveThread.id,
-      reasons:        analysis.reasons,
-      messagePreview: body.slice(0, 80) + (body.length > 80 ? '…' : ''),
-      senderRole:     currentUser.role,
-      senderName:     currentUser.name
-    });
   }
 
-  // Notify recipient in-app (Phase 5 handles cross-user email server-side)
-  const recipientId = currentUser.role === 'student'
-    ? _msActiveThread.employerId
-    : _msActiveThread.studentId;
-  createNotification({
-    userId:    recipientId,
-    type:      'newMessage',
-    payload:   { preview: body.slice(0, 60), senderName: currentUser.name, senderRole: currentUser.role, threadId: _msActiveThread.id },
-    userEmail: null // TODO: Phase 5 — pass recipient email server-side for immediate email
-  });
+  // The recipient's "newMessage" notification is created by the message INSERT
+  // trigger (cross-user write — not allowed from the client in Path A).
 
   input.value = '';
   await _msRenderMessages(_msActiveThread.id);

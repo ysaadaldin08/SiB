@@ -160,19 +160,8 @@ async function submitApplication(e) {
     resumeUrl: document.getElementById('applyResume').value.trim()
   });
   showToast('✓ Application submitted!');
-  // Notify student — immediate email
-  createNotification({
-    userId: currentUser.id,
-    type: 'applicationSubmitted',
-    payload: { postingTitle: currentPosting.title, companyName: currentPosting.companyName, firstName: currentUser.first },
-    userEmail: currentUser.email,
-  });
-  createNotification({
-    userId: currentPosting.employerId,
-    type: 'newApplication',
-    payload: { studentName: name, postingTitle: currentPosting.title, postingId: currentPosting.id },
-    userEmail: null,
-  });
+  // The applications INSERT trigger notifies the student (confirmation) and the
+  // employer (new applicant) server-side — no client-side notification needed.
   // Re-render apply panel to show status
   document.getElementById('applyPanelBody').innerHTML = buildApplyPanel(currentPosting);
 }

@@ -465,8 +465,10 @@ async function openEditPosting(id) {
 }
 
 async function savePosting() {
-  // Check coordinator approval before allowing new listings
-  if (typeof employerCanPost === 'function' && !employerCanPost(currentUser)) {
+  // Check coordinator approval before allowing new listings. Read the live flag
+  // from the DB (the cached user object doesn't carry approval state after a
+  // direct Supabase login). RLS enforces this server-side too.
+  if (typeof employerCanPostNow === 'function' && !(await employerCanPostNow())) {
     showToast('Your account is pending coordinator approval. You\'ll be notified by email once approved.', true);
     return;
   }

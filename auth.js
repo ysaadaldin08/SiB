@@ -2,7 +2,7 @@
 // currentUser shape: { id, name, first, email, role, emailVerified,
 //   emailVerificationToken, emailVerificationExpiresAt, notificationPreferences,
 //   createdAt } — see CLAUDE.md Data Model for full field definitions.
-// config.js (API_BASE, getToken) and email.js (sendEmail) are loaded before this script.
+// config.js (SUPABASE_URL, getToken, window._supabase) and email.js (sendEmail) are loaded before this script.
 
 function loadCurrentUser() {
   try { return JSON.parse(localStorage.getItem('sib_user') || 'null'); } catch(e) { return null; }

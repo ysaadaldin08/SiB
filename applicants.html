@@ -148,29 +148,8 @@ async function changeStatus(appId, newStatus) {
     if (existingPill) existingPill.outerHTML = statusPill(newStatus);
   }
   showToast('✓ Status updated to: ' + newStatus);
-  const app = _cachedApps.find(a => a.id === appId);
-  if (app) {
-    createNotification({
-      userId: app.studentId,
-      type: 'applicationStatus',
-      payload: {
-        status: newStatus,
-        postingTitle: _currentPosting ? _currentPosting.title : '—',
-        firstName: app.studentName ? app.studentName.split(' ')[0] : 'there',
-      },
-      userEmail: null,
-    });
-  }
-  // Notify all coordinators when a student is accepted for co-op placement
-  if (newStatus === 'Accepted' && app) {
-    notifyCoordinators('newPlacement', {
-      studentName:  app.studentName,
-      school:       app.school || '',
-      postingTitle: _currentPosting ? _currentPosting.title       : '—',
-      companyName:  _currentPosting ? _currentPosting.companyName : '—',
-      postingId:    app.postingId
-    });
-  }
+  // The applications status-change trigger notifies the student, and on
+  // "Accepted" notifies all coordinators (newPlacement) — server-side.
 }
 
 // Navigate employer to their dashboard Messages section to message an accepted student.
@@ -179,7 +158,7 @@ function goMessageStudent(applicationId, studentId, studentName, listingId, list
   sessionStorage.setItem('sib_open_thread_params', JSON.stringify({
     applicationId,
     studentId,
-    employerId: currentUser.email,
+    employerId: currentUser.id,
     studentName,
     employerName: currentUser.name,
     listingId,

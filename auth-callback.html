@@ -294,8 +294,15 @@
     btn.disabled = true;
     btn.textContent = 'Setting up your account…';
     try {
+      // 1) Tag the auth user's metadata with the chosen role.
       const { data, error } = await window._supabase.auth.updateUser({ data: { role: _selectedRole } });
       if (error) { showError(error.message || 'Setup failed. Please try again.'); return; }
+      // 2) Create profiles.role + the matching domain row. claim_role() is a
+      //    SECURITY DEFINER RPC: idempotent, student/employer only, never
+      //    coordinator. Without it an OAuth account has no domain row and can
+      //    neither apply nor post.
+      const { error: rpcErr } = await window._supabase.rpc('claim_role', { p_role: _selectedRole });
+      if (rpcErr) { showError(rpcErr.message || 'Setup failed. Please try again.'); return; }
       completeLogin(_userFromSupabase(data.user), _pendingSession.access_token);
     } catch (e) {
       showError('An unexpected error occurred.');

@@ -180,41 +180,48 @@ async function doCoordinatorLogin() {
   const pass  = (document.getElementById('coordPass').value  || '');
   if (!email || !pass) { showToast('Enter your email and password.', true); return; }
 
+  const sb = window._supabase;
+  if (!sb) { showToast('Auth service not ready — please wait a moment and try again.', true); return; }
+
   const btn = document.querySelector('.coord-login-card .btn-primary');
   if (btn) { btn.disabled = true; btn.textContent = 'Signing in…'; }
 
   try {
-    const res = await fetch(API_BASE + '/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password: pass })
-    });
-    const json = await res.json();
-
-    if (!json.success) {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if (error) {
       showToast('Invalid credentials. Contact the SiB administrator if you need access.', true);
       return;
     }
-    if (json.data.user.role !== 'coordinator') {
+
+    // Coordinator role lives in profiles.role (assigned manually, never at signup).
+    const { data: prof } = await sb.from('profiles').select('role, full_name').eq('id', data.user.id).maybeSingle();
+    if (!prof || prof.role !== 'coordinator') {
+      await sb.auth.signOut();
       showToast('This account does not have coordinator access.', true);
       return;
     }
 
-    const apiUser = json.data.user;
-    const user = _mergeVerificationState({
-      ...apiUser,
-      name:  apiUser.name || apiUser.first || email,
-      first: apiUser.first || (apiUser.name || '').split(' ')[0] || '',
-    });
+    const fullName = prof.full_name || data.user.user_metadata?.full_name || email;
+    const user = {
+      id:    data.user.id,
+      email: data.user.email,
+      role:  'coordinator',
+      name:  fullName,
+      first: fullName.split(' ')[0] || 'Coordinator',
+      emailVerified: true,
+      notificationPreferences: _defaultNotificationPreferences(),
+      createdAt: data.user.created_at || new Date().toISOString(),
+      domainVerified: true,
+      coordinatorApproved: true
+    };
     saveCurrentUser(user);
     currentUser = user;
-    saveToken(json.data.token);
+    saveToken(data.session.access_token);
 
-    showToast('✓ Welcome, ' + (user.first || 'Coordinator') + '!');
+    showToast('✓ Welcome, ' + user.first + '!');
     setTimeout(() => { window.location.href = 'coordinator-dashboard.html'; }, 500);
   } catch (err) {
-    console.error('Coordinator login error:', err);
-    showToast('Could not reach the server. Check your connection.', true);
+    showToast('An unexpected error occurred. Please try again.', true);
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Sign In to Coordinator Dashboard →'; }
   }
