@@ -380,14 +380,40 @@
   }
   routeSession(session);
 
-  function routeSession(session) {
+  async function routeSession(session) {
     localStorage.setItem('sib_token', session.access_token);
     const user = _userFromSupabase(session.user);
+
+    // profiles.role is authoritative for coordinators: they are assigned manually
+    // in the DB and carry NO role in user_metadata, so a metadata-only read (as in
+    // _userFromSupabase) would misroute them into the student/employer picker.
+    // Read profiles.role and let a 'coordinator' assignment win.
+    let dbRole = null;
+    try {
+      const { data: prof } = await sb
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .maybeSingle();
+      dbRole = prof ? prof.role : null;
+    } catch (e) { /* fall back to metadata role below */ }
+
+    if (dbRole === 'coordinator') {
+      user.role = 'coordinator';
+      completeLogin(user, session.access_token);
+      return;
+    }
+
+    // No chosen role yet (fresh OAuth signup). The signup trigger may have written
+    // a 'student' placeholder into profiles.role, but the account has no domain row
+    // until it picks — so always let it choose here rather than trusting the
+    // placeholder.
     if (!user.role) {
       showRolePicker(session, user);
-    } else {
-      completeLogin(user, session.access_token);
+      return;
     }
+
+    completeLogin(user, session.access_token);
   }
 })();
 </script>

@@ -290,7 +290,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const { data: prof } = await sb.from('profiles').select('role').eq('id', user.id).maybeSingle();
         const role = prof?.role || user.user_metadata?.role;
         if (role === 'coordinator') { window.location.href = 'coordinator-dashboard.html'; return; }
-        if (role === 'employer')    { window.location.href = 'employer-register.html'; return; }
+        if (role === 'employer')    { window.location.href = 'dashboard-employer.html'; return; }
         // Sync the cached user with the authoritative role from the DB
         const stored = loadCurrentUser();
         if (stored && role && stored.role !== role) { stored.role = role; saveCurrentUser(stored); }

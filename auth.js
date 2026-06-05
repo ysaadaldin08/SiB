@@ -323,11 +323,13 @@ function afterAuth() {
   const target = sessionStorage.getItem('sib_auth_target');
   sessionStorage.removeItem('sib_auth_target');
   if (target) {
-    if (target === 'student-apply'    && currentUser.role === 'employer') { window.location.href = 'employer-register.html'; return; }
+    // Employers are never force-routed to registration — they land on the dashboard
+    // and complete their one-time company profile only when they go to post.
+    if (target === 'student-apply'    && currentUser.role === 'employer') { window.location.href = 'dashboard-employer.html'; return; }
     if (target === 'employer-register' && currentUser.role === 'student') { window.location.href = 'student-apply.html';    return; }
     window.location.href = target + '.html';
   } else {
-    window.location.href = currentUser.role === 'employer' ? 'employer-register.html' : 'student-apply.html';
+    window.location.href = currentUser.role === 'employer' ? 'dashboard-employer.html' : 'student-apply.html';
   }
 }
 
@@ -414,21 +416,23 @@ function goDashboard() {
     window.location.href = 'coordinator-dashboard.html';
     return;
   }
-  const isEmployer = currentUser.role === 'employer';
-  const hasApp = isEmployer
-    ? sessionStorage.getItem('sib_emp_data')
-    : sessionStorage.getItem('sib_student_app');
-
-  if (hasApp) {
-    window.location.href = isEmployer ? 'dashboard-employer.html' : 'dashboard-student.html';
+  // Employers go straight to their dashboard — browsing needs no company profile;
+  // only posting does, and that is gated inside the dashboard against the DB.
+  // Students still complete the onboarding application before their dashboard unlocks.
+  if (currentUser.role === 'employer') {
+    window.location.href = 'dashboard-employer.html';
     return;
   }
 
-  const applyPage  = isEmployer ? 'employer-register.html' : 'student-apply.html';
-  const applyLabel = isEmployer ? 'Complete Company Registration' : 'Complete Your Application';
-  const detail     = isEmployer
-    ? 'Your dashboard will be ready once you complete the company registration form. It only takes a few minutes.'
-    : 'Your dashboard will be ready once you submit your student application. It only takes about 12 minutes.';
+  const hasApp = sessionStorage.getItem('sib_student_app');
+  if (hasApp) {
+    window.location.href = 'dashboard-student.html';
+    return;
+  }
+
+  const applyPage  = 'student-apply.html';
+  const applyLabel = 'Complete Your Application';
+  const detail     = 'Your dashboard will be ready once you submit your student application. It only takes about 12 minutes.';
 
   let overlay = document.getElementById('_dashBlockedOverlay');
   if (!overlay) {
@@ -463,7 +467,7 @@ function goDashboard() {
 function requireAuth(page) {
   if (currentUser) {
     if (!currentUser.emailVerified) { _showVerifyPending(currentUser.email); return; }
-    if (page === 'student-apply'    && currentUser.role === 'employer') { window.location.href = 'employer-register.html'; return; }
+    if (page === 'student-apply'    && currentUser.role === 'employer') { window.location.href = 'dashboard-employer.html'; return; }
     if (page === 'employer-register' && currentUser.role === 'student') { window.location.href = 'student-apply.html';    return; }
     window.location.href = page + '.html';
     return;

@@ -366,13 +366,11 @@ function goToDashboard() {
 }
 function handleApplyNav() {
   if (!currentUser) { openModal('authModal'); return; }
-  if (currentUser.role === 'employer') {
-    if (sessionStorage.getItem('sib_emp_data')) { goDashboard(); return; }
-    window.location.href = 'employer-register.html';
-  } else {
-    if (sessionStorage.getItem('sib_student_app')) { goDashboard(); return; }
-    window.location.href = 'student-apply.html';
-  }
+  // Employers go straight to their dashboard (no forced registration); students
+  // resume/complete their onboarding application.
+  if (currentUser.role === 'employer') { goDashboard(); return; }
+  if (sessionStorage.getItem('sib_student_app')) { goDashboard(); return; }
+  window.location.href = 'student-apply.html';
 }
 function heroSearch(e) {
   e.preventDefault();

@@ -419,45 +419,22 @@ function populateStudentDash() {
 
 // —— EMPLOYER FORM ——
 let currentEmpStep = 0;
-let empData = {};
 
 function nextEmpStep(from) {
   if (from === 0) {
-    const company = document.getElementById('e1company').value.trim();
+    // Company Profile step — company-level fields only (no placement details).
+    const company  = document.getElementById('e1company').value.trim();
     const industry = document.getElementById('e1industry').value;
-    const website = document.getElementById('e1website').value.trim();
-    const cname = document.getElementById('e1cname').value.trim();
-    const ctitle = document.getElementById('e1ctitle').value.trim();
-    const email = document.getElementById('e1email').value.trim();
-    const phone = document.getElementById('e1phone').value.trim();
-    if (!company||!industry||!website||!cname||!ctitle||!email||!phone) { showToast('Please fill in all required fields.', true); return; }
-    const emailErr = document.getElementById('e1emailErr');
-    if (!isValidEmail(email)) { emailErr.classList.add('show'); return; } else { emailErr.classList.remove('show'); }
+    const website  = document.getElementById('e1website').value.trim();
+    const address  = document.getElementById('e1address').value.trim();
+    const cname    = document.getElementById('e1cname').value.trim();
+    const ctitle   = document.getElementById('e1ctitle').value.trim();
+    const phone    = document.getElementById('e1phone').value.trim();
+    if (!company||!industry||!website||!address||!cname||!ctitle||!phone) { showToast('Please fill in all required fields.', true); return; }
     const phoneErr = document.getElementById('e1phoneErr');
     if (!isValidPhone(phone)) { phoneErr.classList.add('show'); return; } else { phoneErr.classList.remove('show'); }
     const websiteErr = document.getElementById('e1websiteErr');
     try { new URL(website); websiteErr.classList.remove('show'); } catch(e) { websiteErr.classList.add('show'); return; }
-    empData.company = company; empData.industry = industry;
-  }
-  if (from === 1) {
-    const address = document.getElementById('e2address').value.trim();
-    const numStudents = document.getElementById('e2students').value;
-    const format = document.getElementById('e2format').value;
-    const hours = document.getElementById('e2hours').value;
-    const startdate = document.getElementById('e2startdate').value;
-    const supervisor = document.getElementById('e2supervisor').value.trim();
-    const desc = document.getElementById('e2desc').value.trim();
-    if (!address||!numStudents||!format||!hours||!startdate||!supervisor||!desc) { showToast('Please fill in all required fields.', true); return; }
-    const today = new Date(); today.setHours(0,0,0,0);
-    const chosenStart = new Date(startdate + 'T00:00:00');
-    if (chosenStart < today) { showToast('Start date must be a future date.', true); return; }
-    const selectedTracks = [...document.querySelectorAll('#es1 .track-chip.selected')].map(el => el.textContent.trim());
-    if (selectedTracks.length === 0) { showToast('Please select at least one placement track.', true); return; }
-    const wordCount = desc.split(/\s+/).filter(w=>w).length;
-    if (wordCount < 10) { showToast('Please provide a more detailed placement description.', true); return; }
-    const startFormatted = (() => { try { return new Date(startdate + 'T00:00:00').toLocaleDateString('en-CA', { month: 'long', day: 'numeric', year: 'numeric' }); } catch(e) { return startdate; } })();
-    empData.format = format; empData.hours = hours; empData.students = numStudents; empData.supervisor = supervisor;
-    empData.startDate = startFormatted; empData.tracks = selectedTracks.join(', ');
   }
   document.getElementById('es' + from).classList.remove('active');
   document.getElementById('etab' + from).classList.remove('active');
@@ -481,10 +458,10 @@ function prevEmpStep(from) {
 }
 
 async function submitEmpReg() {
-  const allChecked = [...document.querySelectorAll('#es2 .clause')].every(c => c.classList.contains('checked'));
+  // Commitment is the final step (#es1). All three clauses must be checked.
+  const allChecked = [...document.querySelectorAll('#es1 .clause')].every(c => c.classList.contains('checked'));
   if (!allChecked) { showToast('Please check all commitment clauses before submitting.', true); return; }
 
-  // —— Persist the employer profile to Supabase before showing success ——
   const sb = window._supabase;
   if (!sb) { showToast('Service not ready — please wait a moment and try again.', true); return; }
 
@@ -493,42 +470,53 @@ async function submitEmpReg() {
   const { data: authData } = await sb.auth.getUser();
   const userId = authData?.user?.id;
   if (!userId) {
-    showToast('Please sign in to submit your registration.', true);
+    showToast('Please sign in to save your company profile.', true);
     if (typeof openAuth === 'function') openAuth('login', 'employer');
     return;
   }
 
-  // Map form inputs → existing employers columns only. company_name is NOT NULL.
   const companyName = (document.getElementById('e1company')?.value || '').trim();
   if (!companyName) { showToast('Company name is required.', true); return; }
+
+  // Industry: when "Other" is picked, persist the free-text elaboration instead.
+  const industrySel = document.getElementById('e1industry')?.value || '';
+  let industry = industrySel;
+  if (industrySel === 'other') {
+    industry = (document.querySelector('#industryOther input')?.value || '').trim() || 'Other';
+  }
+
+  // Company-level columns only — placement details (track, hours, supervisor, etc.)
+  // belong to postings, not to the company profile.
   const employerRow = {
     id:                          userId,            // = auth.uid()
     company_name:                companyName,
-    contact_name:                (document.getElementById('e1cname')?.value  || '').trim() || null,
-    phone:                       (document.getElementById('e1phone')?.value  || '').trim() || null,
+    industry:                    industry || null,
     website:                     (document.getElementById('e1website')?.value || '').trim() || null,
+    office_address:              (document.getElementById('e1address')?.value || '').trim() || null,
+    contact_name:                (document.getElementById('e1cname')?.value   || '').trim() || null,
+    contact_title:               (document.getElementById('e1ctitle')?.value  || '').trim() || null,
+    phone:                       (document.getElementById('e1phone')?.value   || '').trim() || null,
     obligations_acknowledged_at: new Date().toISOString()
-    // domain_verified / coordinator_approved / verification_status left at DB defaults — never set client-side.
+    // domain_verified / coordinator_approved / verification_status are DB-locked — never set client-side.
   };
 
   const { error } = await sb.from('employers').upsert(employerRow, { onConflict: 'id' });
   if (error) {
-    // Do NOT advance to the success screen on failure.
-    showToast(error.message || 'Could not save your registration. Please try again.', true);
+    showToast(error.message || 'Could not save your company profile. Please try again.', true);
     return;
   }
 
-  const el = (id, val) => { const e = document.getElementById(id); if(e) e.textContent = val; };
-  el('el-company', empData.company || '—');
-  el('el-industry', empData.industry || '—');
-  el('el-format', empData.format || '—');
-  el('el-hours', (empData.hours || '—') + ' hrs/week');
-  el('el-students', empData.students || '—');
-  el('el-supervisor', empData.supervisor || '—');
-  sessionStorage.setItem('sib_emp_data', JSON.stringify(empData));
-  document.getElementById('empFormMain').style.display = 'none';
-  document.getElementById('empSuccess').classList.add('show');
-  window.scrollTo(0,0);
+  showToast('✓ Company profile saved.');
+
+  // If the employer came here from "Create Posting", return them to it; otherwise
+  // land them on their dashboard. (No sessionStorage profile cache — the dashboard
+  // reads the authoritative employers row directly.)
+  if (sessionStorage.getItem('sib_post_after_profile') === '1') {
+    sessionStorage.removeItem('sib_post_after_profile');
+    setTimeout(() => { window.location.href = 'dashboard-employer.html?openPost=1'; }, 450);
+    return;
+  }
+  setTimeout(() => { window.location.href = 'dashboard-employer.html'; }, 450);
 }
 
 // —— RESOURCE CENTRE NAVIGATION ——
@@ -574,24 +562,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (target) { target.classList.add('active'); updateSDots(step); currentSStep = step; }
   }
 
-  // Populate employer dashboard from sessionStorage if present
-  const empStored = sessionStorage.getItem('sib_emp_data');
-  if (empStored) {
-    try {
-      const d = JSON.parse(empStored);
-      const el = (id, val) => { const e = document.getElementById(id); if(e) e.textContent = val; };
-      el('el-company', d.company || '—');
-      el('el-industry', d.industry || '—');
-      el('el-format', d.format || '—');
-      el('el-hours', (d.hours || '—') + ' hrs/week');
-      el('el-students', d.students || '—');
-      el('el-supervisor', d.supervisor || '—');
-      const edComp = document.getElementById('edash-company');
-      if (edComp) edComp.textContent = d.company || '';
-      const cohort = document.getElementById('edash-cohortline');
-      if (cohort) cohort.textContent = 'Spring 2026 cohort · ' + (d.company || '');
-    } catch(e) {}
-  }
+  // (Employer dashboard company fields are populated from the DB by
+  // renderCompanyProfile() in dashboard-employer.html — no sessionStorage cache.)
 
   // Populate student dashboard from sessionStorage if present
   const appStored = sessionStorage.getItem('sib_student_app');

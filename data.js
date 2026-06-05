@@ -498,6 +498,42 @@ async function employerCanPostNow() {
   } catch (_) { return false; }
 }
 
+// ——— EMPLOYER COMPANY PROFILE (DB-backed dashboard/posting gate) ———
+// Path A replaces the old sessionStorage.sib_emp_data gate with a database check,
+// so an employer returning on a new device is NEVER forced to re-register.
+
+// Returns the signed-in employer's own row (or null). `select('*')` keeps this
+// resilient whether or not the company-profile columns migration
+// (20260605000000_employer_company_profile.sql) has been applied yet.
+async function getMyEmployerProfile() {
+  const sb = _sb();
+  if (!sb) return null;
+  try {
+    const uid = await _uid();
+    if (!uid) return null;
+    const { data } = await sb.from('employers').select('*').eq('id', uid).maybeSingle();
+    return data || null;
+  } catch (_) { return null; }
+}
+
+// A company profile is "complete" once the one-time profile form has been
+// submitted: a real company_name (the signup trigger seeds an empty '') AND the
+// commitment obligations acknowledged. Reads only columns that exist pre-migration
+// so the gate is correct even before the new columns land.
+async function employerProfileComplete() {
+  const sb = _sb();
+  if (!sb) return false;
+  try {
+    const uid = await _uid();
+    if (!uid) return false;
+    const { data } = await sb.from('employers')
+      .select('company_name, obligations_acknowledged_at')
+      .eq('id', uid)
+      .maybeSingle();
+    return !!(data && data.company_name && data.company_name.trim() && data.obligations_acknowledged_at);
+  } catch (_) { return false; }
+}
+
 // ——— localStorage HELPERS (only sib_user and sib_token live here) ———
 
 function _lsGet(key) {

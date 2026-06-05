@@ -226,7 +226,7 @@ function renderPostings(list) {
 
 function handleApplyNav() {
   if (!currentUser) { openModal('authModal'); return; }
-  window.location.href = currentUser.role === 'employer' ? 'employer-register.html' : 'student-apply.html';
+  window.location.href = currentUser.role === 'employer' ? 'dashboard-employer.html' : 'student-apply.html';
 }
 
 document.addEventListener('DOMContentLoaded', () => {

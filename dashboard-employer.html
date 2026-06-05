@@ -264,21 +264,25 @@
 
     <!-- MY COMPANY -->
     <div id="edash-listing" style="display:none;">
-      <div class="dash-header"><div class="dash-title">My Company Listing</div><div class="dash-sub">Your registered placement details. Contact the coordinator to make changes.</div></div>
+      <div class="dash-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+          <div class="dash-title">My Company Profile</div>
+          <div class="dash-sub">Your one-time organization profile. It identifies your placements to students and coordinators.</div>
+        </div>
+        <button class="btn-blue" onclick="editCompanyProfile()">Edit company profile</button>
+      </div>
       <div class="tracker-card">
         <div class="detail-grid" style="margin-bottom:0;">
           <div class="detail-card"><div class="detail-label">Company</div><div class="detail-val" id="el-company">—</div></div>
           <div class="detail-card"><div class="detail-label">Industry</div><div class="detail-val" id="el-industry">—</div></div>
-          <div class="detail-card"><div class="detail-label">Work Format</div><div class="detail-val" id="el-format">—</div></div>
-          <div class="detail-card"><div class="detail-label">Hours / Week</div><div class="detail-val" id="el-hours">—</div></div>
-          <div class="detail-card"><div class="detail-label">Candidates Needed</div><div class="detail-val" id="el-students">—</div></div>
-          <div class="detail-card"><div class="detail-label">Named Supervisor</div><div class="detail-val" id="el-supervisor">—</div></div>
+          <div class="detail-card"><div class="detail-label">Website</div><div class="detail-val" id="el-website">—</div></div>
+          <div class="detail-card"><div class="detail-label">Office Address</div><div class="detail-val" id="el-address">—</div></div>
+          <div class="detail-card"><div class="detail-label">Primary Contact</div><div class="detail-val" id="el-contact">—</div></div>
+          <div class="detail-card"><div class="detail-label">Contact Title</div><div class="detail-val" id="el-title">—</div></div>
+          <div class="detail-card"><div class="detail-label">Phone</div><div class="detail-val" id="el-phone">—</div></div>
         </div>
       </div>
-      <div style="background:rgba(180,83,9,0.05);border:1px solid rgba(180,83,9,0.18);border-radius:var(--radius);padding:14px 18px;margin-top:14px;">
-        <div style="font-size:13px;font-weight:700;color:var(--amber);margin-bottom:3px;">Need to update your listing?</div>
-        <div style="font-size:13px;color:var(--text-muted);">Email <a href="mailto:ysaadaldin08@gmail.com" style="color:var(--blue);font-weight:600;">ysaadaldin08@gmail.com</a> with your requested changes.</div>
-      </div>
+      <div id="el-profile-status" style="margin-top:14px;font-size:13px;"></div>
     </div>
 
   </div>
@@ -374,6 +378,37 @@ async function renderOverviewStats() {
   }
 }
 
+// ——— COMPANY PROFILE (DB-backed) ———
+async function renderCompanyProfile() {
+  if (!currentUser) return;
+  const prof = (typeof getMyEmployerProfile === 'function') ? await getMyEmployerProfile() : null;
+  const companyName = (prof && prof.company_name && prof.company_name.trim()) ? prof.company_name : currentUser.name;
+
+  // Dashboard header
+  const c = document.getElementById('edash-company'); if (c) c.textContent = companyName;
+  const ct = document.getElementById('edash-contact'); if (ct) ct.textContent = (prof && prof.contact_name) || currentUser.name;
+  const cohort = document.getElementById('edash-cohortline'); if (cohort) cohort.textContent = 'Spring 2026 cohort · ' + companyName;
+
+  // "My Company" detail cards
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = (val && String(val).trim()) ? val : '—'; };
+  set('el-company', companyName);
+  set('el-industry', prof && prof.industry);
+  set('el-website',  prof && prof.website);
+  set('el-address',  prof && prof.office_address);
+  set('el-contact',  prof && prof.contact_name);
+  set('el-title',    prof && prof.contact_title);
+  set('el-phone',    prof && prof.phone);
+
+  // Completion status line + CTA
+  const complete = !!(prof && prof.company_name && prof.company_name.trim() && prof.obligations_acknowledged_at);
+  const status = document.getElementById('el-profile-status');
+  if (status) {
+    status.innerHTML = complete
+      ? '<span style="color:var(--text-muted);">✓ Your company profile is complete.</span>'
+      : '<span style="color:var(--amber);font-weight:600;">Your company profile isn\'t complete yet — finish it to start posting placements.</span> <a onclick="editCompanyProfile()" style="color:var(--blue);font-weight:600;cursor:pointer;">Complete now →</a>';
+  }
+}
+
 // ——— POSTING CRUD ———
 async function renderPostingsList() {
   if (!currentUser) return;
@@ -420,8 +455,45 @@ async function buildPostingCard(p) {
     </div>`;
 }
 
+// Navigate to the one-time company profile form (from "My Company" / prompts).
+function editCompanyProfile() {
+  window.location.href = 'employer-register.html';
+}
+
+// Prompt shown when an employer tries to post without a completed company profile.
+function showProfilePrompt() {
+  let overlay = document.getElementById('_profilePrompt');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = '_profilePrompt';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(10,14,26,0.72);backdrop-filter:blur(6px);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+    overlay.innerHTML = `
+      <div style="background:#fff;border-radius:20px;padding:36px 32px;max-width:420px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,0.22);text-align:center;">
+        <div style="width:52px;height:52px;border-radius:14px;background:#f0f4ff;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1a6cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+        </div>
+        <h2 style="font-size:20px;font-weight:700;color:#0d1117;margin:0 0 10px;letter-spacing:-0.02em;">Complete your company profile to post</h2>
+        <p style="font-size:14px;color:#6b7280;line-height:1.6;margin:0 0 24px;">Posting a placement needs your one-time company profile. It only takes a couple of minutes — we'll bring you right back here to finish your posting.</p>
+        <button onclick="window.location.href='employer-register.html'" style="width:100%;padding:13px;background:#0d1117;color:#fff;font-size:14px;font-weight:700;border:none;border-radius:10px;cursor:pointer;letter-spacing:-0.01em;">Complete company profile →</button>
+        <button onclick="document.getElementById('_profilePrompt').remove();sessionStorage.removeItem('sib_post_after_profile');" style="margin-top:12px;width:100%;padding:11px;background:none;color:#6b7280;font-size:13px;font-weight:600;border:1px solid #e5e7eb;border-radius:10px;cursor:pointer;">Maybe later</button>
+      </div>`;
+    document.body.appendChild(overlay);
+  } else {
+    overlay.style.display = 'flex';
+  }
+}
+
 // Create
-function openCreatePosting() {
+async function openCreatePosting(force) {
+  // Posting requires a completed company profile (DB-gated, not sessionStorage).
+  // If missing, route to the one-time profile form and return here to post.
+  // `force` is passed by the ?openPost=1 return-from-profile deep link, where the
+  // profile was just saved — skip the re-check (and avoid a cold-load false negative).
+  if (!force && typeof employerProfileComplete === 'function' && !(await employerProfileComplete())) {
+    sessionStorage.setItem('sib_post_after_profile', '1');
+    showProfilePrompt();
+    return;
+  }
   document.getElementById('postingModalTitle').textContent = 'Create New Posting';
   document.getElementById('editPostingId').value = '';
   ['pf-title','pf-location','pf-start','pf-supervisor','pf-desc','pf-responsibilities','pf-requirements'].forEach(id => {
@@ -473,8 +545,9 @@ async function savePosting() {
   const startDate = (() => { try { return new Date(rawStart + 'T00:00:00').toLocaleDateString('en-CA', { month: 'long', day: 'numeric', year: 'numeric' }); } catch(e) { return rawStart; } })();
 
   const data = {
-    employerId: currentUser.email,
-    companyName: currentUser.name,
+    // employer_id is set server-side from auth.uid() in createPosting(); company_name
+    // is derived from the authoritative employers row by the set_posting_company_name
+    // DB trigger — never sent from the client (anti-spoof). See data.js _postingToApi.
     title,
     track: document.getElementById('pf-track').value,
     workMode: document.getElementById('pf-mode').value,
@@ -541,29 +614,14 @@ function confirmDelete() {
 // ——— INIT ———
 document.addEventListener('DOMContentLoaded', () => {
   if (!currentUser) { window.location.href = 'index.html'; return; }
-  if (!sessionStorage.getItem('sib_emp_data')) { window.location.href = 'employer-register.html'; return; }
-  const c = document.getElementById('edash-company');
-  const ct = document.getElementById('edash-contact');
-  if (c) c.textContent = currentUser.name;
-  if (ct) ct.textContent = currentUser.name;
-  const cohort = document.getElementById('edash-cohortline');
-  if (cohort) cohort.textContent = 'Spring 2026 cohort · ' + currentUser.name;
+  // Browsing the dashboard requires NO company profile. The gate is now the DATABASE
+  // (employerProfileComplete()), checked only when posting — so an employer returning
+  // on a new device is never bounced back to registration.
 
   initNotifBell();
   msInit();
   renderOverviewStats();
-
-  // Populate company listing from sessionStorage if present
-  const empStored = sessionStorage.getItem('sib_emp_data');
-  if (empStored) {
-    try {
-      const d = JSON.parse(empStored);
-      const el = (id, val) => { const e = document.getElementById(id); if(e) e.textContent = val; };
-      el('el-company', d.company || '—'); el('el-industry', d.industry || '—');
-      el('el-format', d.format || '—'); el('el-hours', (d.hours || '—') + ' hrs/week');
-      el('el-students', d.students || '—'); el('el-supervisor', d.supervisor || '—');
-    } catch(e) {}
-  }
+  renderCompanyProfile();   // header + "My Company" populated from the employers row
 
   if (document.getElementById('studentGrid')) renderStudents(students);
 
@@ -573,6 +631,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (_sec === 'messages') showEDashSection('messages');
   else if (_sec === 'postings') showEDashSection('postings');
   else if (_sec === 'notifications') showEDashSection('notifications');
+
+  // Return-from-profile deep link: open the posting composer once back on the dash.
+  // Profile was just saved, so bypass the completeness gate (force = true).
+  if (_params.get('openPost') === '1') {
+    showEDashSection('postings');
+    openCreatePosting(true);
+  }
 });
 </script>
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>

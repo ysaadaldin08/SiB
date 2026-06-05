@@ -98,21 +98,20 @@
 <div class="form-page">
   <div class="form-wrap" style="max-width:740px;">
     <button class="form-back" onclick="window.location.href='index.html'" data-aos="fade-up">← Back to Home</button>
-    <h1 class="form-title" data-aos="fade-up" data-aos-delay="60">Employer Registration</h1>
-    <p class="form-sub" data-aos="fade-up" data-aos-delay="140">~10 minutes · Reviewed within 3–5 business days before portal access is granted</p>
+    <h1 class="form-title" data-aos="fade-up" data-aos-delay="60">Company Profile</h1>
+    <p class="form-sub" data-aos="fade-up" data-aos-delay="140">A few minutes · Saved to your account — you only do this once</p>
 
     <div id="empFormMain">
       <div class="emp-step-nav" data-aos="fade-up" data-aos-delay="200">
-        <button class="emp-step-tab active" id="etab0">1 · Company & Contact</button>
-        <button class="emp-step-tab" id="etab1">2 · Placement Details</button>
-        <button class="emp-step-tab" id="etab2">3 · Commitment</button>
+        <button class="emp-step-tab active" id="etab0">1 · Company Profile</button>
+        <button class="emp-step-tab" id="etab1">2 · Commitment</button>
       </div>
       <div class="form-card" data-aos="fade-up" data-aos-delay="260">
 
-        <!-- EMP STEP 1 -->
+        <!-- EMP STEP 1 — Company Profile -->
         <div class="emp-form-step active" id="es0">
           <div class="step-heading">Company Information</div>
-          <div class="step-sub" style="margin-bottom:22px;">Tell us about your company.</div>
+          <div class="step-sub" style="margin-bottom:22px;">Tell us about your organization. This is a one-time profile, not a job posting — you'll create placements from your dashboard.</div>
           <div class="field-row">
             <div class="field"><label>Company Name *</label><input type="text" id="e1company" placeholder="Company name"></div>
             <div class="field"><label>Industry *</label>
@@ -132,90 +131,33 @@
             <div class="field-hint">Enter your full website URL (e.g. https://yourcompany.com).</div>
             <div class="field-error" id="e1websiteErr">Please enter a valid website URL (e.g. https://yourcompany.ca).</div>
           </div>
+          <div class="field">
+            <label>Office Address *</label>
+            <input type="text" id="e1address" placeholder="Street, City, Province">
+            <div class="field-hint">Primary work-site address where placed students will report.</div>
+          </div>
           <div style="margin-top:6px;padding-top:22px;border-top:1px solid var(--line);">
             <div class="step-heading" style="font-size:19px;margin-bottom:5px;">Primary Contact</div>
-            <div class="step-sub" style="margin-bottom:18px;">The person we'll communicate with about this placement.</div>
+            <div class="step-sub" style="margin-bottom:18px;">The person we'll communicate with about placements. We'll reach you at your account email.</div>
           </div>
           <div class="field-row">
             <div class="field"><label>Contact Name *</label><input type="text" id="e1cname" placeholder="Full name"></div>
             <div class="field"><label>Title / Role *</label><input type="text" id="e1ctitle" placeholder="e.g. HR Manager"></div>
           </div>
-          <div class="field-row">
-            <div class="field">
-              <label>Email Address *</label>
-              <input type="email" id="e1email" placeholder="contact@company.com">
-              <div class="field-error" id="e1emailErr">Please enter a valid email address.</div>
-            </div>
-            <div class="field">
-              <label>Phone Number *</label>
-              <input type="tel" id="e1phone" placeholder="613-555-0100">
-              <div class="field-hint">Canadian or North American number (e.g. 613-555-0100).</div>
-              <div class="field-error" id="e1phoneErr">Please enter a valid phone number (e.g. 613-555-0100).</div>
-            </div>
+          <div class="field">
+            <label>Phone Number *</label>
+            <input type="tel" id="e1phone" placeholder="613-555-0100">
+            <div class="field-hint">Canadian or North American number (e.g. 613-555-0100).</div>
+            <div class="field-error" id="e1phoneErr">Please enter a valid phone number (e.g. 613-555-0100).</div>
           </div>
           <div class="form-actions">
-            <div style="font-size:13px;color:var(--text-faint);">Step 1 of 3</div>
+            <div style="font-size:13px;color:var(--text-faint);">Step 1 of 2</div>
             <button class="btn-form-next" onclick="nextEmpStep(0)">Continue →</button>
           </div>
         </div>
 
-        <!-- EMP STEP 2 -->
+        <!-- EMP STEP 2 — Commitment -->
         <div class="emp-form-step" id="es1">
-          <div class="step-heading">Placement Details</div>
-          <div class="step-sub" style="margin-bottom:22px;">Tell us about the placement you're offering.</div>
-          <div class="field">
-            <label>Office Address *</label>
-            <input type="text" id="e2address" placeholder="Street, City, Province">
-            <div class="field-hint">Specific address where the student will be working.</div>
-          </div>
-          <div class="field-row">
-            <div class="field">
-              <label>Number of Candidates Needed *</label>
-              <input type="number" id="e2students" min="1" max="50" placeholder="e.g. 2">
-              <div class="field-hint">Enter how many candidates you need.</div>
-            </div>
-            <div class="field">
-              <label>Work Format *</label>
-              <select id="e2format">
-                <option value="">Select format</option>
-                <option>In-person</option><option>Remote</option><option>Hybrid</option>
-              </select>
-            </div>
-          </div>
-          <div class="field">
-            <label>Preferred Placement Tracks *</label>
-            <div class="field-hint" style="margin-bottom:0;">Select all tracks you would consider hosting a co-op student in.</div>
-            <div class="track-chip-grid">
-              <div class="track-chip" onclick="toggleTrackSel(this,'Technology &amp; IT')">Technology &amp; IT</div>
-              <div class="track-chip" onclick="toggleTrackSel(this,'Business &amp; Finance')">Business &amp; Finance</div>
-              <div class="track-chip" onclick="toggleTrackSel(this,'Marketing &amp; Communications')">Marketing &amp; Communications</div>
-              <div class="track-chip" onclick="toggleTrackSel(this,'Health &amp; Sciences')">Health &amp; Sciences</div>
-              <div class="track-chip" onclick="toggleTrackSel(this,'Education &amp; Social Services')">Education &amp; Social Services</div>
-              <div class="track-chip" onclick="toggleTrackSel(this,'Trades &amp; Engineering')">Trades &amp; Engineering</div>
-              <div class="track-chip" onclick="toggleTrackSel(this,'Arts, Media &amp; Design')">Arts, Media &amp; Design</div>
-              <div class="track-chip" onclick="toggleTrackSel(this,'Law &amp; Government')">Law &amp; Government</div>
-              <div class="track-chip" onclick="toggleTrackSel(this,'Hospitality &amp; Food Services')">Hospitality &amp; Food Services</div>
-              <div class="track-chip" onclick="toggleTrackSel(this,'Retail &amp; Customer Service')">Retail &amp; Customer Service</div>
-            </div>
-          </div>
-          <div class="field-row">
-            <div class="field"><label>Hours Required Per Week *</label><input type="number" id="e2hours" min="14" max="40" placeholder="e.g. 20"></div>
-            <div class="field">
-              <label>Preferred Start Date *</label>
-              <input type="date" id="e2startdate">
-              <div class="field-hint">Select the date when you would like the placement to begin.</div>
-            </div>
-          </div>
-          <div class="field"><label>Named Supervisor *</label><input type="text" id="e2supervisor" placeholder="Full name of the direct supervisor"><div class="field-hint">A named individual is required — not a general inbox.</div></div>
-          <div class="field"><label>Placement Description *</label><textarea id="e2desc" style="min-height:140px;" placeholder="Describe what the candidate(s) will actually do during their placement. Be specific."></textarea></div>
-          <div class="form-actions">
-            <button class="btn-form-back" onclick="prevEmpStep(1)">← Back</button>
-            <button class="btn-form-next" onclick="nextEmpStep(1)">Continue →</button>
-          </div>
-        </div>
-
-        <!-- EMP STEP 3 -->
-        <div class="emp-form-step" id="es2">
           <div class="step-heading">Employer Commitment</div>
           <div class="step-sub" style="margin-bottom:22px;">Check all boxes to confirm your commitment to the SiB program.</div>
           <div class="clauses">
@@ -224,8 +166,8 @@
             <div class="clause" onclick="toggleClause(this)"><div class="clause-box">✓</div><p>I agree to participate in end-of-term feedback to improve the program for future cohorts.</p></div>
           </div>
           <div class="form-actions">
-            <button class="btn-form-back" onclick="prevEmpStep(2)">← Back</button>
-            <button class="btn-form-submit" onclick="submitEmpReg()">Submit Registration →</button>
+            <button class="btn-form-back" onclick="prevEmpStep(1)">← Back</button>
+            <button class="btn-form-submit" onclick="submitEmpReg()">Save Company Profile →</button>
           </div>
         </div>
 
@@ -261,11 +203,41 @@
 <script src="auth.js"></script>
 <script src="app.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  if (sessionStorage.getItem('sib_emp_data')) {
-    window.location.href = 'dashboard-employer.html';
-  }
+document.addEventListener('DOMContentLoaded', async () => {
   updateNavForAuth();
+  // Prefill from the employer's existing row so this one-time profile can be
+  // reviewed/edited (e.g. arriving from the dashboard "Edit company profile").
+  // select('*') is resilient whether or not the new profile columns migration
+  // (industry / office_address / contact_title) has been applied yet.
+  try {
+    const sb = window._supabase;
+    if (!sb) return;
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return;
+    const { data: e } = await sb.from('employers').select('*').eq('id', user.id).maybeSingle();
+    if (!e) return;
+    const setVal = (id, v) => { const el = document.getElementById(id); if (el && v != null && v !== '') el.value = v; };
+    setVal('e1company', e.company_name);
+    setVal('e1website', e.website);
+    setVal('e1address', e.office_address);
+    setVal('e1cname',   e.contact_name);
+    setVal('e1ctitle',  e.contact_title);
+    setVal('e1phone',   e.phone);
+    if (e.industry) {
+      const sel = document.getElementById('e1industry');
+      if (sel) {
+        const opts = [...sel.options].map(o => o.value || o.textContent.trim());
+        if (opts.includes(e.industry)) {
+          sel.value = [...sel.options].find(o => (o.value || o.textContent.trim()) === e.industry)?.value ?? e.industry;
+        } else {
+          sel.value = 'other';
+          if (typeof handleOther === 'function') handleOther(sel, 'industryOther');
+          const oi = document.querySelector('#industryOther input');
+          if (oi) oi.value = e.industry;
+        }
+      }
+    }
+  } catch (_) {}
 });
 </script>
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
