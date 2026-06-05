@@ -206,7 +206,9 @@ async function doCoordinatorLogin() {
       return;
     }
 
-    const fullName = prof.full_name || data.user.user_metadata?.full_name || email;
+    // Prefer the real name (profiles.full_name, then auth metadata); only fall back
+    // to the email handle — never the full address — if no name exists at all.
+    const fullName = prof.full_name || data.user.user_metadata?.full_name || (email.split('@')[0] || email);
     const user = {
       id:    data.user.id,
       email: data.user.email,

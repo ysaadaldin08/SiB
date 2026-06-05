@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- SECURITY: CSP, MIME-type, and referrer headers. 'unsafe-inline' in script-src is required
      by the current inline-script architecture; migrate to nonces in Phase 8 build pipeline. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src https://fonts.gstatic.com; img-src 'self' https://placehold.co https://mhauftulhvnguualfcfw.supabase.co data: blob:; connect-src 'self' https://mhauftulhvnguualfcfw.supabase.co http://localhost:3001; frame-ancestors 'none'; object-src 'none'; base-uri 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src https://fonts.gstatic.com; img-src 'self' https://placehold.co https://mhauftulhvnguualfcfw.supabase.co data: blob:; connect-src 'self' https://mhauftulhvnguualfcfw.supabase.co; frame-ancestors 'none'; object-src 'none'; base-uri 'self';">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
 <title>Coordinator Dashboard — Students in Business</title>
@@ -40,7 +40,11 @@
 .coord-tab-count.danger { background: #fef2f2 !important; color: #dc2626 !important; }
 
 /* —— PAGE LAYOUT —— */
-.coord-page { min-height: 100vh; background: #ffffff; padding: 0 48px 80px; }
+/* #mainNav is position:fixed and 60px tall. Offset the whole page below it so the
+   sticky tab bar (top:60px) and the Overview heading are never clipped under the
+   nav at rest. Without this, content starts at y=0 behind the fixed nav. */
+body { padding-top: 60px; }
+.coord-page { min-height: calc(100vh - 60px); background: #ffffff; padding: 0 48px 80px; }
 .coord-inner { max-width: 1180px; margin: 0 auto; padding-top: 36px; }
 .coord-page-header {
   margin-bottom: 28px; padding-bottom: 24px; border-bottom: 1px solid var(--line);
@@ -362,7 +366,8 @@ async function cGet(path) {
   if (!sb) return { success: false, data: [] };
   try {
     if (path === '/coordinator/postings') {
-      const { data: posts } = await sb.from('postings').select('*').order('created_at', { ascending: false });
+      const { data: posts, error: postErr } = await sb.from('postings').select('*').order('created_at', { ascending: false });
+      if (postErr) console.warn('[coordinator] read failed on postings:', postErr.message);
       const rows = posts || [];
       const empIds = [...new Set(rows.map(p => p.employer_id))];
       const [emps, profs, appRows] = await Promise.all([
@@ -385,7 +390,8 @@ async function cGet(path) {
     }
 
     if (path === '/coordinator/applications') {
-      const { data: apps } = await sb.from('applications').select('*').order('created_at', { ascending: false });
+      const { data: apps, error: appErr } = await sb.from('applications').select('*').order('created_at', { ascending: false });
+      if (appErr) console.warn('[coordinator] read failed on applications:', appErr.message);
       const rows = apps || [];
       const sids = [...new Set(rows.map(a => a.student_id))];
       const pids = [...new Set(rows.map(a => a.posting_id))];
@@ -409,24 +415,33 @@ async function cGet(path) {
     }
 
     if (path === '/coordinator/users') {
-      const { data: profiles } = await sb.from('profiles').select('id, email, role, created_at, full_name').order('created_at', { ascending: false });
+      const { data: profiles, error: profErr } = await sb.from('profiles').select('id, email, role, created_at, full_name').order('created_at', { ascending: false });
+      if (profErr) console.warn('[coordinator] read failed on profiles:', profErr.message);
       const rows = profiles || [];
       const empIds = rows.filter(u => u.role === 'employer').map(u => u.id);
       const stuIds = rows.filter(u => u.role === 'student').map(u => u.id);
       const [emps, studs, appRows, postRows] = await Promise.all([
         empIds.length ? sb.from('employers').select('id, company_name, contact_name, coordinator_approved').in('id', empIds).then(r => r.data || []) : Promise.resolve([]),
-        stuIds.length ? sb.from('students').select('id, school, grade').in('id', stuIds).then(r => r.data || []) : Promise.resolve([]),
+        // profile (jsonb) carries the first/last a student typed at onboarding — a
+        // secondary name source when profiles.full_name was never populated.
+        stuIds.length ? sb.from('students').select('id, school, grade, profile').in('id', stuIds).then(r => r.data || []) : Promise.resolve([]),
         stuIds.length ? sb.from('applications').select('student_id').in('student_id', stuIds).then(r => r.data || []) : Promise.resolve([]),
         empIds.length ? sb.from('postings').select('employer_id').eq('is_active', true).in('employer_id', empIds).then(r => r.data || []) : Promise.resolve([])
       ]);
-      const companyMap = {}, nameMap = {}, schoolMap = {}, gradeMap = {}, apprMap = {}, appCnt = {}, postCnt = {};
+      const companyMap = {}, nameMap = {}, stuNameMap = {}, schoolMap = {}, gradeMap = {}, apprMap = {}, appCnt = {}, postCnt = {};
       emps.forEach(e => { companyMap[e.id] = e.company_name; nameMap[e.id] = e.contact_name || e.company_name; apprMap[e.id] = !!e.coordinator_approved; });
-      studs.forEach(s => { schoolMap[s.id] = s.school; gradeMap[s.id] = s.grade; });
+      studs.forEach(s => {
+        schoolMap[s.id] = s.school; gradeMap[s.id] = s.grade;
+        const nm = [s.profile?.first, s.profile?.last].filter(Boolean).join(' ').trim();
+        if (nm) stuNameMap[s.id] = nm;
+      });
       appRows.forEach(a => { appCnt[a.student_id] = (appCnt[a.student_id] || 0) + 1; });
       postRows.forEach(p => { postCnt[p.employer_id] = (postCnt[p.employer_id] || 0) + 1; });
       return { success: true, data: rows.map(u => ({
         ...u,
-        full_name:            u.full_name || nameMap[u.id] || null,
+        // Name priority: profiles.full_name → employer contact/company → student
+        // onboarding first/last. Email handle is the display-time last resort.
+        full_name:            u.full_name || nameMap[u.id] || stuNameMap[u.id] || null,
         company_name:         companyMap[u.id] || null,
         school:               schoolMap[u.id] || null,
         grade:                gradeMap[u.id] || null,
@@ -505,20 +520,37 @@ function switchTab(tab) {
   if (tab === 'applications')   filterApplications();
 }
 
-// —— LOAD ALL DATA ——
-async function loadAll() {
-  try {
-    const [pRes, aRes, uRes] = await Promise.all([
-      cGet('/coordinator/postings'),
-      cGet('/coordinator/applications'),
-      cGet('/coordinator/users'),
-    ]);
-    coordPostings     = pRes.success ? pRes.data : [];
-    coordApplications = aRes.success ? aRes.data : [];
-    coordUsers        = uRes.success ? uRes.data : [];
-  } catch (_) {
-    // Server may be unavailable — localStorage sections still work
+// —— SESSION GATE (Path A) ——
+// config.js injects the Supabase JS SDK asynchronously and the auth session is
+// restored from storage asynchronously too. If a coordinator-scoped read fires
+// before the JWT is attached, it goes out as `anon`, is_coordinator() is false,
+// and RLS returns zero rows with NO error — which looks exactly like an empty
+// dashboard. Awaiting getSession() here guarantees the token is live (mirrors the
+// _uid()/getUser() await every other Path A page does before reading).
+async function _ensureCoordSession() {
+  let waited = 0;
+  while (!window._supabase && waited < 5000) {
+    await new Promise(r => setTimeout(r, 50));
+    waited += 50;
   }
+  const sb = window._supabase;
+  if (!sb) return null;
+  try {
+    const { data } = await sb.auth.getSession();
+    return data?.session || null;
+  } catch (_) { return null; }
+}
+
+// —— LOAD ALL DATA (direct Supabase, coordinator RLS) ——
+async function loadAll() {
+  const [pRes, aRes, uRes] = await Promise.all([
+    cGet('/coordinator/postings'),
+    cGet('/coordinator/applications'),
+    cGet('/coordinator/users'),
+  ]);
+  coordPostings     = pRes.data || [];
+  coordApplications = aRes.data || [];
+  coordUsers        = uRes.data || [];
 }
 
 // —— UPDATE TAB COUNTS ——
@@ -549,17 +581,13 @@ async function renderOverview() {
   const threads   = await getAllMessageThreads();
   const flagged   = threads.filter(t => t.status === 'flagged').length;
   const unreviewed = threads.filter(t => t.status === 'flagged' && !t.reviewedAt).length;
-  const apiOk     = coordUsers.length > 0 || coordPostings.length > 0;
 
   const sec = document.getElementById('section-overview');
   sec.innerHTML = `
     <div class="coord-page-header">
       <div>
         <div class="coord-page-title">Overview</div>
-        <div class="coord-page-sub">${apiOk ? 'Live platform snapshot.' : 'Messaging and notifications are live. Connect the API server to see user and listing data.'}</div>
-      </div>
-      <div style="font-size:12.5px;color:${apiOk ? '#15803d' : '#d97706'};font-weight:600;background:${apiOk ? '#f0fdf4' : '#fffbeb'};border:1px solid ${apiOk ? '#86efac' : '#fde68a'};border-radius:8px;padding:6px 12px;">
-        ${apiOk ? '✓ API connected' : '⚠ API offline — localStorage data shown'}
+        <div class="coord-page-sub">Live platform snapshot.</div>
       </div>
     </div>
 
@@ -625,7 +653,7 @@ function renderUsers() {
   if (!container) return;
 
   if (!coordUsers.length) {
-    container.innerHTML = emptyState('👥', 'No user data', 'Connect the API server to load student and employer accounts.');
+    container.innerHTML = emptyState('👥', 'No users yet', 'Student and employer accounts will appear here as people sign up.');
     container.style.display = 'block';
     return;
   }
@@ -636,7 +664,7 @@ function renderUsers() {
   }
 
   container.innerHTML = users.map(u => {
-    const name    = u.full_name || u.email;
+    const name    = displayName(u.full_name, u.email);
     const initial = (u.company_name || name || '?').charAt(0).toUpperCase();
     const isEmp   = u.role === 'employer';
     const count   = isEmp ? (u.active_posting_count || 0) : (u.application_count || 0);
@@ -650,7 +678,7 @@ function renderUsers() {
            Verify →
          </button>`
       : '';
-    // Employer posting-approval: reads coordinator_approved from API response (2.3)
+    // Employer posting-approval: coordinator_approved comes from the employers row (via cGet)
     const alreadyApproved = isEmp && !!u.coordinator_approved;
     const approvalHtml = isEmp
       ? (alreadyApproved
@@ -684,16 +712,16 @@ function renderUsers() {
 }
 
 async function manualVerifyUser(userId, email) {
-  try {
-    const res = await cPut('/coordinator/users/' + userId, { email_verified: true });
-    if (res.success) {
-      showToast('✓ ' + email + ' verified.');
-      const u = coordUsers.find(x => String(x.id) === userId);
-      if (u) { u.email_verified = true; renderUsers(); }
-      return;
-    }
-  } catch (_) {}
-  showToast('Could not verify account — server unavailable. Try again or contact the administrator.', true);
+  const res = await cPut('/coordinator/users/' + userId, { email_verified: true });
+  if (res.success) {
+    showToast('✓ ' + email + ' verified.');
+    const u = coordUsers.find(x => String(x.id) === userId);
+    if (u) { u.email_verified = true; renderUsers(); }
+    return;
+  }
+  // Manual verification needs a service-role admin function, which Path A does not
+  // expose to the browser — surface the real reason rather than a server error.
+  showToast(res.error || 'Manual verification isn’t available from the browser yet.', true);
 }
 
 async function approveEmployer(userId, name) {
@@ -704,10 +732,10 @@ async function approveEmployer(userId, name) {
       const u = coordUsers.find(x => String(x.id) === String(userId));
       if (u) { u.coordinator_approved = true; renderUsers(); }
     } else {
-      showToast('Could not approve: ' + (r.error || 'Server error'), true);
+      showToast('Could not approve: ' + (r.error || 'please try again'), true);
     }
   } catch (_) {
-    showToast('Server unavailable — could not approve employer.', true);
+    showToast('Could not approve employer — please try again.', true);
   }
 }
 
@@ -726,7 +754,7 @@ function renderPlacements() {
   if (!container) return;
 
   if (!coordApplications.length) {
-    container.innerHTML = emptyState('📋', 'No data yet', 'Connect the API server to load application data.');
+    container.innerHTML = emptyState('📋', 'No applications yet', 'Applications appear here once students start applying to listings.');
     return;
   }
   if (!placed.length) {
@@ -738,7 +766,7 @@ function renderPlacements() {
     const stu = a.students  || {};
     const pos = a.postings  || {};
     const co  = pos.employers || {};
-    const name = stu.full_name || 'Unknown Student';
+    const name = (stu.full_name || '').trim() || emailHandle(stu.email) || 'Unknown Student';
     const initial = name.charAt(0).toUpperCase();
     return `
       <div class="coord-app-card">
@@ -804,7 +832,7 @@ async function coordRenderThreadList() {
     return;
   }
 
-  // Preview and message count come from server enrichment — no per-thread API call needed.
+  // Preview and message count are enriched client-side (_enrichThreadsClient) — no per-thread fetch needed.
   list.innerHTML = threads.map(t => {
     const pn       = t.participantNames || {};
     const preview  = t.preview ? t.preview.slice(0, 76) + (t.preview.length > 76 ? '…' : '') : 'No messages';
@@ -1059,7 +1087,7 @@ function renderListings() {
     <div class="stat-card"><div class="stat-label">Total Applicants</div><div class="stat-val">${totalApplicants}</div></div>`;
 
   if (!coordPostings.length) {
-    document.getElementById('listings-list').innerHTML = emptyState('📋', 'No listings yet', 'Employer postings will appear here. Connect the API server if this is unexpected.');
+    document.getElementById('listings-list').innerHTML = emptyState('📋', 'No listings yet', 'Employer postings will appear here once employers start posting.');
     return;
   }
 
@@ -1116,7 +1144,7 @@ function renderApplications(list) {
     <div class="stat-card"><div class="stat-label">Accepted</div><div class="stat-val" style="${accepted ? 'color:#15803d;' : ''}">${accepted}</div></div>`;
 
   if (!list.length) {
-    document.getElementById('applications-list').innerHTML = emptyState('📭', 'No applications found', 'No applications match your filter, or connect the API server.');
+    document.getElementById('applications-list').innerHTML = emptyState('📭', 'No applications found', 'No applications match your current search or filter.');
     return;
   }
 
@@ -1124,7 +1152,7 @@ function renderApplications(list) {
     const stu = a.students || {};
     const pos = a.postings  || {};
     const co  = pos.employers || {};
-    const name = stu.full_name || 'Unknown Student';
+    const name = (stu.full_name || '').trim() || emailHandle(stu.email) || 'Unknown Student';
     const initial = name.charAt(0).toUpperCase();
     const opts = STATUS_OPTIONS.map(s => `<option value="${s}" ${s === a.status ? 'selected' : ''}>${s}</option>`).join('');
     const resumeHtml = a.resume_url
@@ -1223,6 +1251,17 @@ function toggleCover(id) {
 }
 
 // —— HELPERS ——
+// Display name resolution: prefer the real name the user typed at signup
+// (profiles.full_name, surfaced by the cGet dispatchers). Only fall back to the
+// email handle — never the full address — when no name exists anywhere.
+function emailHandle(email) {
+  if (!email) return '';
+  const at = String(email).indexOf('@');
+  return at > 0 ? String(email).slice(0, at) : String(email);
+}
+function displayName(fullName, email) {
+  return (fullName || '').trim() || emailHandle(email) || '—';
+}
 function escHtml(str) {
   return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
@@ -1245,6 +1284,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const nameEl = document.getElementById('navUserName');
   if (nameEl) nameEl.textContent = currentUser.name;
+
+  // Wait for a live Supabase session before any coordinator-scoped read, or the
+  // RLS-gated tables come back empty (see _ensureCoordSession).
+  const session = await _ensureCoordSession();
+  if (!session) { window.location.href = 'coordinator-login.html'; return; }
 
   await loadAll();
 
