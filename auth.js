@@ -303,6 +303,8 @@ async function doSignOut() {
   saveToken(null);
   // Clear ALL sib_* keys so no stale PII remains after logout (PIPEDA data minimization)
   Object.keys(localStorage).filter(k => k.startsWith('sib_')).forEach(k => localStorage.removeItem(k));
+  // Onboarding drafts live in sessionStorage (minors' PII) — clear them on logout too.
+  ['sib_draft_student', 'sib_draft_employer'].forEach(k => sessionStorage.removeItem(k));
   _removeVerifyOverlays();
   updateNavForAuth();
   window.location.href = 'index.html';

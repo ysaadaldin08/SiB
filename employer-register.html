@@ -216,7 +216,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!user) return;
     const { data: e } = await sb.from('employers').select('*').eq('id', user.id).maybeSingle();
     if (!e) return;
-    const setVal = (id, v) => { const el = document.getElementById(id); if (el && v != null && v !== '') el.value = v; };
+    // Don't clobber a restored draft (app.js restoreEmployerDraft runs first): only
+    // fill fields the draft left empty.
+    const setVal = (id, v) => { const el = document.getElementById(id); if (el && !el.value && v != null && v !== '') el.value = v; };
     setVal('e1company', e.company_name);
     setVal('e1website', e.website);
     setVal('e1address', e.office_address);
@@ -225,7 +227,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     setVal('e1phone',   e.phone);
     if (e.industry) {
       const sel = document.getElementById('e1industry');
-      if (sel) {
+      if (sel && !sel.value) {
         const opts = [...sel.options].map(o => o.value || o.textContent.trim());
         if (opts.includes(e.industry)) {
           sel.value = [...sel.options].find(o => (o.value || o.textContent.trim()) === e.industry)?.value ?? e.industry;
@@ -233,7 +235,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           sel.value = 'other';
           if (typeof handleOther === 'function') handleOther(sel, 'industryOther');
           const oi = document.querySelector('#industryOther input');
-          if (oi) oi.value = e.industry;
+          if (oi && !oi.value) oi.value = e.industry;
         }
       }
     }
@@ -242,15 +244,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 <script>AOS.init({ duration: 600, easing: 'ease-out-cubic', once: true, offset: 60 });</script>
-<script src="https://unpkg.com/@studio-freight/lenis@1.0.23/bundled/lenis.min.js"></script>
-<script>
-  const lenis = new Lenis({ duration: 1.2, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
-  lenis.on('scroll', ({ scroll }) => {
-    const nav = document.getElementById('mainNav');
-    if (nav) nav.classList.toggle('scrolled', scroll > 10);
-  });
-  function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
-  requestAnimationFrame(raf);
-</script>
+<!-- Lenis smooth-scroll removed (Fix 3): it intercepted wheel/trackpad events and
+     left scrolling possible only by dragging the scrollbar. Native scroll works
+     fine; the nav "scrolled" state is handled by the scroll listener in app.js. -->
+
 </body>
 </html>

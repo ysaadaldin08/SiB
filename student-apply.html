@@ -238,7 +238,7 @@
             <div class="step-heading" style="font-size:19px;margin-bottom:5px;">Commitment Agreement</div>
             <div class="step-sub">All boxes must be checked to submit.</div>
             <div class="clauses">
-              <div class="clause" onclick="toggleClause(this)"><div class="clause-box">✓</div><p>I confirm that I am a Grade 10–12 student enrolled in an Ottawa-area high school and am eligible for co-op credit.</p></div>
+              <div class="clause" onclick="toggleClause(this)"><div class="clause-box">✓</div><p>I confirm that I am a Grade 10–12 student enrolled in an Ontario high school and am eligible for co-op credit.</p></div>
               <div class="clause" onclick="toggleClause(this)"><div class="clause-box">✓</div><p>I understand that I may not contact employers directly — all communication is routed through the SiB coordinator.</p></div>
               <div class="clause" onclick="toggleClause(this)"><div class="clause-box">✓</div><p>I consent to my profile information (excluding full name and contact details) being shared with vetted employers on this platform.</p></div>
               <div class="clause" onclick="toggleClause(this)"><div class="clause-box">✓</div><p>I agree to maintain professional conduct throughout the placement and notify the coordinator of any issues or concerns.</p></div>
@@ -305,15 +305,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 <script>AOS.init({ duration: 600, easing: 'ease-out-cubic', once: true, offset: 60 });</script>
-<script src="https://unpkg.com/@studio-freight/lenis@1.0.23/bundled/lenis.min.js"></script>
-<script>
-  const lenis = new Lenis({ duration: 1.2, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
-  lenis.on('scroll', ({ scroll }) => {
-    const nav = document.getElementById('mainNav');
-    if (nav) nav.classList.toggle('scrolled', scroll > 10);
-  });
-  function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
-  requestAnimationFrame(raf);
-</script>
+<!-- Lenis smooth-scroll removed (Fix 3): it intercepted wheel/trackpad events and
+     left scrolling possible only by dragging the scrollbar. Native scroll works
+     fine; the nav "scrolled" state is handled by the scroll listener in app.js. -->
+
 </body>
 </html>

@@ -95,7 +95,7 @@
     <div class="jl-header">
       <div class="section-eyebrow" data-aos="fade-up">Spring 2026 Cohort</div>
       <h1 data-aos="fade-up" data-aos-delay="100" style="font-family:var(--serif);font-size:38px;font-weight:400;color:var(--ink);letter-spacing:-0.02em;margin-bottom:8px;line-height:1.1;">Browse Co-op &amp; Internship Listings</h1>
-      <p data-aos="fade-up" data-aos-delay="200" style="font-size:15px;color:var(--text-muted);max-width:560px;line-height:1.65;">Open co-op placements from Ottawa-area employers across every industry. Browse freely — sign in as a student to apply.</p>
+      <p data-aos="fade-up" data-aos-delay="200" style="font-size:15px;color:var(--text-muted);max-width:560px;line-height:1.65;">Open co-op placements from Ontario employers across every industry. Browse freely — sign in as a student to apply.</p>
     </div>
 
     <!-- Search -->
@@ -164,7 +164,7 @@
 <!-- FOOTER -->
 <footer>
   <div class="footer-inner">
-    <div><div class="footer-brand">Students in Business</div><div class="footer-tagline">Co-op Placement Platform · Ottawa</div></div>
+    <div><div class="footer-brand">Students in Business</div><div class="footer-tagline">Co-op Placement Platform · Ontario</div></div>
     <div style="text-align:right;"><div class="footer-email">Contact: <a href="mailto:ysaadaldin08@gmail.com" style="color:var(--blue);font-weight:600;">ysaadaldin08@gmail.com</a></div><div class="footer-note">Built &amp; managed by Yousef Saadaldin · Spring 2026</div></div>
   </div>
 </footer>
@@ -229,8 +229,11 @@ function handleApplyNav() {
   window.location.href = currentUser.role === 'employer' ? 'dashboard-employer.html' : 'student-apply.html';
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  allPostings = getActivePostings();
+document.addEventListener('DOMContentLoaded', async () => {
+  // getActivePostings() is async (Path A reads Supabase directly). Without await,
+  // allPostings would hold a pending Promise and applyFilters() would throw on
+  // .filter(), leaving the board empty — see Fix 2.
+  allPostings = await getActivePostings();
 
   // Pre-fill search from URL ?q=
   const params = new URLSearchParams(location.search);

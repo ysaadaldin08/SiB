@@ -26,7 +26,7 @@ function closeModal(id) {
 function toggleFaq(el) { el.closest('.faq-item').classList.toggle('open'); }
 
 // —— CLAUSES ——
-function toggleClause(el) { el.classList.toggle('checked'); }
+function toggleClause(el) { el.classList.toggle('checked'); saveOnboardingDraft(); }
 
 // —— NAV SCROLL (fallback; primary handler is in per-page Lenis init) ——
 window.addEventListener('scroll', () => {
@@ -52,6 +52,7 @@ function toggleTrackSel(el, name) {
   } else {
     el.classList.toggle('selected');
   }
+  saveOnboardingDraft();
 }
 
 // —— UPLOAD ——
@@ -316,6 +317,7 @@ function nextSStep(from) {
     updateSDots(next);
     currentSStep = next;
   }
+  saveStudentDraft();
   window.scrollTo(0,180);
 }
 
@@ -325,7 +327,9 @@ function prevSStep(from) {
   if (prev >= 0) {
     document.getElementById('ss' + prev).classList.add('active');
     updateSDots(prev);
+    currentSStep = prev;
   }
+  saveStudentDraft();
   window.scrollTo(0,180);
 }
 
@@ -349,6 +353,7 @@ async function doSubmit() {
   // Persist to Supabase first; do NOT advance to the success screen on failure.
   const ok = await _persistStudentProfile();
   if (!ok) return;
+  sessionStorage.removeItem('sib_draft_student');   // submitted — drop the draft (minors' PII)
   populateStudentDash();   // keeps sessionStorage for dashboard display + resume preview
   document.getElementById('studentFormMain').style.display = 'none';
   document.getElementById('studentSuccess').classList.add('show');
@@ -443,6 +448,7 @@ function nextEmpStep(from) {
   document.getElementById('es' + next).classList.add('active');
   document.getElementById('etab' + next).classList.add('active');
   currentEmpStep = next;
+  saveEmployerDraft();
   window.scrollTo(0,180);
 }
 
@@ -454,6 +460,7 @@ function prevEmpStep(from) {
   document.getElementById('etab' + prev).classList.add('active');
   document.getElementById('etab' + from).classList.remove('done');
   currentEmpStep = prev;
+  saveEmployerDraft();
   window.scrollTo(0,180);
 }
 
@@ -507,6 +514,7 @@ async function submitEmpReg() {
   }
 
   showToast('✓ Company profile saved.');
+  sessionStorage.removeItem('sib_draft_employer');   // saved — drop the draft (PII)
 
   // If the employer came here from "Create Posting", return them to it; otherwise
   // land them on their dashboard. (No sessionStorage profile cache — the dashboard
@@ -518,6 +526,130 @@ async function submitEmpReg() {
   }
   setTimeout(() => { window.location.href = 'dashboard-employer.html'; }, 450);
 }
+
+// —— ONBOARDING DRAFT AUTOSAVE ————————————————————————————————————————————————
+// Lightweight per-form draft so a page refresh never wipes a half-finished
+// application. PII SAFETY (these forms hold minors' data — names, schools,
+// teacher emails): drafts live in sessionStorage ONLY, so they die when the tab
+// closes, and they are cleared on successful submit and on sign-out. They are
+// never written to localStorage, a tracked file, or the database.
+const SIB_DRAFT_STUDENT  = 'sib_draft_student';
+const SIB_DRAFT_EMPLOYER = 'sib_draft_employer';
+
+const _studentDraftIds = [
+  's1first', 's1last', 's1email', 's1phone', 's1school', 's1grade',
+  's1teachername', 's1teacheremail',
+  's3hours', 's3date', 's3commute', 's3commuteDesc', 's3auth',
+  's4q1', 's4q2', 's4q3'
+];
+const _employerDraftIds = [
+  'e1company', 'e1industry', 'e1website', 'e1address', 'e1cname', 'e1ctitle', 'e1phone'
+];
+
+function _readDraftFields(ids) {
+  const out = {};
+  ids.forEach(id => { const el = document.getElementById(id); if (el) out[id] = el.value; });
+  return out;
+}
+function _writeDraftFields(fields) {
+  if (!fields) return;
+  Object.keys(fields).forEach(id => {
+    const el = document.getElementById(id);
+    if (el && fields[id] != null) el.value = fields[id];
+  });
+}
+
+function saveStudentDraft() {
+  if (!document.getElementById('studentFormMain')) return;
+  const draft = {
+    step:    currentSStep,
+    fields:  _readDraftFields(_studentDraftIds),
+    tracks:  [...studentSelectedTracks],
+    clauses: [...document.querySelectorAll('#ss4 .clause')].map(c => c.classList.contains('checked'))
+  };
+  try { sessionStorage.setItem(SIB_DRAFT_STUDENT, JSON.stringify(draft)); } catch (_) {}
+}
+
+function restoreStudentDraft() {
+  if (!document.getElementById('studentFormMain')) return;
+  let draft = null;
+  try { draft = JSON.parse(sessionStorage.getItem(SIB_DRAFT_STUDENT) || 'null'); } catch (_) {}
+  if (!draft) return;
+
+  _writeDraftFields(draft.fields);
+  // reveal the commute "Other" elaboration if that option was chosen
+  const commute = document.getElementById('s3commute');
+  if (commute && typeof handleOther === 'function') handleOther(commute, 's3commuteOther');
+
+  // tracks — matched by visible label (the Set stores the decoded name)
+  if (Array.isArray(draft.tracks) && draft.tracks.length) {
+    studentSelectedTracks.clear();
+    document.querySelectorAll('#trackSelGrid .track-sel-card').forEach(card => {
+      const name = (card.querySelector('.track-sel-name')?.textContent || '').trim();
+      if (name && draft.tracks.includes(name)) {
+        card.classList.add('selected');
+        studentSelectedTracks.add(name);
+      }
+    });
+    const cnt = document.getElementById('trackSelCount');
+    if (cnt) cnt.textContent = studentSelectedTracks.size + ' selected';
+  }
+
+  // commitment clauses
+  if (Array.isArray(draft.clauses)) {
+    document.querySelectorAll('#ss4 .clause').forEach((c, i) => { if (draft.clauses[i]) c.classList.add('checked'); });
+  }
+
+  // jump back to the last step the user was on
+  const step = Math.min(Math.max(parseInt(draft.step, 10) || 0, 0), totalSSteps - 1);
+  document.querySelectorAll('#studentFormMain .form-step').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById('ss' + step);
+  if (target) { target.classList.add('active'); updateSDots(step); currentSStep = step; }
+}
+
+function saveEmployerDraft() {
+  if (!document.getElementById('empFormMain')) return;
+  const draft = {
+    step:          currentEmpStep,
+    fields:        _readDraftFields(_employerDraftIds),
+    industryOther: document.querySelector('#industryOther input')?.value || '',
+    clauses:       [...document.querySelectorAll('#es1 .clause')].map(c => c.classList.contains('checked'))
+  };
+  try { sessionStorage.setItem(SIB_DRAFT_EMPLOYER, JSON.stringify(draft)); } catch (_) {}
+}
+
+function restoreEmployerDraft() {
+  if (!document.getElementById('empFormMain')) return;
+  let draft = null;
+  try { draft = JSON.parse(sessionStorage.getItem(SIB_DRAFT_EMPLOYER) || 'null'); } catch (_) {}
+  if (!draft) return;
+
+  _writeDraftFields(draft.fields);
+  // industry "Other" free-text + reveal
+  const industry = document.getElementById('e1industry');
+  if (industry && typeof handleOther === 'function') handleOther(industry, 'industryOther');
+  const otherInput = document.querySelector('#industryOther input');
+  if (otherInput && draft.industryOther) otherInput.value = draft.industryOther;
+
+  // commitment clauses
+  if (Array.isArray(draft.clauses)) {
+    document.querySelectorAll('#es1 .clause').forEach((c, i) => { if (draft.clauses[i]) c.classList.add('checked'); });
+  }
+
+  // jump back to the last step (2-step form: es0 / es1)
+  const step = (parseInt(draft.step, 10) === 1) ? 1 : 0;
+  ['es0', 'es1'].forEach((id, i) => {
+    const s = document.getElementById(id);
+    if (s) s.classList.toggle('active', i === step);
+    const tab = document.getElementById('etab' + i);
+    if (tab) { tab.classList.toggle('active', i === step); tab.classList.toggle('done', i < step); }
+  });
+  currentEmpStep = step;
+}
+
+// Save from the click-driven controls (tracks, clauses) where no input/change
+// event fires; each saver no-ops unless its form is on the page.
+function saveOnboardingDraft() { saveStudentDraft(); saveEmployerDraft(); }
 
 // —— RESOURCE CENTRE NAVIGATION ——
 let appSavedStep = null;
@@ -551,6 +683,20 @@ function returnToApplication() {
 // —— INIT ——
 document.addEventListener('DOMContentLoaded', () => {
   updateNavForAuth();
+
+  // —— Onboarding draft autosave: restore any in-progress draft, then save on edit ——
+  const _sForm = document.getElementById('studentFormMain');
+  if (_sForm) {
+    restoreStudentDraft();
+    _sForm.addEventListener('input',  saveStudentDraft);
+    _sForm.addEventListener('change', saveStudentDraft);
+  }
+  const _eForm = document.getElementById('empFormMain');
+  if (_eForm) {
+    restoreEmployerDraft();
+    _eForm.addEventListener('input',  saveEmployerDraft);
+    _eForm.addEventListener('change', saveEmployerDraft);
+  }
 
   // Restore student form step if returning from resources
   const restoreStep = sessionStorage.getItem('sib_restore_step');
