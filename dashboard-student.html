@@ -348,9 +348,15 @@ async function renderOverviewStats() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   if (!currentUser) { window.location.href = 'index.html'; return; }
-  if (!sessionStorage.getItem('sib_student_app')) { window.location.href = 'student-apply.html'; return; }
+  // Cache may be empty after a logout / on a new device. Rehydrate from the students
+  // table (the source of truth) before bouncing to the application form; only send
+  // them to apply if the DB has no real application yet.
+  if (!sessionStorage.getItem('sib_student_app')) {
+    const rehydrated = (typeof rehydrateStudentApp === 'function') && await rehydrateStudentApp();
+    if (!rehydrated) { window.location.href = 'student-apply.html'; return; }
+  }
   const n = document.getElementById('sdash-name');
   const u = document.getElementById('sdash-username');
   const f = document.getElementById('sdash-firstname');

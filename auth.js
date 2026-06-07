@@ -305,6 +305,9 @@ async function doSignOut() {
   Object.keys(localStorage).filter(k => k.startsWith('sib_')).forEach(k => localStorage.removeItem(k));
   // Onboarding drafts live in sessionStorage (minors' PII) — clear them on logout too.
   ['sib_draft_student', 'sib_draft_employer'].forEach(k => sessionStorage.removeItem(k));
+  // The student dashboard display cache is sessionStorage PII; it's always rebuildable
+  // from the students table on next login (rehydrateStudentApp), so drop it on logout.
+  sessionStorage.removeItem('sib_student_app');
   _removeVerifyOverlays();
   updateNavForAuth();
   window.location.href = 'index.html';
@@ -406,7 +409,7 @@ document.addEventListener('click', () => {
 });
 
 // —— DASHBOARD GUARD ——
-function goDashboard() {
+async function goDashboard() {
   if (!currentUser) return;
 
   if (!currentUser.emailVerified) {
@@ -426,8 +429,12 @@ function goDashboard() {
     return;
   }
 
-  const hasApp = sessionStorage.getItem('sib_student_app');
-  if (hasApp) {
+  // The students TABLE is the source of truth — not the sessionStorage cache (which
+  // is wiped on logout). Rehydrate the dashboard cache from the DB so a returning
+  // student still lands on their dashboard. Only fall through to the "Complete Your
+  // Application" overlay when the DB has no real application yet.
+  if (sessionStorage.getItem('sib_student_app') ||
+      (typeof rehydrateStudentApp === 'function' && await rehydrateStudentApp())) {
     window.location.href = 'dashboard-student.html';
     return;
   }

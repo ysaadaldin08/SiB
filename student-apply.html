@@ -297,8 +297,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     } catch (_) {}
   }
-  if (sessionStorage.getItem('sib_student_app')) {
+  // A returning student who already applied may land here with an empty cache (after
+  // logout / on a new device). Rehydrate from the students table so they go straight
+  // to their dashboard instead of seeing a blank application form.
+  if (sessionStorage.getItem('sib_student_app') ||
+      (typeof rehydrateStudentApp === 'function' && await rehydrateStudentApp())) {
     window.location.href = 'dashboard-student.html';
+    return;
   }
   updateNavForAuth();
 });

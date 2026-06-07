@@ -381,19 +381,25 @@ async function _persistStudentProfile() {
   const profile = {
     first:           (document.getElementById('s1first')?.value || '').trim(),
     last:            (document.getElementById('s1last')?.value  || '').trim(),
+    email:           (document.getElementById('s1email')?.value || '').trim(),
     phone:           (document.getElementById('s1phone')?.value || '').trim(),
     teacherName:     (document.getElementById('s1teachername')?.value  || '').trim(),
     teacherEmail:    (document.getElementById('s1teacheremail')?.value || '').trim(),
     hoursPerWeek:    document.getElementById('s3hours')?.value || '',
     startDate:       document.getElementById('s3date')?.value  || '',
     commute:         document.getElementById('s3commute')?.value || '',
+    commuteDesc:     (document.getElementById('s3commuteDesc')?.value || '').trim(),
     guardianAuth:    document.getElementById('s3auth')?.value || '',
     tracks:          [...studentSelectedTracks],
     goals:           (document.getElementById('s4q1')?.value || '').trim(),
     experience:      (document.getElementById('s4q2')?.value || '').trim(),
     schedulingNotes: (document.getElementById('s4q3')?.value || '').trim(),
     resumeName:      uploadedResume ? uploadedResume.name : null,
-    submittedAt:     new Date().toISOString()
+    submittedAt:     new Date().toISOString(),
+    // Compliance record (minors' platform): timestamp the student checked all five
+    // commitment clauses. submitStudentApp() gates submit on all clauses being checked,
+    // so reaching here means they were accepted.
+    clausesAcceptedAt: new Date().toISOString()
     // NOTE: the resume FILE is not persisted yet — it stays in sessionStorage as a
     // data URL. Proper resume storage needs a Supabase Storage bucket (follow-up).
   };
@@ -417,9 +423,66 @@ function populateStudentDash() {
     q1: document.getElementById('s4q1')?.value || '',
     q2: document.getElementById('s4q2')?.value || '',
     resumeName: uploadedResume ? uploadedResume.name : null,
-    resumeDataUrl: uploadedResumeDataUrl || null
+    resumeDataUrl: uploadedResumeDataUrl || null,
+    // Carried for parity with rehydrateStudentApp() (no dashboard display spot yet).
+    email: document.getElementById('s1email')?.value || '',
+    commuteDesc: document.getElementById('s3commuteDesc')?.value || ''
   };
   sessionStorage.setItem('sib_student_app', JSON.stringify(appData));
+}
+
+// —— REHYDRATE DASHBOARD CACHE FROM SUPABASE ——————————————————————————————————
+// The students TABLE is the source of truth for a submitted application; the
+// `sib_student_app` sessionStorage object is only a display cache and is wiped on
+// logout (and never leaves the device). This reads the signed-in student's row and
+// rebuilds that cache so the dashboard works after any logout or on a new device —
+// the same way the employer dashboard re-reads its employers row.
+//
+// Returns true if a real (non-empty) application was rehydrated, false otherwise
+// (no session, no row, service not ready, or the row's profile is still the empty
+// seed — i.e. the student hasn't submitted yet).
+async function rehydrateStudentApp() {
+  const sb = window._supabase;
+  if (!sb) return false;
+
+  let userId;
+  try {
+    const { data: authData } = await sb.auth.getUser();
+    userId = authData?.user?.id;
+  } catch (_) { return false; }
+  if (!userId) return false;
+
+  // maybeSingle (not single): a missing row returns data:null instead of erroring.
+  const { data, error } = await sb
+    .from('students')
+    .select('school, grade, profile')
+    .eq('id', userId)
+    .maybeSingle();
+  if (error || !data) return false;
+
+  const p = data.profile;
+  // The signup trigger seeds profile as '{}'. An empty object means no application yet.
+  if (!p || typeof p !== 'object' || Object.keys(p).length === 0) return false;
+
+  // Map the DB shape -> the `sib_student_app` cache shape dashboard-student.html reads.
+  // resumeDataUrl has NO DB source yet (resume FILE persistence is a separate future
+  // task), so it stays null; resumeName carries through from the profile jsonb.
+  const cache = {
+    first:         p.first || '',
+    last:          p.last  || '',
+    school:        data.school || '',
+    grade:         data.grade  || '',
+    hrs:           p.hoursPerWeek || '',
+    tracks:        Array.isArray(p.tracks) ? p.tracks.join(', ') : (p.tracks || ''),
+    q1:            p.goals      || '',
+    q2:            p.experience || '',
+    resumeName:    p.resumeName || null,
+    resumeDataUrl: null,
+    email:         p.email       || '',
+    commuteDesc:   p.commuteDesc || ''
+  };
+  sessionStorage.setItem('sib_student_app', JSON.stringify(cache));
+  return true;
 }
 
 // —— EMPLOYER FORM ——
