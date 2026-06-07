@@ -378,10 +378,10 @@ function heroSearch(e) {
   window.location.href = 'job-listings.html' + (q ? '?q=' + encodeURIComponent(q) : '');
 }
 
-function renderLiveListings() {
+async function renderLiveListings() {
   const grid = document.getElementById('liveListingsGrid');
   if (!grid) return;
-  const postings = getActivePostings().slice(0, 4);
+  const postings = (await getActivePostings()).slice(0, 4);
   if (!postings.length) {
     grid.innerHTML = '<p style="color:rgba(255,255,255,0.4);font-size:14px;">No active listings yet.</p>';
     return;
@@ -403,13 +403,13 @@ function renderLiveListings() {
   if (typeof AOS !== 'undefined') AOS.refresh();
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   if (currentUser) {
     document.getElementById('heroStudentBtn').style.display = 'none';
     document.getElementById('heroEmployerBtn').style.display = 'none';
     document.getElementById('heroDashBtn').style.display = '';
   }
-  renderLiveListings();
+  await renderLiveListings();
 });
 </script>
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
