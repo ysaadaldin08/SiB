@@ -592,32 +592,32 @@ async function renderOverview() {
     </div>
 
     <div class="stat-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:12px;">
-      <div class="stat-card" data-aos="fade-up" data-aos-delay="0">
+      <div class="stat-card">
         <div class="stat-label">Students</div><div class="stat-val">${students || '—'}</div>
       </div>
-      <div class="stat-card" data-aos="fade-up" data-aos-delay="60">
+      <div class="stat-card">
         <div class="stat-label">Employers</div><div class="stat-val">${employers || '—'}</div>
       </div>
-      <div class="stat-card" data-aos="fade-up" data-aos-delay="120">
+      <div class="stat-card">
         <div class="stat-label">Active Listings</div><div class="stat-val">${active || '—'}</div>
       </div>
     </div>
     <div class="stat-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;">
-      <div class="stat-card" data-aos="fade-up" data-aos-delay="0">
+      <div class="stat-card">
         <div class="stat-label">Total Applications</div><div class="stat-val">${totalApps || '—'}</div>
       </div>
-      <div class="stat-card" data-aos="fade-up" data-aos-delay="60" style="${placed ? 'border-color:#86efac;' : ''}">
+      <div class="stat-card" style="${placed ? 'border-color:#86efac;' : ''}">
         <div class="stat-label">Accepted Placements</div>
         <div class="stat-val" style="${placed ? 'color:#15803d;' : ''}">${placed}</div>
       </div>
-      <div class="stat-card" data-aos="fade-up" data-aos-delay="120" style="${flagged ? 'border-color:#fca5a5;' : ''}">
+      <div class="stat-card" style="${flagged ? 'border-color:#fca5a5;' : ''}">
         <div class="stat-label">Flagged Threads</div>
         <div class="stat-val" style="${flagged ? 'color:#dc2626;' : ''}">${flagged}</div>
       </div>
     </div>
 
     ${unreviewed ? `
-    <div style="padding:16px 20px;background:#fef2f2;border:1.5px solid #fca5a5;border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:20px;" data-aos="fade-up">
+    <div style="padding:16px 20px;background:#fef2f2;border:1.5px solid #fca5a5;border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:20px;">
       <div>
         <div style="font-size:13.5px;color:#991b1b;font-weight:700;">⚑ ${unreviewed} conversation${unreviewed !== 1 ? 's' : ''} flagged and awaiting review</div>
         <div style="font-size:12.5px;color:#b91c1c;margin-top:2px;">Review required before the co-op period ends.</div>
@@ -626,7 +626,7 @@ async function renderOverview() {
     </div>` : ''}
 
     ${placed ? `
-    <div style="padding:16px 20px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;" data-aos="fade-up">
+    <div style="padding:16px 20px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
       <div style="font-size:13.5px;color:#15803d;font-weight:700;">✓ ${placed} student${placed !== 1 ? 's' : ''} placed — ready for school board reporting</div>
       <button onclick="switchTab('placements')" style="padding:9px 18px;border-radius:9px;background:#15803d;color:#fff;border:none;font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">View placements →</button>
     </div>` : ''}`;

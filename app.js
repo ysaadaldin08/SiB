@@ -177,7 +177,7 @@ function renderStudents(list) {
     return;
   }
   grid.innerHTML = list.map((s, i) => `
-    <div class="scard" data-aos="fade-up" data-aos-delay="${Math.min(i * 80, 320)}" onclick="openSProfile('${_htmlEsc(s.id)}')">
+    <div class="scard" onclick="openSProfile('${_htmlEsc(s.id)}')">
       <div class="scard-top">
         <div class="scard-avatar">${_htmlEsc((s.firstName || '?').charAt(0))}</div>
       </div>
@@ -838,7 +838,7 @@ document.addEventListener('DOMContentLoaded', () => {
     m.id = '_reportConcernModal';
     m.className = 'modal-overlay';
     m.innerHTML = `
-      <div class="modal-box" style="max-width:480px;">
+      <div class="modal" style="max-width:480px;">
         <button class="modal-close" onclick="closeReportConcernModal()">×</button>
         <h3 style="font-family:var(--serif);font-size:22px;font-weight:400;color:var(--ink);margin:0 0 6px;letter-spacing:-0.02em;">Report a concern</h3>
         <p style="font-size:13.5px;color:var(--text-muted);margin:0 0 20px;line-height:1.6;">All reports are reviewed by the SiB co-op coordinator. If this is an urgent safety matter, contact your school or emergency services directly.</p>

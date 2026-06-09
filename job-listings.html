@@ -218,8 +218,7 @@ function renderPostings(list) {
     return;
   }
   el.innerHTML = list.map((p, i) => {
-    const html = postingCardHTML(p);
-    return html.replace('class="posting-card', `class="posting-card" data-aos="fade-up" data-aos-delay="${Math.min(i * 80, 320)}`);
+    return postingCardHTML(p);
   }).join('');
   if (typeof AOS !== 'undefined') AOS.refresh();
 }

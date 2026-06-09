@@ -83,15 +83,15 @@ async function renderApplicants(posting) {
     <a href="dashboard-employer.html" class="posting-back-link">← Back to dashboard</a>
 
     <div style="margin-bottom:28px;">
-      <div class="section-eyebrow" data-aos="fade-up">Applicant Review</div>
-      <h1 style="font-family:var(--serif);font-size:34px;font-weight:400;color:var(--ink);letter-spacing:-0.02em;margin-bottom:6px;line-height:1.15;" data-aos="fade-up" data-aos-delay="100">${posting.title}</h1>
-      <p style="font-size:14.5px;color:var(--text-muted);" data-aos="fade-up" data-aos-delay="180">${posting.companyName} · ${posting.workMode} · ${posting.hoursPerWeek} hrs/week · ${posting.location}</p>
+      <div class="section-eyebrow">Applicant Review</div>
+      <h1 style="font-family:var(--serif);font-size:34px;font-weight:400;color:var(--ink);letter-spacing:-0.02em;margin-bottom:6px;line-height:1.15;">${posting.title}</h1>
+      <p style="font-size:14.5px;color:var(--text-muted);">${posting.companyName} · ${posting.workMode} · ${posting.hoursPerWeek} hrs/week · ${posting.location}</p>
     </div>
 
     <div class="stat-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:28px;">
-      <div class="stat-card" data-aos="fade-up" data-aos-delay="100"><div class="stat-label">Total Applicants</div><div class="stat-val">${apps.length}</div></div>
-      <div class="stat-card" data-aos="fade-up" data-aos-delay="200"><div class="stat-label">Under Review / Interview</div><div class="stat-val">${apps.filter(a => a.status === 'Under Review' || a.status === 'Interview').length}</div></div>
-      <div class="stat-card" data-aos="fade-up" data-aos-delay="300"><div class="stat-label">Accepted</div><div class="stat-val">${apps.filter(a => a.status === 'Accepted').length}</div></div>
+      <div class="stat-card"><div class="stat-label">Total Applicants</div><div class="stat-val">${apps.length}</div></div>
+      <div class="stat-card"><div class="stat-label">Under Review / Interview</div><div class="stat-val">${apps.filter(a => a.status === 'Under Review' || a.status === 'Interview').length}</div></div>
+      <div class="stat-card"><div class="stat-label">Accepted</div><div class="stat-val">${apps.filter(a => a.status === 'Accepted').length}</div></div>
     </div>`;
 
   if (!apps.length) {
@@ -117,7 +117,7 @@ async function renderApplicants(posting) {
             <div class="applicant-avatar">${initial}</div>
             <div class="applicant-info">
               <div class="applicant-name">${_htmlEsc(a.studentName)}</div>
-              <div class="applicant-detail">${_htmlEsc(a.school)}${a.grade ? ' · Grade ' + _htmlEsc(String(a.grade)) : ''}</div>
+              <div class="applicant-detail">${_htmlEsc(a.school)}${a.grade ? ' · ' + _htmlEsc(String(a.grade)) : ''}</div>
             </div>
             ${statusPill(a.status)}
           </div>
