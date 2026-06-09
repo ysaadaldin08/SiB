@@ -156,7 +156,7 @@
         <div class="stat-card" data-aos="fade-up" data-aos-delay="100"><div class="stat-label">My Postings</div><div class="stat-val" id="estat-total">0</div><div class="stat-change" id="estat-total-sub"></div></div>
         <div class="stat-card" data-aos="fade-up" data-aos-delay="200"><div class="stat-label">Active Listings</div><div class="stat-val" id="estat-active">0</div></div>
         <div class="stat-card" data-aos="fade-up" data-aos-delay="300"><div class="stat-label">Total Applicants</div><div class="stat-val" id="estat-applicants">0</div><div class="stat-change" id="estat-app-sub"></div></div>
-        <div class="stat-card" data-aos="fade-up" data-aos-delay="400"><div class="stat-label">Available Candidates</div><div class="stat-val">6</div><div class="stat-change">↑ New profiles this week</div></div>
+        <div class="stat-card" data-aos="fade-up" data-aos-delay="400"><div class="stat-label">Available Candidates</div><div class="stat-val" id="estat-candidates">0</div><div class="stat-change" id="estat-candidates-sub"></div></div>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
         <button class="btn-blue" onclick="openCreatePosting()">+ Create New Posting</button>
@@ -307,7 +307,7 @@ function showEDashSection(sec) {
   document.querySelectorAll('.dash-sidebar .sidebar-link[id^=elink]').forEach(l => {
     l.classList.toggle('active', l.id === 'elink-' + sec);
   });
-  if (sec === 'browse') renderStudents([]);
+  if (sec === 'browse') loadBrowseCandidates();
   if (sec === 'postings') renderPostingsList();
   if (sec === 'overview') renderOverviewStats();
   if (sec === 'messages') msRenderInbox();
@@ -623,7 +623,17 @@ document.addEventListener('DOMContentLoaded', () => {
   renderOverviewStats();
   renderCompanyProfile();   // header + "My Company" populated from the employers row
 
-  if (document.getElementById('studentGrid')) renderStudents([]);
+  // Load the approved-employer candidate gallery once on dashboard load: caches
+  // the list (app.js _browseCandidates), renders the grid, and fills the overview
+  // "Available Candidates" count. RLS returns [] unless this employer is approved.
+  if (document.getElementById('studentGrid')) {
+    loadBrowseCandidates().then(list => {
+      const cEl = document.getElementById('estat-candidates');
+      if (cEl) cEl.textContent = list.length;
+      const cSub = document.getElementById('estat-candidates-sub');
+      if (cSub) cSub.textContent = list.length ? 'available to browse' : '';
+    });
+  }
 
   // Handle deep-link sections from URL params (e.g. from notifications)
   const _params = new URLSearchParams(location.search);

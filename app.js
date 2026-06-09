@@ -153,27 +153,40 @@ function handleOther(select, targetId) {
 const badWords = ['damn','hell','ass','crap','shit','fuck','bitch','bastard','piss','dick','cock','pussy','tits','whore','slut','cunt','motherfuck','nigger','faggot','retard'];
 function containsProfanity(text) { const l = text.toLowerCase(); return badWords.some(w => l.includes(w)); }
 
-// —— STUDENT PROFILES ——
+// —— BROWSE CANDIDATES — employer gallery ——
+// Candidates come from data.js getBrowseCandidates() (the students_public view:
+// approved-employer-gated, privacy-safe fields only — first name, grade, school,
+// tracks, hours/week, start date, commute; NO last name, contact, free-text
+// answers, or resume). We cache the fetched list here so search/filter and the
+// profile modal work without re-querying. The DB returns [] for students and
+// non-approved employers, so an empty gallery is the correct gated state.
+let _browseCandidates = [];
+
+// Fetch + cache + render. Returns the list so callers can use the count.
+async function loadBrowseCandidates() {
+  _browseCandidates = (typeof getBrowseCandidates === 'function') ? await getBrowseCandidates() : [];
+  renderStudents(_browseCandidates);
+  return _browseCandidates;
+}
+
 function renderStudents(list) {
   const grid = document.getElementById('studentGrid');
   if (!grid) return;
   if (!list.length) {
-    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-state-icon">👥</div><div class="empty-state-title">No candidates match your filter</div><div class="empty-state-body">Try clearing the search, or check back as more students complete their profiles.</div></div>`;
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-state-icon">👥</div><div class="empty-state-title">No candidates yet</div><div class="empty-state-body">Approved student profiles appear here as students submit their applications. Try clearing the search filter.</div></div>`;
     return;
   }
   grid.innerHTML = list.map((s, i) => `
-    <div class="scard" data-aos="fade-up" data-aos-delay="${Math.min(i * 80, 320)}" onclick="openSProfile(${Number(s.id)})">
+    <div class="scard" data-aos="fade-up" data-aos-delay="${Math.min(i * 80, 320)}" onclick="openSProfile('${_htmlEsc(s.id)}')">
       <div class="scard-top">
-        <div class="scard-avatar">${_htmlEsc(s.name.charAt(0))}</div>
-        <span class="${s.status==='verified'?'badge-v':'badge-p'}">${s.status==='verified'?'Verified Ready':'Pending Review'}</span>
+        <div class="scard-avatar">${_htmlEsc((s.firstName || '?').charAt(0))}</div>
       </div>
-      <div class="scard-name">${_htmlEsc(s.name)}</div>
-      <div class="scard-school">${_htmlEsc(s.school)} · Grade ${_htmlEsc(String(s.grade))}</div>
-      <div class="tag-row">${s.tracks.map(t=>`<span class="ttag ${TRACK_CLASS[t]||'tt-biz'}">${_htmlEsc(t)}</span>`).join('')}</div>
-      <div class="scard-skills">Skills: ${_htmlEsc(s.skills.slice(0,3).join(', '))}</div>
+      <div class="scard-name">${_htmlEsc(s.firstName)}</div>
+      <div class="scard-school">${_htmlEsc(s.school)}${s.grade ? ' · Grade ' + _htmlEsc(String(s.grade)) : ''}</div>
+      <div class="tag-row">${(s.tracks || []).map(t=>`<span class="ttag ${TRACK_CLASS[t]||'tt-biz'}">${_htmlEsc(t)}</span>`).join('')}</div>
       <div class="scard-footer">
-        <div class="avail-label"><strong>${_htmlEsc(s.availability)}</strong> available</div>
-        <button class="btn-intro" onclick="event.stopPropagation();openIntroModal(${Number(s.id)})">Request Intro</button>
+        <div class="avail-label">${s.hoursPerWeek ? `<strong>${_htmlEsc(String(s.hoursPerWeek))} hrs/week</strong>` : ''}${s.startDate ? `${s.hoursPerWeek ? ' · ' : ''}Start ${_htmlEsc(s.startDate)}` : ''}</div>
+        <button class="btn-intro" onclick="event.stopPropagation();openIntroModal('${_htmlEsc(s.id)}')">Request Intro</button>
       </div>
     </div>
   `).join('');
@@ -182,39 +195,33 @@ function renderStudents(list) {
 
 function filterStudents(val) {
   const q = (typeof val === 'string' ? val : '').toLowerCase();
-  // Candidate data is not wired in Path A yet; treat the list as empty until a
-  // real source exists, so typing in the Browse search never throws.
-  const src = (typeof students !== 'undefined') ? students : [];
-  renderStudents(src.filter(s =>
-    !q || s.name.toLowerCase().includes(q) || s.school.toLowerCase().includes(q) ||
-    s.skills.some(sk => sk.toLowerCase().includes(q)) || s.tracks.some(t => t.toLowerCase().includes(q))
+  renderStudents(_browseCandidates.filter(s =>
+    !q
+    || (s.firstName || '').toLowerCase().includes(q)
+    || (s.school || '').toLowerCase().includes(q)
+    || (s.tracks || []).some(t => String(t).toLowerCase().includes(q))
   ));
 }
 
 function openSProfile(id) {
-  const s = students.find(x => x.id === id);
+  const s = _browseCandidates.find(x => x.id === id);
   if (!s) return;
   document.getElementById('profileModalContent').innerHTML = `
-    <div class="pmodal-avatar">${_htmlEsc(s.name.charAt(0))}</div>
+    <div class="pmodal-avatar">${_htmlEsc((s.firstName || '?').charAt(0))}</div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
-      <div class="modal-title" style="margin-bottom:0;">${_htmlEsc(s.name)}</div>
-      <span class="${s.status==='verified'?'badge-v':'badge-p'}">${s.status==='verified'?'Verified Ready':'Pending Review'}</span>
+      <div class="modal-title" style="margin-bottom:0;">${_htmlEsc(s.firstName)}</div>
     </div>
-    <div class="modal-sub">${_htmlEsc(s.school)} · Grade ${_htmlEsc(String(s.grade))}</div>
-    <div class="pmodal-bio">${_htmlEsc(s.bio)}</div>
+    <div class="modal-sub">${_htmlEsc(s.school)}${s.grade ? ' · Grade ' + _htmlEsc(String(s.grade)) : ''}</div>
     <div class="pmodal-sec">Tracks</div>
-    <div class="tag-row" style="margin-bottom:16px;">${s.tracks.map(t=>`<span class="ttag ${TRACK_CLASS[t]||'tt-biz'}">${_htmlEsc(t)}</span>`).join('')}</div>
-    <div class="pmodal-sec">Skills</div>
-    <div class="skills-row">${s.skills.map(sk=>`<span class="skill-chip">${_htmlEsc(sk)}</span>`).join('')}</div>
+    <div class="tag-row" style="margin-bottom:16px;">${(s.tracks || []).map(t=>`<span class="ttag ${TRACK_CLASS[t]||'tt-biz'}">${_htmlEsc(t)}</span>`).join('')}</div>
     <div class="pmeta">
-      <div class="pmeta-item"><div class="pk">Availability</div><div class="pv">${_htmlEsc(s.availability)}</div></div>
-      <div class="pmeta-item"><div class="pk">Commute</div><div class="pv">${_htmlEsc(s.commute)}</div></div>
-      <div class="pmeta-item"><div class="pk">Preferred Start</div><div class="pv">${_htmlEsc(s.startDate)}</div></div>
-      <div class="pmeta-item"><div class="pk">References</div><div class="pv">${_htmlEsc(s.references)}</div></div>
+      <div class="pmeta-item"><div class="pk">Hours / week</div><div class="pv">${_htmlEsc(s.hoursPerWeek ? String(s.hoursPerWeek) : '—')}</div></div>
+      <div class="pmeta-item"><div class="pk">Commute</div><div class="pv">${_htmlEsc(s.commute || '—')}</div></div>
+      <div class="pmeta-item"><div class="pk">Preferred Start</div><div class="pv">${_htmlEsc(s.startDate || '—')}</div></div>
     </div>
     <div class="modal-btns">
       <button class="btn-modal-outline" onclick="showToast('Resume request sent to coordinator')">Request Resume</button>
-      <button class="btn-modal-fill" onclick="closeModal('profileModal');openIntroModal(${Number(s.id)})">Request Introduction →</button>
+      <button class="btn-modal-fill" onclick="closeModal('profileModal');openIntroModal('${_htmlEsc(s.id)}')">Request Introduction →</button>
     </div>
   `;
   openModal('profileModal');
@@ -223,15 +230,15 @@ function openSProfile(id) {
 let currentIntroId = null;
 function openIntroModal(id) {
   currentIntroId = id;
-  const s = students.find(x => x.id === id);
+  const s = _browseCandidates.find(x => x.id === id);
   const sub = document.getElementById('introModalSub');
-  if (sub) sub.textContent = `Requesting an intro for ${s?.name || 'this candidate'} — coordinator will respond within 1–2 business days.`;
+  if (sub) sub.textContent = `Requesting an intro for ${s?.firstName || 'this candidate'} — coordinator will respond within 1–2 business days.`;
   openModal('introModal');
 }
 function submitIntro() {
-  const s = students.find(x => x.id === currentIntroId);
+  const s = _browseCandidates.find(x => x.id === currentIntroId);
   closeModal('introModal');
-  showToast('✓ Intro request sent for ' + (s?.name || 'candidate') + ' to coordinator');
+  showToast('✓ Intro request sent for ' + (s?.firstName || 'candidate') + ' to coordinator');
 }
 
 // —— DASHBOARD SECTIONS ——

@@ -321,6 +321,42 @@ async function updateApplicationStatus(id, status) {
   } catch (_) { return false; }
 }
 
+// ——— BROWSE CANDIDATES (employer gallery) ———
+// Reads the students_public VIEW: a privacy-safe projection that the DB exposes
+// ONLY to coordinator-approved / domain-verified employers (gated in the view's
+// WHERE via current_user_employer_approved()). Students and non-approved
+// employers get [] — there is no client-side gate to trust here, RLS/grants do it.
+// Exposed fields ONLY: id, first name, grade, school, tracks, hours/week, start
+// date, commute. No last name, email, phone, guardian, teacher, free-text
+// answers, or resume exist on the view, so they cannot leak.
+
+function _candidateFromApi(c) {
+  if (!c) return null;
+  return {
+    id:           c.id,
+    firstName:    c.first_name    || '',
+    grade:        c.grade         || '',
+    school:       c.school        || '',
+    tracks:       Array.isArray(c.tracks) ? c.tracks : (c.tracks ? [c.tracks] : []),
+    hoursPerWeek: c.hours_per_week || '',
+    startDate:    c.start_date    || '',
+    commute:      c.commute       || ''
+  };
+}
+
+async function getBrowseCandidates() {
+  const sb = _sb();
+  if (!sb) return [];
+  try {
+    const { data, error } = await sb
+      .from('students_public')
+      .select('*')
+      .order('first_name', { ascending: true });
+    if (error) return [];
+    return (data || []).map(_candidateFromApi);
+  } catch (_) { return []; }
+}
+
 // ——— STATS ———
 
 async function getStudentStats(_email) {
