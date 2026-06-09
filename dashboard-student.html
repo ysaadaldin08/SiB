@@ -262,9 +262,9 @@ function studentGoToMessages(applicationId, employerId, employerName, listingId,
   });
 }
 
-function renderSDashNotifications() {
+async function renderSDashNotifications() {
   if (!currentUser) return;
-  const notifs = getNotifications(currentUser.id)
+  const notifs = (await getNotifications(currentUser.id))
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   const list = document.getElementById('sdash-notif-list');
   if (!list) return;

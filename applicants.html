@@ -199,11 +199,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   const postingId = new URLSearchParams(location.search).get('postingId');
   if (!postingId) { renderNotFound(); return; }
 
-  const posting = await getPostingById(postingId);
+  // Read the base `postings` table (owner RLS) rather than the active-only
+  // postings_public view, so applicants stay reachable on archived postings.
+  const myPostings = await getPostingsByEmployer(currentUser.email);
+  const posting = myPostings.find(p => p.id === postingId) || null;
   if (!posting) { renderNotFound(); return; }
 
-  // Verify this employer owns the posting
-  if (posting.employerId !== currentUser.email.toLowerCase()) {
+  // Verify this employer owns the posting (employer_id is the auth UID = currentUser.id)
+  if (posting.employerId !== currentUser.id) {
     renderAccessDenied(); return;
   }
 

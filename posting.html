@@ -101,7 +101,7 @@
 <script>
 let currentPosting = null;
 
-function buildApplyPanel(posting) {
+async function buildApplyPanel(posting) {
   if (!currentUser) {
     return `
       <div class="apply-gate-note">Sign in as a student to apply to this placement.</div>
@@ -111,7 +111,7 @@ function buildApplyPanel(posting) {
   if (currentUser.role === 'employer') {
     return `<div class="apply-gate-note">Employers cannot apply to placements. Use your <a href="dashboard-employer.html" style="color:var(--blue);font-weight:600;">dashboard</a> to post roles.</div>`;
   }
-  const existing = getApplicationForPosting(currentUser.email, posting.id);
+  const existing = await getApplicationForPosting(currentUser.email, posting.id);
   if (existing) {
     return `
       <div class="apply-already-box">
@@ -163,11 +163,11 @@ async function submitApplication(e) {
   // The applications INSERT trigger notifies the student (confirmation) and the
   // employer (new applicant) server-side — no client-side notification needed.
   // Re-render apply panel to show status
-  document.getElementById('applyPanelBody').innerHTML = buildApplyPanel(currentPosting);
+  document.getElementById('applyPanelBody').innerHTML = await buildApplyPanel(currentPosting);
 }
 
-function renderPage(posting) {
-  const applyPanelHtml = buildApplyPanel(posting);
+async function renderPage(posting) {
+  const applyPanelHtml = await buildApplyPanel(posting);
   document.title = posting.title + ' — ' + posting.companyName + ' — SiB';
   document.getElementById('pageRoot').innerHTML = `
     <div class="posting-detail-page">
@@ -240,14 +240,14 @@ function renderNotFound() {
     </div>`;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   updateNavForAuth();
   const id = new URLSearchParams(location.search).get('id');
   if (!id) { renderNotFound(); return; }
-  const posting = getPostingById(id);
+  const posting = await getPostingById(id);
   if (!posting || !posting.isActive) { renderNotFound(); return; }
   currentPosting = posting;
-  renderPage(posting);
+  await renderPage(posting);
   if (typeof AOS !== 'undefined') AOS.refresh();
 });
 </script>

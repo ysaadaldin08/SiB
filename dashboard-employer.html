@@ -307,7 +307,7 @@ function showEDashSection(sec) {
   document.querySelectorAll('.dash-sidebar .sidebar-link[id^=elink]').forEach(l => {
     l.classList.toggle('active', l.id === 'elink-' + sec);
   });
-  if (sec === 'browse') renderStudents(students);
+  if (sec === 'browse') renderStudents([]);
   if (sec === 'postings') renderPostingsList();
   if (sec === 'overview') renderOverviewStats();
   if (sec === 'messages') msRenderInbox();
@@ -333,9 +333,9 @@ function goMessageStudent(applicationId, studentId, studentName, listingId, list
   window.location.href = 'dashboard-employer.html?section=messages';
 }
 
-function renderEDashNotifications() {
+async function renderEDashNotifications() {
   if (!currentUser) return;
-  const notifs = getNotifications(currentUser.id)
+  const notifs = (await getNotifications(currentUser.id))
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   const list = document.getElementById('edash-notif-list');
   if (!list) return;
@@ -623,7 +623,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderOverviewStats();
   renderCompanyProfile();   // header + "My Company" populated from the employers row
 
-  if (document.getElementById('studentGrid')) renderStudents(students);
+  if (document.getElementById('studentGrid')) renderStudents([]);
 
   // Handle deep-link sections from URL params (e.g. from notifications)
   const _params = new URLSearchParams(location.search);

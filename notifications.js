@@ -45,7 +45,10 @@ function _notifSubject(type, p) {
 }
 
 function _notifBody(type, p) {
-  const base = window.location.origin;
+  // Subpath-aware base (mirrors auth.js _authCallbackUrl): include the directory
+  // the app is served from so links resolve under /SiB/ on GitHub Pages, then trim
+  // the trailing slash to keep the `${base}/page.html` joins clean.
+  const base = (window.location.origin + window.location.pathname.replace(/[^/]*$/, '')).replace(/\/$/, '');
   const sig  = '\n\n— The SiB Team\n' + base;
   switch (type) {
     case 'signupConfirm':
