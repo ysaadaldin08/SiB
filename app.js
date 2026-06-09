@@ -879,16 +879,46 @@ function openReportConcernModal() {
 function closeReportConcernModal() {
   if (typeof closeModal === 'function') closeModal('_reportConcernModal');
 }
-function submitReportConcern() {
+async function submitReportConcern() {
   const detail = (document.getElementById('_rcDetail').value || '').trim();
   if (!detail) { showToast('Please describe your concern before submitting.', true); return; }
-  const payload = {
-    senderName:  (document.getElementById('_rcName').value  || '').trim() || (currentUser ? currentUser.name : 'Anonymous'),
-    senderEmail: (document.getElementById('_rcEmail').value || '').trim() || (currentUser ? currentUser.email : ''),
-    type:        document.getElementById('_rcType').value,
-    detail
-  };
-  if (typeof notifyCoordinators === 'function') notifyCoordinators('concernReport', payload);
+  const name       = (document.getElementById('_rcName').value  || '').trim();
+  const email      = (document.getElementById('_rcEmail').value || '').trim();
+  const reportType = document.getElementById('_rcType').value;
+  const reporterName  = name  || (currentUser ? currentUser.name  : 'Anonymous');
+  const reporterEmail = email || (currentUser ? currentUser.email : null) || null;
+
+  // Persist to concern_reports — the source of truth the coordinator Reports tab
+  // reads. anon + authenticated may INSERT; status defaults to 'open' (the insert
+  // policy requires 'open'), so we omit it. No .select() chained → no SELECT needed.
+  const sb = window._supabase;
+  let ok = false;
+  if (sb) {
+    try {
+      const { error } = await sb.from('concern_reports').insert({
+        reporter_name:  reporterName,
+        reporter_email: reporterEmail,
+        report_type:    reportType,
+        detail
+      });
+      ok = !error;
+    } catch (_) { ok = false; }
+  }
+
+  // A safety report must NEVER falsely confirm. Only show success on a real insert.
+  if (!ok) {
+    showToast("Couldn't submit your report — please try again or contact your school directly.", true);
+    return;
+  }
+
+  // Secondary: also notify coordinators in-app (bell). Fire-and-forget; the table
+  // write above is authoritative, so a failed notification won't fail the report.
+  if (typeof notifyCoordinators === 'function') {
+    notifyCoordinators('concernReport', {
+      senderName: reporterName, senderEmail: reporterEmail || '', type: reportType, detail
+    });
+  }
+
   closeReportConcernModal();
   showToast('✓ Report submitted. A coordinator will review it shortly.');
   ['_rcName','_rcEmail','_rcDetail'].forEach(id => {

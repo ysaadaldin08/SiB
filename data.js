@@ -867,6 +867,43 @@ async function getCoordinatorByEmail(email) {
 
 function createCoordinator(_data) { return null; }
 
+// ——— CONCERN REPORTS (coordinator Reports tab) ———
+// Footer "Report a concern" writes here (anon + authenticated INSERT). RLS
+// (concern_reports_select_coordinator) returns rows ONLY to coordinators; every
+// other caller gets []. Coordinators may UPDATE status for triage.
+
+function _concernReportFromApi(r) {
+  return {
+    id:            r.id,
+    reporterName:  r.reporter_name  || 'Anonymous',
+    reporterEmail: r.reporter_email || '',
+    reportType:    r.report_type    || 'other',
+    detail:        r.detail         || '',
+    status:        r.status         || 'open',
+    createdAt:     r.created_at
+  };
+}
+
+async function getConcernReports() {
+  const sb = _sb();
+  if (!sb) return [];
+  try {
+    const { data, error } = await sb
+      .from('concern_reports')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) return [];
+    return (data || []).map(_concernReportFromApi);
+  } catch (_) { return []; }
+}
+
+async function updateConcernReportStatus(id, status) {
+  const sb = _sb();
+  if (!sb) return false;
+  try { const { error } = await sb.from('concern_reports').update({ status }).eq('id', id); return !error; }
+  catch (_) { return false; }
+}
+
 // ——— MIGRATION ———
 // Runs once per page load; version-gated. Backfills new fields on the cached
 // sib_user so existing dev sessions keep working.

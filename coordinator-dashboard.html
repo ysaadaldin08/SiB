@@ -557,6 +557,7 @@ async function loadAll() {
 async function updateTabCounts() {
   const threads = await getAllMessageThreads();
   const flagged = threads.filter(t => t.status === 'flagged');
+  const concernCount = (typeof getConcernReports === 'function') ? (await getConcernReports()).length : 0;
   const placed  = coordApplications.filter(a => a.status === 'Accepted');
 
   document.getElementById('tab-count-users').textContent         = coordUsers.length || '—';
@@ -566,8 +567,9 @@ async function updateTabCounts() {
   document.getElementById('tab-count-applications').textContent  = coordApplications.length || '—';
 
   const reportsEl = document.getElementById('tab-count-reports');
-  reportsEl.textContent = flagged.length;
-  if (flagged.length > 0) reportsEl.classList.add('danger');
+  const reportsTotal = flagged.length + concernCount;
+  reportsEl.textContent = reportsTotal;
+  if (reportsTotal > 0) reportsEl.classList.add('danger');
   else reportsEl.classList.remove('danger');
 }
 
@@ -1026,21 +1028,77 @@ async function coordCloseThread(threadId) {
 }
 
 // —— ⑤ REPORTS ——
+// Concern-report <select> value codes -> human labels (mirror app.js's modal options).
+const REPORT_TYPE_LABELS = {
+  inappropriate_message: 'Inappropriate message or communication',
+  unsafe_employer:       'Unsafe or concerning employer behaviour',
+  student_concern:       "Concern about a student's wellbeing",
+  technical_issue:       'Technical issue on the platform',
+  other:                 'Other concern'
+};
+const CONCERN_STATUSES = ['open', 'reviewed', 'resolved'];
+
+// Coordinator triage: advance a concern report's status (RLS allows coordinator UPDATE).
+async function updateConcernStatus(id, status) {
+  const ok = (typeof updateConcernReportStatus === 'function') && await updateConcernReportStatus(id, status);
+  if (typeof showToast === 'function') showToast(ok ? '✓ Report marked ' + status : 'Could not update report status — try again.', !ok);
+  if (ok) { renderReports(); updateTabCounts(); }
+}
+
 async function renderReports() {
-  const flagged = (await getAllMessageThreads())
+  const [threadsAll, reports] = await Promise.all([
+    getAllMessageThreads(),
+    (typeof getConcernReports === 'function') ? getConcernReports() : Promise.resolve([])
+  ]);
+  const flagged = threadsAll
     .filter(t => t.status === 'flagged')
     .sort((a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt));
 
   const container = document.getElementById('reports-list');
   if (!container) return;
 
-  if (!flagged.length) {
-    container.innerHTML = emptyState('✓', 'No flagged conversations', 'All clear — no conversations have been flagged or reported.');
+  if (!flagged.length && !reports.length) {
+    container.innerHTML = emptyState('✓', 'No reports', 'All clear — no concern reports submitted and no conversations flagged.');
     return;
   }
 
-  // Use server-enriched flagged counts and reasons — no per-thread getMessages() call needed.
-  container.innerHTML = flagged.map(t => {
+  let html = '';
+
+  // ——— Concern reports (footer "Report a concern" form) ———
+  html += `<div style="font-size:13px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:0.06em;margin:2px 0 12px;">Concern reports <span style="color:var(--text-faint);">(${reports.length})</span></div>`;
+  if (!reports.length) {
+    html += `<div style="font-size:13px;color:var(--text-faint);padding:0 0 6px;">No concern reports submitted.</div>`;
+  } else {
+    html += reports.map(r => {
+      const label = REPORT_TYPE_LABELS[r.reportType] || r.reportType || 'Other concern';
+      const ago = typeof timeAgo === 'function' ? timeAgo(r.createdAt) : '';
+      const sc = ({ open: ['#fef2f2','#dc2626','#fca5a5'], reviewed: ['#fffbeb','#b45309','#fde68a'], resolved: ['#f0fdf4','#15803d','#86efac'] })[r.status] || ['#f3f4f6','#6b7280','#e5e7eb'];
+      const contact = r.reporterEmail ? ` · <a href="mailto:${escHtml(r.reporterEmail)}" style="color:var(--blue);font-weight:600;">${escHtml(r.reporterEmail)}</a>` : '';
+      const statusSelect = `<select onchange="updateConcernStatus('${r.id}', this.value)" style="font-size:11.5px;font-weight:700;border-radius:6px;padding:3px 9px;border:1px solid ${sc[2]};background:${sc[0]};color:${sc[1]};cursor:pointer;">${CONCERN_STATUSES.map(s => `<option value="${s}" ${s === r.status ? 'selected' : ''}>${s.charAt(0).toUpperCase() + s.slice(1)}</option>`).join('')}</select>`;
+      return `
+      <div class="coord-posting-card" style="border-left:3px solid ${sc[2]};">
+        <div class="coord-posting-top">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:5px;">${escHtml(label)}</div>
+            <div style="font-size:12.5px;color:var(--text-muted);margin-bottom:7px;">From: ${escHtml(r.reporterName || 'Anonymous')}${contact}</div>
+            <div style="font-size:13px;color:var(--ink);line-height:1.55;background:#f9fafb;border:1px solid var(--line);border-radius:7px;padding:9px 12px;white-space:pre-wrap;">${escHtml(r.detail)}</div>
+          </div>
+          <div style="font-size:11.5px;color:var(--text-faint);white-space:nowrap;flex-shrink:0;">${ago}</div>
+        </div>
+        <div class="coord-posting-footer">
+          <span style="font-size:12px;color:var(--text-faint);">Triage status:</span>
+          ${statusSelect}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ——— Flagged conversations (automated scanning + thread reports) ———
+  html += `<div style="font-size:13px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:0.06em;margin:20px 0 12px;">Flagged conversations <span style="color:var(--text-faint);">(${flagged.length})</span></div>`;
+  if (!flagged.length) {
+    html += `<div style="font-size:13px;color:var(--text-faint);padding:0 0 6px;">No conversations flagged.</div>`;
+  } else {
+    html += flagged.map(t => {
     const pn          = t.participantNames || {};
     const allReasons  = moderationReasonLabels(t.flagReasonsSummary || []);
     const flaggedCount = t.flaggedCount  || 0;
@@ -1073,7 +1131,10 @@ async function renderReports() {
           </button>
         </div>
       </div>`;
-  }).join('');
+    }).join('');
+  }
+
+  container.innerHTML = html;
 }
 
 // —— ⑥ LISTINGS (was Postings) ——
