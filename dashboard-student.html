@@ -323,6 +323,34 @@ async function renderApplicationsTab() {
   }).join('');
 }
 
+// Derive the SiB Program Status banner (#sdash-status) + the four-step Program
+// Progress tracker from data already on the client — the student's application
+// statuses and the coordinator-approval flag. No dedicated DB field exists; this
+// is pure client-side derivation that reuses the existing done/current step classes.
+function renderProgramStatus(apps) {
+  if (!currentUser) return;
+  apps = apps || [];
+  let step, label;
+  if (apps.some(a => a.status === 'Accepted'))                                     { step = 4; label = 'Matched'; }
+  else if (currentUser.coordinatorApproved)                                        { step = 3; label = 'Approved'; }
+  else if (apps.some(a => a.status === 'Under Review' || a.status === 'Interview')) { step = 2; label = 'Under Review'; }
+  else                                                                             { step = 1; label = 'Submitted'; }
+
+  const banner = document.getElementById('sdash-status');
+  if (banner) banner.textContent = label;
+
+  // Steps: 1 Submitted, 2 Under Review, 3 Approved, 4 Matched.
+  // n < step => done (✓), n === step => current (number), n > step => upcoming (number).
+  document.querySelectorAll('.tracker-steps .tracker-step').forEach((el, i) => {
+    const n = i + 1;
+    el.classList.remove('done', 'current');
+    const circle = el.querySelector('.tracker-circle');
+    if (n < step)        { el.classList.add('done');    if (circle) circle.textContent = '✓'; }
+    else if (n === step) { el.classList.add('current'); if (circle) circle.textContent = String(n); }
+    else                 {                              if (circle) circle.textContent = String(n); }
+  });
+}
+
 async function renderOverviewStats() {
   if (!currentUser) return;
   const stats = await getStudentStats(currentUser.email);
@@ -332,8 +360,11 @@ async function renderOverviewStats() {
   document.getElementById('stat-active-sub').textContent = stats.active ? 'under review or interview' : '';
   document.getElementById('stat-latest').textContent = stats.latest ? formatDateShort(stats.latest) : '—';
 
-  // Recent apps preview
-  const apps = (await getApplicationsByStudent(currentUser.email)).slice(0, 3);
+  // SiB program status (banner + tracker) and the recent-apps preview both derive
+  // from the student's full application list.
+  const allApps = await getApplicationsByStudent(currentUser.email);
+  renderProgramStatus(allApps);
+  const apps = allApps.slice(0, 3);
   if (apps.length) {
     document.getElementById('recentAppsCard').style.display = 'block';
     document.getElementById('recentAppsList').innerHTML = apps.map(a => {
