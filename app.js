@@ -28,7 +28,7 @@ function toggleFaq(el) { el.closest('.faq-item').classList.toggle('open'); }
 // —— CLAUSES ——
 function toggleClause(el) { el.classList.toggle('checked'); saveOnboardingDraft(); }
 
-// —— NAV SCROLL (fallback; primary handler is in per-page Lenis init) ——
+// —— NAV SCROLL (toggles #mainNav.scrolled — the only scroll handler now that Lenis is removed) ——
 window.addEventListener('scroll', () => {
   const nav = document.getElementById('mainNav');
   if (nav) nav.classList.toggle('scrolled', window.scrollY > 10);

@@ -397,11 +397,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 </script>
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 <script>AOS.init({ duration: 600, easing: 'ease-out-cubic', once: true, offset: 60 });</script>
-<script src="https://unpkg.com/@studio-freight/lenis@1.0.23/bundled/lenis.min.js"></script>
-<script>
-  const lenis = new Lenis({ duration: 1.2, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
-  function raf(time) { lenis.raf(time); requestAnimationFrame(raf); }
-  requestAnimationFrame(raf);
-</script>
+<!-- Lenis smooth-scroll removed: it intercepted wheel/trackpad events and left
+     scrolling possible only by dragging the scrollbar. Native scroll works fine;
+     the nav "scrolled" state is handled by the scroll listener in app.js. -->
 </body>
 </html>

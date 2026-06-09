@@ -236,6 +236,15 @@ async function getApplicationsByStudent(_email) {
     if (ids.length) {
       const { data: posts } = await sb.from('postings_public').select('*').in('id', ids);
       (posts || []).forEach(p => { pmap[p.id] = p; });
+      // Accepted-then-archived postings drop out of postings_public (active-only).
+      // The accepted-student RLS path (postings_select_accepted_student) still lets
+      // the student read the base postings row, so backfill any ids the public view
+      // didn't return. Genuinely deleted postings stay absent -> "Listing removed".
+      const missing = ids.filter(id => !pmap[id]);
+      if (missing.length) {
+        const { data: basePosts } = await sb.from('postings').select('*').in('id', missing);
+        (basePosts || []).forEach(p => { pmap[p.id] = p; });
+      }
     }
     return (apps || []).map(a => _appFromApi({ ...a, postings: pmap[a.posting_id] || null }));
   } catch (_) { return []; }

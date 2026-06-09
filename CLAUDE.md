@@ -460,6 +460,17 @@ Both pages use shared styles from `style.css` and load the full script stack (`c
 
 Demo functionality and screenshot tooling are fully removed. This is the production codebase.
 
+## Post-audit backlog (June 2026)
+
+A full **read-only site audit was completed June 2026** and every flow-breaking issue it surfaced was fixed (the missing-`await` data reads on posting/applicants/dashboards, the employer applicant-access UUID-vs-email mismatch, the unwired Browse Candidates gallery, the notification-email links that ignored the `/SiB/` subpath, and the dead `localhost:3001` CSP entry). The items below are the **deferred** carry-overs — intentionally parked, not lost:
+
+- **`notify_coordinators` rate-limiting (NOT a revoke).** The RPC is intentionally left **`anon`-executable** because anonymous safety reporting — the footer "Report a concern" button on public pages — depends on it; revoking anon `EXECUTE` would *silently drop anonymous child-safety reports* (the client swallows the error and still shows "✓ submitted"). The spam surface is to be addressed by **server-side rate-limiting**, built alongside the planned messaging rate-limits — never by revoking anon.
+- **BFG git-history purge.** Old demo/coordinator passwords still exist in **public git history**. They are already rotated/inert, so this is *not a live hole*. The purge rewrites history and force-pushes, so it needs **Yousef's explicit OK and a calm window** — deliberately NOT done near the presentation.
+- **Deploy-signs-me-out quirk.** Pushing to GitHub Pages clears the session and signs out logged-in users. Harmless (no data loss), parked. Investigate the session-check-on-load path when convenient.
+- **Supabase Auth leaked-password protection.** Currently **disabled** (flagged by the security advisor); a dashboard setting to enable when convenient.
+- **Browse Candidates depth.** Live but minimal: only privacy-safe fields are shown, and the intro request is a **coordinator-mediated toast stub with no backend**. Deeper profile fields and a real intro-request flow are future work.
+- **Other carry-overs:** coordinator email-verify Edge Function (manual verify needs `service_role`, unavailable client-side); accepted-student **supervisor display** on the confirmed placement; **résumé file storage** via a Supabase Storage bucket (currently a résumé URL only).
+
 ## Hard Rules
 - Do not add sections, features, or content not in the reference
 - Do not "improve" a reference design — match it
