@@ -241,23 +241,14 @@
     </div>
     <div class="value-grid">
       <div class="value-card reveal reveal-delay-1" data-aos="fade-up" data-aos-delay="100">
-        <div class="value-icon vi-blue">
-          <svg class="value-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#1a6cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
-        </div>
         <h3>Vetted Students</h3>
         <p>Every applicant completes a 5-step screening process. Resumes reviewed. Commitment verified. Only serious students reach employer profiles.</p>
       </div>
       <div class="value-card reveal reveal-delay-2" data-aos="fade-up" data-aos-delay="200">
-        <div class="value-icon vi-green">
-          <svg class="value-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#1a7f4b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
-        </div>
         <h3>Zero Cost to Employers</h3>
         <p>No fees, no subscriptions. Co-op placements are a genuine zero-cost way to bring motivated, school-board-supervised talent into your team.</p>
       </div>
       <div class="value-card reveal reveal-delay-3" data-aos="fade-up" data-aos-delay="300">
-        <div class="value-icon vi-amber">
-          <svg class="value-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-        </div>
         <h3>Co-op Credit Guaranteed</h3>
         <p>All placements run through Ontario school co-op programs. School boards confirm credit — no extra paperwork for companies.</p>
       </div>
@@ -281,17 +272,26 @@
       </div>
       <div class="how-visual reveal reveal-right" data-aos="fade-left" data-aos-delay="200">
         <div style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-faint);margin-bottom:14px;">Placement Tracks</div>
-        <div class="tracks-list">
-          <div class="track-item"><span class="track-dot"></span><div><div class="track-name">Technology &amp; IT</div><div class="track-desc">Dev, IT, product, data</div></div></div>
-          <div class="track-item"><span class="track-dot"></span><div><div class="track-name">Business &amp; Finance</div><div class="track-desc">Operations, accounting, analysis</div></div></div>
-          <div class="track-item"><span class="track-dot"></span><div><div class="track-name">Marketing &amp; Communications</div><div class="track-desc">Social, content, PR, events</div></div></div>
-          <div class="track-item"><span class="track-dot"></span><div><div class="track-name">Health &amp; Sciences</div><div class="track-desc">Healthcare, lab, public health</div></div></div>
-          <div class="track-item"><span class="track-dot"></span><div><div class="track-name">Education &amp; Social Services</div><div class="track-desc">Schools, social work, community</div></div></div>
-          <div class="track-item"><span class="track-dot"></span><div><div class="track-name">Trades &amp; Engineering</div><div class="track-desc">Civil, mechanical, skilled trades</div></div></div>
-          <div class="track-item"><span class="track-dot"></span><div><div class="track-name">Arts, Media &amp; Design</div><div class="track-desc">UX, graphic design, film, music</div></div></div>
-          <div class="track-item"><span class="track-dot"></span><div><div class="track-name">Law &amp; Government</div><div class="track-desc">Policy, legal, civic administration</div></div></div>
-          <div class="track-item"><span class="track-dot"></span><div><div class="track-name">Hospitality &amp; Food Services</div><div class="track-desc">Restaurants, hotels, catering</div></div></div>
-          <div class="track-item"><span class="track-dot"></span><div><div class="track-name">Retail &amp; Customer Service</div><div class="track-desc">Sales, customer experience, retail</div></div></div>
+        <div class="tracks-carousel" id="tracksCarousel" aria-roledescription="carousel" aria-label="Placement tracks">
+          <div class="tracks-stage">
+            <button type="button" class="tracks-arrow tracks-arrow-prev" id="tracksPrev" aria-label="Previous track">&lsaquo;</button>
+            <div class="tracks-viewport">
+              <div class="tracks-list" id="tracksTrack">
+                <div class="track-slide" role="group" aria-roledescription="slide" aria-label="Technology &amp; IT"><div class="track-item"><span class="track-dot"></span><div><div class="track-name">Technology &amp; IT</div><div class="track-desc">Dev, IT, product, data</div></div></div></div>
+                <div class="track-slide" role="group" aria-roledescription="slide" aria-label="Business &amp; Finance"><div class="track-item"><span class="track-dot"></span><div><div class="track-name">Business &amp; Finance</div><div class="track-desc">Operations, accounting, analysis</div></div></div></div>
+                <div class="track-slide" role="group" aria-roledescription="slide" aria-label="Marketing &amp; Communications"><div class="track-item"><span class="track-dot"></span><div><div class="track-name">Marketing &amp; Communications</div><div class="track-desc">Social, content, PR, events</div></div></div></div>
+                <div class="track-slide" role="group" aria-roledescription="slide" aria-label="Health &amp; Sciences"><div class="track-item"><span class="track-dot"></span><div><div class="track-name">Health &amp; Sciences</div><div class="track-desc">Healthcare, lab, public health</div></div></div></div>
+                <div class="track-slide" role="group" aria-roledescription="slide" aria-label="Education &amp; Social Services"><div class="track-item"><span class="track-dot"></span><div><div class="track-name">Education &amp; Social Services</div><div class="track-desc">Schools, social work, community</div></div></div></div>
+                <div class="track-slide" role="group" aria-roledescription="slide" aria-label="Trades &amp; Engineering"><div class="track-item"><span class="track-dot"></span><div><div class="track-name">Trades &amp; Engineering</div><div class="track-desc">Civil, mechanical, skilled trades</div></div></div></div>
+                <div class="track-slide" role="group" aria-roledescription="slide" aria-label="Arts, Media &amp; Design"><div class="track-item"><span class="track-dot"></span><div><div class="track-name">Arts, Media &amp; Design</div><div class="track-desc">UX, graphic design, film, music</div></div></div></div>
+                <div class="track-slide" role="group" aria-roledescription="slide" aria-label="Law &amp; Government"><div class="track-item"><span class="track-dot"></span><div><div class="track-name">Law &amp; Government</div><div class="track-desc">Policy, legal, civic administration</div></div></div></div>
+                <div class="track-slide" role="group" aria-roledescription="slide" aria-label="Hospitality &amp; Food Services"><div class="track-item"><span class="track-dot"></span><div><div class="track-name">Hospitality &amp; Food Services</div><div class="track-desc">Restaurants, hotels, catering</div></div></div></div>
+                <div class="track-slide" role="group" aria-roledescription="slide" aria-label="Retail &amp; Customer Service"><div class="track-item"><span class="track-dot"></span><div><div class="track-name">Retail &amp; Customer Service</div><div class="track-desc">Sales, customer experience, retail</div></div></div></div>
+              </div>
+            </div>
+            <button type="button" class="tracks-arrow tracks-arrow-next" id="tracksNext" aria-label="Next track">&rsaquo;</button>
+          </div>
+          <div class="tracks-dots" id="tracksDots" role="tablist" aria-label="Select placement track"></div>
         </div>
       </div>
     </div>
@@ -403,12 +403,70 @@ async function renderLiveListings() {
   if (typeof AOS !== 'undefined') AOS.refresh();
 }
 
+// Auto-rotating Placement Tracks carousel. Self-contained: one slide at a time,
+// horizontal slide (transform only), pauses on hover/focus, loops, full list of
+// 10 reachable via dots + arrows. Honors prefers-reduced-motion (no auto-play).
+function initTracksCarousel() {
+  const root     = document.getElementById('tracksCarousel');
+  const track    = document.getElementById('tracksTrack');
+  const dotsWrap = document.getElementById('tracksDots');
+  const prevBtn  = document.getElementById('tracksPrev');
+  const nextBtn  = document.getElementById('tracksNext');
+  if (!root || !track || !dotsWrap) return;
+
+  const slides = Array.from(track.children);
+  const count  = slides.length;
+  if (!count) return;
+
+  const INTERVAL    = 3000;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let index = 0;
+  let timer = null;
+
+  const dots = slides.map((slide, i) => {
+    const label = slide.getAttribute('aria-label') || ('Track ' + (i + 1));
+    const dot = document.createElement('button');
+    dot.type = 'button';
+    dot.className = 'tracks-dot';
+    dot.setAttribute('role', 'tab');
+    dot.setAttribute('aria-label', 'Show ' + label);
+    dot.addEventListener('click', () => { goTo(i); restart(); });
+    dotsWrap.appendChild(dot);
+    return dot;
+  });
+
+  function render() {
+    track.style.transform = 'translateX(' + (-index * 100) + '%)';
+    slides.forEach((s, i) => s.setAttribute('aria-hidden', i === index ? 'false' : 'true'));
+    dots.forEach((d, i) => d.setAttribute('aria-selected', i === index ? 'true' : 'false'));
+  }
+  function goTo(i) { index = (i + count) % count; render(); }
+  function next() { goTo(index + 1); }
+  function prev() { goTo(index - 1); }
+
+  function start()   { if (!reduceMotion && !timer) timer = setInterval(next, INTERVAL); }
+  function stop()    { if (timer) { clearInterval(timer); timer = null; } }
+  function restart() { stop(); start(); }
+
+  if (nextBtn) nextBtn.addEventListener('click', () => { next(); restart(); });
+  if (prevBtn) prevBtn.addEventListener('click', () => { prev(); restart(); });
+
+  root.addEventListener('mouseenter', stop);
+  root.addEventListener('mouseleave', start);
+  root.addEventListener('focusin', stop);
+  root.addEventListener('focusout', start);
+
+  render();
+  start();
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   if (currentUser) {
     document.getElementById('heroStudentBtn').style.display = 'none';
     document.getElementById('heroEmployerBtn').style.display = 'none';
     document.getElementById('heroDashBtn').style.display = '';
   }
+  initTracksCarousel();
   await renderLiveListings();
 });
 </script>
