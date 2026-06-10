@@ -334,12 +334,31 @@ function openIntroModal(id) {
   const s = _browseCandidates.find(x => x.id === id);
   const sub = document.getElementById('introModalSub');
   if (sub) sub.textContent = `Requesting an intro for ${s?.firstName || 'this candidate'} — coordinator will respond within 1–2 business days.`;
+  const noteEl = document.getElementById('introNote');
+  if (noteEl) noteEl.value = '';   // fresh note field per candidate
   openModal('introModal');
 }
-function submitIntro() {
+let _introSubmitting = false;
+async function submitIntro() {
+  if (_introSubmitting) return;                       // guard against double-submit
+  const note = (document.getElementById('introNote')?.value || '').trim();
+  _introSubmitting = true;
+  try {
+    await createIntroRequest({ studentId: currentIntroId, note });
+  } catch (e) {
+    // Real failure — surface it, keep the modal open so the user can retry.
+    showToast(e && e.message ? e.message : 'Could not send your request. Please try again.', true);
+    return;
+  } finally {
+    _introSubmitting = false;
+  }
+  // Success only after the DB insert resolved.
   const s = _browseCandidates.find(x => x.id === currentIntroId);
   closeModal('introModal');
+  const noteEl = document.getElementById('introNote');
+  if (noteEl) noteEl.value = '';
   showToast('✓ Intro request sent for ' + (s?.firstName || 'candidate') + ' to coordinator');
+  if (typeof renderIntroRequests === 'function') renderIntroRequests();   // refresh "My Requests"
 }
 
 // —— DASHBOARD SECTIONS ——

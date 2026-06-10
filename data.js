@@ -366,6 +366,56 @@ async function getBrowseCandidates() {
   } catch (_) { return []; }
 }
 
+// ——— INTRO REQUESTS (employer "Request an Intro") ———
+// Writes to the intro_requests table; the AFTER INSERT trigger notifies all
+// coordinators DB-side, so there is no client-side notification call.
+function _introRequestFromApi(r) {
+  if (!r) return null;
+  return {
+    id:         r.id,
+    employerId: r.employer_id,
+    studentId:  r.student_id,
+    note:       r.note || '',
+    status:     r.status || 'open',
+    createdAt:  r.created_at
+  };
+}
+
+async function createIntroRequest(data) {
+  const sb = _sb();
+  if (!sb) throw new Error('Auth service not ready');
+  const uid = await _uid();
+  if (!uid) throw new Error('You must be signed in to request an intro.');
+  // employer_id is the signed-in employer — the INSERT policy enforces
+  // (employer_id = auth.uid() AND current_user_employer_approved()); the caller
+  // only supplies studentId + note.
+  const { data: row, error } = await sb
+    .from('intro_requests')
+    .insert({
+      employer_id: uid,
+      student_id: data.studentId,
+      note: data.note || ''
+    })
+    .select('*')
+    .single();
+  if (error) throw new Error(error.message);
+  return _introRequestFromApi(row);
+}
+
+async function getIntroRequests() {
+  // Owner SELECT policy scopes the rows to the signed-in employer; newest first.
+  const sb = _sb();
+  if (!sb) return [];
+  try {
+    const { data, error } = await sb
+      .from('intro_requests')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) return [];
+    return (data || []).map(_introRequestFromApi);
+  } catch (_) { return []; }
+}
+
 // ——— STATS ———
 
 async function getStudentStats(_email) {
