@@ -99,6 +99,7 @@ function _notifLabel(type, p) {
     case 'employerPendingApproval': return `Employer pending approval: ${p.companyName || p.email || '—'}`;
     case 'employerApproved':        return 'Your employer account has been approved — you can now post listings.';
     case 'concernReport':           return `⚑ Concern report from ${p.senderName || 'a user'}: ${p.type || '—'}`;
+    case 'introRequestReceived':    return `${p.companyName || 'An employer'} requested an introduction${p.note ? ': "' + p.note + '"' : ''}`;
     default:                        return 'New notification';
   }
 }
@@ -120,6 +121,7 @@ function _notifHref(type, p) {
     case 'newUserReview':
     case 'employerPendingApproval': return 'coordinator-dashboard.html?section=users';
     case 'employerApproved':        return 'dashboard-employer.html';
+    case 'introRequestReceived':    return 'dashboard-student.html?section=notifications';
     default:                        return '#';
   }
 }
