@@ -169,14 +169,109 @@ async function loadBrowseCandidates() {
   return _browseCandidates;
 }
 
+// ——— SHARED CLIENT-SIDE PAGINATION ———
+// One reusable factory used by the job board (job-listings.html) and Browse
+// Candidates. It owns page state + the controls UI, and injects its own controls
+// element immediately after the list container (no markup edits needed).
+//   config: { container, pageSize=10, renderSlice(slice), onEmpty(), onRender(total) }
+//   exposes: setItems(list) -> resets to page 1 + renders; render() -> re-renders.
+function createPaginator(config) {
+  const container = config.container;
+  if (!container) return null;
+  const pageSize    = config.pageSize || 10;
+  const renderSlice = config.renderSlice;
+  const onEmpty     = config.onEmpty;
+  const onRender    = config.onRender;
+
+  // Reuse an existing controls sibling if present, else inject one right after.
+  let controls = container.nextElementSibling;
+  if (!controls || !controls.classList || !controls.classList.contains('pager')) {
+    controls = document.createElement('nav');
+    controls.className = 'pager';
+    controls.setAttribute('aria-label', 'Pagination');
+    container.parentNode.insertBefore(controls, container.nextSibling);
+  }
+
+  let items = [];
+  let page  = 1;
+  const pageCount = () => Math.max(1, Math.ceil(items.length / pageSize));
+
+  // First page, current±1, last page; fill a single-page gap instead of "…".
+  function pageList(current, total) {
+    const wanted = [...new Set([1, current - 1, current, current + 1, total])]
+      .filter(p => p >= 1 && p <= total)
+      .sort((a, b) => a - b);
+    const out = [];
+    let prev = 0;
+    for (const p of wanted) {
+      if (p - prev === 2) out.push(prev + 1);
+      else if (p - prev > 1) out.push('…');
+      out.push(p);
+      prev = p;
+    }
+    return out;
+  }
+
+  function renderControls() {
+    const total = pageCount();
+    if (total <= 1) { controls.innerHTML = ''; controls.style.display = 'none'; return; }
+    controls.style.display = '';
+    let html = `<button type="button" class="pager-btn pager-nav" data-act="prev"${page === 1 ? ' disabled' : ''} aria-label="Previous page">&lsaquo;</button>`;
+    for (const p of pageList(page, total)) {
+      if (p === '…') html += `<span class="pager-ellipsis" aria-hidden="true">…</span>`;
+      else html += `<button type="button" class="pager-btn${p === page ? ' active' : ''}" data-page="${p}"${p === page ? ' aria-current="page"' : ''}>${p}</button>`;
+    }
+    html += `<button type="button" class="pager-btn pager-nav" data-act="next"${page === total ? ' disabled' : ''} aria-label="Next page">&rsaquo;</button>`;
+    controls.innerHTML = html;
+  }
+
+  function render() {
+    if (typeof onRender === 'function') onRender(items.length);
+    if (!items.length) {
+      if (typeof onEmpty === 'function') onEmpty();
+      controls.innerHTML = '';
+      controls.style.display = 'none';
+      return;
+    }
+    const total = pageCount();
+    if (page > total) page = total;
+    if (page < 1) page = 1;
+    const start = (page - 1) * pageSize;
+    renderSlice(items.slice(start, start + pageSize));
+    renderControls();
+    if (typeof AOS !== 'undefined') AOS.refresh();
+  }
+
+  function go(p) {
+    const np = Math.min(Math.max(1, p), pageCount());
+    if (np === page) return;
+    page = np;
+    render();
+  }
+
+  controls.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn || btn.disabled) return;
+    if (btn.dataset.page) go(parseInt(btn.dataset.page, 10));
+    else if (btn.dataset.act === 'prev') go(page - 1);
+    else if (btn.dataset.act === 'next') go(page + 1);
+  });
+
+  function setItems(list) { items = Array.isArray(list) ? list : []; page = 1; render(); }
+
+  return { setItems, render, go };
+}
+
+let _studentsPager = null;
 function renderStudents(list) {
   const grid = document.getElementById('studentGrid');
   if (!grid) return;
-  if (!list.length) {
-    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-state-icon">👥</div><div class="empty-state-title">No candidates yet</div><div class="empty-state-body">Approved student profiles appear here as students submit their applications. Try clearing the search filter.</div></div>`;
-    return;
-  }
-  grid.innerHTML = list.map((s, i) => `
+  if (!_studentsPager) {
+    _studentsPager = createPaginator({
+      container: grid,
+      pageSize: 10,
+      renderSlice: (slice) => {
+        grid.innerHTML = slice.map((s, i) => `
     <div class="scard" onclick="openSProfile('${_htmlEsc(s.id)}')">
       <div class="scard-top">
         <div class="scard-avatar">${_htmlEsc((s.firstName || '?').charAt(0))}</div>
@@ -190,7 +285,13 @@ function renderStudents(list) {
       </div>
     </div>
   `).join('');
-  if (typeof AOS !== 'undefined') AOS.refresh();
+      },
+      onEmpty: () => {
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><div class="empty-state-icon">👥</div><div class="empty-state-title">No candidates yet</div><div class="empty-state-body">Approved student profiles appear here as students submit their applications. Try clearing the search filter.</div></div>`;
+      },
+    });
+  }
+  _studentsPager.setItems(list);
 }
 
 function filterStudents(val) {

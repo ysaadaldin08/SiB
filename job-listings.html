@@ -205,22 +205,30 @@ function clearFilters() {
   applyFilters();
 }
 
+let _postingsPager = null;
 function renderPostings(list) {
   const el = document.getElementById('postingsList');
-  const count = document.getElementById('resultCount');
-  count.textContent = list.length + ' listing' + (list.length !== 1 ? 's' : '') + ' found';
-  if (!list.length) {
-    el.innerHTML = `<div class="empty-state">
+  if (!el) return;
+  if (!_postingsPager) {
+    _postingsPager = createPaginator({
+      container: el,
+      pageSize: 10,
+      renderSlice: (slice) => { el.innerHTML = slice.map(p => postingCardHTML(p)).join(''); },
+      onEmpty: () => {
+        el.innerHTML = `<div class="empty-state">
       <div class="empty-state-icon">🔍</div>
       <div class="empty-state-title">No listings match your filters</div>
       <div class="empty-state-body">Try removing a filter or clearing all to see everything.</div>
     </div>`;
-    return;
+      },
+      // #resultCount stays the TOTAL filtered count, not the per-page slice.
+      onRender: (total) => {
+        const count = document.getElementById('resultCount');
+        if (count) count.textContent = total + ' listing' + (total !== 1 ? 's' : '') + ' found';
+      },
+    });
   }
-  el.innerHTML = list.map((p, i) => {
-    return postingCardHTML(p);
-  }).join('');
-  if (typeof AOS !== 'undefined') AOS.refresh();
+  _postingsPager.setItems(list);
 }
 
 function handleApplyNav() {

@@ -535,6 +535,16 @@ footer { background:var(--ink); color:rgba(255,255,255,0.46); padding:44px 80px;
 .jl-count { font-size:13px; color:var(--text-faint); margin-bottom:14px; }
 .postings-list { display:flex; flex-direction:column; gap:12px; }
 
+/* —— PAGINATION (shared by job board + browse candidates) —— */
+.pager { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:6px; margin-top:28px; }
+.pager-btn { min-width:38px; height:38px; padding:0 11px; display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--line); background:white; color:var(--ink); font-family:var(--sans); font-size:13.5px; font-weight:600; border-radius:var(--radius-sm); cursor:pointer; transition:background var(--transition),border-color var(--transition),color var(--transition); }
+.pager-btn:hover:not(:disabled):not(.active) { background:var(--mist); border-color:var(--ink); }
+.pager-btn:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }
+.pager-btn.active { background:var(--ink); border-color:var(--ink); color:white; cursor:default; }
+.pager-btn:disabled { opacity:0.4; cursor:not-allowed; }
+.pager-nav { font-size:18px; line-height:1; }
+.pager-ellipsis { min-width:24px; text-align:center; color:var(--text-faint); font-weight:600; user-select:none; }
+
 /* —— POSTING CARDS —— */
 .posting-card { background:white; border-radius:var(--radius-lg); padding:24px; border:1px solid var(--line); box-shadow:var(--shadow-xs); transition:all var(--transition); display:block; text-decoration:none; color:inherit; }
 .posting-card:hover { transform:translateY(-2px); box-shadow:var(--shadow); border-color:rgba(26,108,246,0.35); }
