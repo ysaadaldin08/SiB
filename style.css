@@ -245,6 +245,9 @@ body {
 .track-sel-card.selected { border-color:var(--blue); background:var(--blue-light); }
 .track-sel-icon { font-size:22px; margin-bottom:7px; }
 .track-sel-name { font-size:13px; font-weight:600; color:var(--ink); }
+/* 10 tracks in a 3-col grid leave one orphan on the last row — center it. */
+/* No-op on the 2-col (<=960px) breakpoint, where the 10th card is already col 2. */
+#trackSelGrid > .track-sel-card:last-child { grid-column:2; }
 /* Track chips (employer registration) */
 .track-chip-grid { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
 .track-chip { padding:8px 16px; border-radius:100px; border:1.5px solid var(--line); background:var(--mist); font-size:13px; font-weight:600; color:var(--text-muted); cursor:pointer; transition:all var(--transition); user-select:none; }
