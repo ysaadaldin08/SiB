@@ -6,6 +6,10 @@
 // scoped by Row Level Security (see supabase/migrations/20260603000000_*).
 
 function _sb() { return window._supabase || null; }
+// Awaits the lazy-loaded Supabase client (see config.js window._supabaseReady) so
+// page-load reads never fire before the client exists. Returns null only if the CDN
+// never loaded — callers keep their existing `if (!sb) return []/null` guard.
+async function _sbReady() { await window._supabaseReady; return window._supabase || null; }
 async function _uid() {
   const sb = _sb();
   if (!sb) return null;
@@ -139,7 +143,7 @@ function _messageFromApi(m) {
 // base `postings` table (RLS scopes the rows; the view hides supervisor_name).
 
 async function getActivePostings() {
-  const sb = _sb();
+  const sb = await _sbReady();
   if (!sb) return [];
   try {
     const { data, error } = await sb
@@ -152,7 +156,7 @@ async function getActivePostings() {
 }
 
 async function getPostingById(id) {
-  const sb = _sb();
+  const sb = await _sbReady();
   if (!sb) return null;
   try {
     const { data, error } = await sb
@@ -167,7 +171,7 @@ async function getPostingById(id) {
 
 async function getPostingsByEmployer(_email) {
   // _email ignored — RLS scopes the SELECT to the signed-in employer's own rows.
-  const sb = _sb();
+  const sb = await _sbReady();
   if (!sb) return [];
   try {
     const { data, error } = await sb
@@ -217,7 +221,7 @@ async function deletePosting(id) {
 // ——— APPLICATIONS ———
 
 async function getApplicationsByStudent(_email) {
-  const sb = _sb();
+  const sb = await _sbReady();
   if (!sb) return [];
   try {
     const uid = await _uid();
@@ -251,7 +255,7 @@ async function getApplicationsByStudent(_email) {
 }
 
 async function getApplicationsByPosting(postingId) {
-  const sb = _sb();
+  const sb = await _sbReady();
   if (!sb) return [];
   try {
     const { data: apps, error } = await sb
@@ -354,7 +358,7 @@ function _candidateFromApi(c) {
 }
 
 async function getBrowseCandidates() {
-  const sb = _sb();
+  const sb = await _sbReady();
   if (!sb) return [];
   try {
     const { data, error } = await sb
@@ -404,7 +408,7 @@ async function createIntroRequest(data) {
 
 async function getIntroRequests() {
   // Owner SELECT policy scopes the rows to the signed-in employer; newest first.
-  const sb = _sb();
+  const sb = await _sbReady();
   if (!sb) return [];
   try {
     const { data, error } = await sb
@@ -601,7 +605,7 @@ async function employerCanPostNow() {
 // resilient whether or not the company-profile columns migration
 // (20260605000000_employer_company_profile.sql) has been applied yet.
 async function getMyEmployerProfile() {
-  const sb = _sb();
+  const sb = await _sbReady();
   if (!sb) return null;
   try {
     const uid = await _uid();
@@ -651,7 +655,7 @@ function _defaultNotificationPreferences() {
 // notifications are created by SECURITY DEFINER triggers / notify_coordinators().
 
 async function getNotifications(userId) {
-  const sb = _sb();
+  const sb = await _sbReady();
   if (!sb) return [];
   try {
     const uid = userId || (typeof currentUser !== 'undefined' && currentUser ? currentUser.id : null);
@@ -743,7 +747,7 @@ async function _enrichThreadsClient(threads) {
 }
 
 async function getMessageThreads(userId, _role) {
-  const sb = _sb();
+  const sb = await _sbReady();
   if (!sb) return [];
   try {
     const uid = userId || (typeof currentUser !== 'undefined' && currentUser ? currentUser.id : null) || await _uid();
